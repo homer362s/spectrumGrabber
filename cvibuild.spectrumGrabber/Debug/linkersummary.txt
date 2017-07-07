@@ -1,0 +1,10 @@
+spectrumGrabber.obj
+cvi.lib
+analysis.lib
+cvistart.lib
+ps6000.lib
+kernel32.lib
+user32.lib
+EXE Symbol Module
+Exports Module
+Resource Module
