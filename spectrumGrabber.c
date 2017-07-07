@@ -8,6 +8,9 @@
 #include "toolbox.h"
 #include "ps6000Api.h"
 
+#define DACBOARD 1
+#define VGOUT 1
+#define VDOUT 2
 
 //#define measuredPoints 20000
 
@@ -23,6 +26,7 @@ float *timeValues;
 float *freqValues;
 
 char measuring = 0;
+char userRequestedStop = 0;
 
 static int panelHandle = 0;
 int16_t scopeHandle;
@@ -152,69 +156,116 @@ int CVICALLBACK binsRing_CB(int panel, int control, int event, void *callbackDat
 void handleMeasurement()
 {
 	PICO_STATUS status;
-	short averages = 1;
-	int nMeasured = 0;
-	char tmpstr[128];
 	
-	// Get number of requested averages
-	GetCtrlVal(panelHandle, MAINPANEL_AVGBOX, &averages);
+	// Disable the run button
+	SetCtrlAttribute(panelHandle, MAINPANEL_STOPBUTTON, ATTR_DIMMED, FALSE);
+	SetCtrlAttribute(panelHandle, MAINPANEL_RUNBUTTON, ATTR_DIMMED, TRUE);
+	userRequestedStop = 0;
 	
-	sprintf(tmpstr, "0/%d Completed", averages);
-	SetCtrlVal(panelHandle, MAINPANEL_MEASCOUNTDISP, tmpstr);
+	int nBias;
+	GetNumTableRows(panelHandle, MAINPANEL_TABLE, &nBias);
 	
-	for(nMeasured = 0; nMeasured < averages; nMeasured++) {
-		measuring = 1;
-		status = ps6000RunBlock(scopeHandle, measuredPoints/2, measuredPoints/2, timebase, 1, 0, 0, dataAvailableCallback, 0);
+	// Loop over bias conditions measuring at each
+	for(int i = 0; i < nBias; i++) {
+		short averages = 1;
+		int nMeasured = 0;
+		char tmpstr[128];
 
-		switch (status) {
-			case PICO_OK:
-				break;
-			default:
-				break;
-		}
+		// Get number of requested averages
+		GetCtrlVal(panelHandle, MAINPANEL_AVGBOX, &averages);
 	
-		while(measuring) {
-			// Handle events
-			ProcessSystemEvents();
-		}
-	
-		// Convert values to double
-		for (int i = 0;i < measuredPoints;i++) {
-			dataValues[i] = (double) rawDataBuffer[i] / 32767 * 0.05;
-		}
-	
-		// Take FFT
-		for(int i = 0;i < measuredPoints; i++) {
-			zeros[i] = 0;
-		}
-		FFT(dataValues, zeros, measuredPoints);
-	
-		// From now on we only care about the first half of the points
-		for(int i = 0;i < measuredPoints/2; i++) {
-			// Get magnitude
-			dataValues[i] = 20*log10((sqrt(pow(dataValues[i],2) + pow(zeros[i],2))) / measuredPoints);
-		
-			// Average spectra
-			avgSpectrum[i] = (avgSpectrum[i] * ((double) nMeasured / (double) averages) + dataValues[i] * (1 / (double) averages)) * ((double) averages) / ((double) nMeasured + 1);
-		}
-	
-		// Calculate time related stuff
-		float timeInterval_ns = 0;
-		ps6000GetTimebase2(scopeHandle, timebase, measuredPoints, &timeInterval_ns, 0, NULL, 0);
-		int time = timeInterval_ns;
-		for (int i = 0;i < measuredPoints/2;i++) {
-			timeValues[i] = time/1e9;
-			freqValues[i] = i/(measuredPoints*timeInterval_ns/1e9);
-			time += timeInterval_ns;
-		}
-	
-		DeleteGraphPlot(panelHandle, MAINPANEL_GRAPH, -1, VAL_DELAYED_DRAW);
-		PlotXY(panelHandle, MAINPANEL_GRAPH, freqValues, avgSpectrum, measuredPoints/2, VAL_FLOAT, VAL_DOUBLE, VAL_THIN_LINE, VAL_NO_POINT, VAL_SOLID, 1, VAL_BLACK); 
-		
-		// Update progress counter
-		sprintf(tmpstr, "%d/%d Completed", nMeasured + 1, averages);
+		sprintf(tmpstr, "0/%d Completed", averages);
 		SetCtrlVal(panelHandle, MAINPANEL_MEASCOUNTDISP, tmpstr);
+	
+		// Go to requested bias
+		double Vg, Vd;
+		double VgCoeff, VdCoeff;
+		GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(i+1,1), &Vg);
+		GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(i+1,2), &Vd);
+		GetCtrlVal(panelHandle, MAINPANEL_VGCOEFFBOX, &VgCoeff);
+		GetCtrlVal(panelHandle, MAINPANEL_VDCOEFFBOX, &VdCoeff);
+		
+		cbVOut(DACBOARD, VGOUT, BIP10VOLTS, Vg/VgCoeff, 0);
+		cbVOut(DACBOARD, VDOUT, BIP10VOLTS, Vd/VdCoeff, 0);
+		
+		// Loop over a single sias condition and average
+		for(nMeasured = 0; nMeasured < averages; nMeasured++) {
+			if (userRequestedStop)
+				break;
+		
+			measuring = 1;
+			status = ps6000RunBlock(scopeHandle, measuredPoints/2, measuredPoints/2, timebase, 1, 0, 0, dataAvailableCallback, 0);
+
+			switch (status) {
+				case PICO_OK:
+					break;
+				default:
+					break;
+			}
+	
+			while(measuring) {
+				// Handle events
+				ProcessSystemEvents();
+				if (userRequestedStop) {
+					// Update progress counter
+				sprintf(tmpstr, "%d/%d Completed", nMeasured, nMeasured);
+				SetCtrlVal(panelHandle, MAINPANEL_MEASCOUNTDISP, tmpstr);
+					break;
+				}
+			}
+	
+			if (userRequestedStop)
+				break;
+		
+			// Convert values to double
+			for (int i = 0;i < measuredPoints;i++) {
+				dataValues[i] = (double) rawDataBuffer[i] / 32767 * 0.05;
+			}
+	
+			// Take FFT
+			for(int i = 0;i < measuredPoints; i++) {
+				zeros[i] = 0;
+			}
+			FFT(dataValues, zeros, measuredPoints);
+	
+			// From now on we only care about the first half of the points
+			for(int i = 0;i < measuredPoints/2; i++) {
+				// Get magnitude
+				dataValues[i] = 20*log10((sqrt(pow(dataValues[i],2) + pow(zeros[i],2))) / measuredPoints);
+		
+				// Average spectra
+				avgSpectrum[i] = (avgSpectrum[i] * ((double) nMeasured / (double) averages) + dataValues[i] * (1 / (double) averages)) * ((double) averages) / ((double) nMeasured + 1);
+			}
+	
+			// Calculate time related stuff
+			float timeInterval_ns = 0;
+			ps6000GetTimebase2(scopeHandle, timebase, measuredPoints, &timeInterval_ns, 0, NULL, 0);
+			int time = timeInterval_ns;
+			for (int i = 0;i < measuredPoints/2;i++) {
+				timeValues[i] = time/1e9;
+				freqValues[i] = i/(measuredPoints*timeInterval_ns/1e9);
+				time += timeInterval_ns;
+			}
+	
+			DeleteGraphPlot(panelHandle, MAINPANEL_GRAPH, -1, VAL_DELAYED_DRAW);
+			PlotXY(panelHandle, MAINPANEL_GRAPH, freqValues, avgSpectrum, measuredPoints/2, VAL_FLOAT, VAL_DOUBLE, VAL_THIN_LINE, VAL_NO_POINT, VAL_SOLID, 1, VAL_BLACK); 
+		
+			// Update progress counter
+			sprintf(tmpstr, "%d/%d Completed", nMeasured + 1, averages);
+			SetCtrlVal(panelHandle, MAINPANEL_MEASCOUNTDISP, tmpstr);
+		}
+		
+		if (userRequestedStop)
+			break;
 	}
+	
+	// Tell the scope to stop
+	ps6000Stop(scopeHandle);
+	measuring = 0;
+	
+	// Re-enable the run button
+	SetCtrlAttribute(panelHandle, MAINPANEL_STOPBUTTON, ATTR_DIMMED, TRUE);
+	SetCtrlAttribute(panelHandle, MAINPANEL_RUNBUTTON, ATTR_DIMMED, FALSE);
 }
 
 int CVICALLBACK runButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
@@ -222,6 +273,17 @@ int CVICALLBACK runButton_CB(int panel, int control, int event, void *callbackDa
 	switch (event) {
 		case EVENT_COMMIT:
 			handleMeasurement();
+			break;
+	}
+	
+	return 0;
+}
+
+int CVICALLBACK stopButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch (event) {
+		case EVENT_COMMIT:
+			userRequestedStop = 1;
 			break;
 	}
 	

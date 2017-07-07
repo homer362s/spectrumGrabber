@@ -22,6 +22,10 @@ Prototype="void handleMeasurement();"
 Class="Function"
 Prototype="int runButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
+[stopButton_CB]
+Class="Function"
+Prototype="int stopButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
 [mainpanel_CB]
 Class="Function"
 Prototype="int mainpanel_CB(int panel, int event, void *callbackData, int eventData1, int eventData2);"

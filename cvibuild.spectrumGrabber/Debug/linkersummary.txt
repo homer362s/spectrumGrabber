@@ -2,6 +2,7 @@ spectrumGrabber.obj
 cvi.lib
 analysis.lib
 cvistart.lib
+cbw32.lib
 ps6000.lib
 kernel32.lib
 user32.lib

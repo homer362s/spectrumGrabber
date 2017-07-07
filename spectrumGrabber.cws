@@ -12,7 +12,7 @@ VXIplug&play Framework 64-bit Dir = "/C/Program Files/IVI Foundation/VISA/win64"
 Number of Projects = 1
 Active Project = 1
 Project 0001 = "spectrumGrabber.prj"
-Drag Bar Left = 180
+Drag Bar Left = 226
 Window Top = 62
 Window Left = 26
 Window Bottom = 564
@@ -32,7 +32,7 @@ Break At First Statement = False
 Sort Type = "File Name"
 Number of Opened Files = 2
 Window Confinement Region Enabled = True
-MainColumnWidth = 163
+MainColumnWidth = 209
 FileDateColumnWidth = 70
 FileSizeColumnWidth = 70
 
@@ -48,7 +48,7 @@ Batch Build Debug = False
 [File 0001]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"
 File Type = "User Interface Resource"
-Disk Date = 3582306059
+Disk Date = 3582307743
 In Projects = "1,"
 Window Top = 62
 Window Left = 26
@@ -59,12 +59,12 @@ Window Z-Order = 2
 [File 0002]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.c"
 File Type = "CSource"
-Disk Date = 3582306611
+Disk Date = 3582309708
 In Projects = "1,"
 Window Top = 32
 Window Left = 10
 Window Z-Order = 1
-Source Window State = "1,197,197,197,29,103,29,0,0,201,0,45,0,0,0,56,162,0,197,163,349,715,1,13,"
+Source Window State = "1,184,185,185,8,8,8,0,0,195,0,45,0,0,0,56,150,0,187,47,349,715,1,13,"
 
 [File 0003]
 Path = "/c/Program Files (x86)/Pico Technology/SDK/inc/ps6000Api.h"
@@ -92,7 +92,9 @@ Path = "/c/Users/Public/Documents/Measurement Computing/DAQ/C/cbw.h"
 File Type = "Include"
 Disk Date = 3567178027
 In Projects = "1,"
-Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+Window Top = 392
+Window Left = 202
+Source Window State = "1,622,622,622,8,18,18,0,3,80,0,0,0,0,0,25,594,0,622,8,349,715,1,0,"
 
 [Tab Order]
 Tab 0001 = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"
