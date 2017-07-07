@@ -14,6 +14,10 @@ Prototype="void dataAvailableCallback(short handle, unsigned int status, void *p
 Class="Function"
 Prototype="int binsRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
+[handleMeasurement]
+Class="Function"
+Prototype="void handleMeasurement();"
+
 [runButton_CB]
 Class="Function"
 Prototype="int runButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"

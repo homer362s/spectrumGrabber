@@ -12,11 +12,11 @@ VXIplug&play Framework 64-bit Dir = "/C/Program Files/IVI Foundation/VISA/win64"
 Number of Projects = 1
 Active Project = 1
 Project 0001 = "spectrumGrabber.prj"
-Drag Bar Left = 231
-Window Top = 30
-Window Left = 421
-Window Bottom = 534
-Window Right = 1211
+Drag Bar Left = 180
+Window Top = 62
+Window Left = 26
+Window Bottom = 564
+Window Right = 816
 Maximized = True
 Maximized Children = True
 Max32 Number Of Errors = 20
@@ -32,7 +32,7 @@ Break At First Statement = False
 Sort Type = "File Name"
 Number of Opened Files = 2
 Window Confinement Region Enabled = True
-MainColumnWidth = 214
+MainColumnWidth = 163
 FileDateColumnWidth = 70
 FileSizeColumnWidth = 70
 
@@ -48,7 +48,7 @@ Batch Build Debug = False
 [File 0001]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"
 File Type = "User Interface Resource"
-Disk Date = 3582295419
+Disk Date = 3582306059
 In Projects = "1,"
 Window Top = 62
 Window Left = 26
@@ -59,20 +59,12 @@ Window Z-Order = 2
 [File 0002]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.c"
 File Type = "CSource"
-Disk Date = 3582296889
+Disk Date = 3582306611
 In Projects = "1,"
 Window Top = 32
 Window Left = 10
 Window Z-Order = 1
-Source Window State = "1,267,271,271,8,26,26,0,0,172,0,0,0,0,0,45,70,0,93,8,349,715,1,0,"
-Breakpoint 0001 = "139,0,enabled,"
-Breakpoint 0002 = "142,0,enabled,"
-Breakpoint 0003 = "153,0,enabled,"
-Breakpoint 0004 = "164,0,enabled,"
-Breakpoint 0005 = "174,0,enabled,"
-Breakpoint 0006 = "179,0,enabled,"
-Breakpoint 0007 = "255,0,enabled,"
-Breakpoint 0008 = "269,0,enabled,"
+Source Window State = "1,197,197,197,29,103,29,0,0,201,0,45,0,0,0,56,162,0,197,163,349,715,1,13,"
 
 [File 0003]
 Path = "/c/Program Files (x86)/Pico Technology/SDK/inc/ps6000Api.h"
@@ -81,13 +73,26 @@ Disk Date = 3516620848
 In Projects = "1,"
 Window Top = 182
 Window Left = 90
-Source Window State = "1,52,52,52,10,15,15,0,3,0,0,0,0,0,0,0,28,0,52,10,349,715,1,0,"
+Source Window State = "1,120,120,120,2,17,17,0,0,0,0,0,0,0,0,0,108,0,122,29,349,715,1,0,"
 
 [File 0004]
 Path = "/c/Program Files (x86)/Pico Technology/SDK/lib/ps6000.lib"
 File Type = "Library"
 Disk Date = 3516620848
 In Projects = "1,"
+
+[File 0005]
+Path = "/c/Users/Public/Documents/Measurement Computing/DAQ/C/cbw32.lib"
+File Type = "Library"
+Disk Date = 3559043316
+In Projects = "1,"
+
+[File 0006]
+Path = "/c/Users/Public/Documents/Measurement Computing/DAQ/C/cbw.h"
+File Type = "Include"
+Disk Date = 3567178027
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
 
 [Tab Order]
 Tab 0001 = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"

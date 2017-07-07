@@ -19,6 +19,10 @@
 #define  MAINPANEL_RUNBUTTON              4       /* control type: command, callback function: runButton_CB */
 #define  MAINPANEL_RING                   5       /* control type: ring, callback function: (none) */
 #define  MAINPANEL_BINSRING               6       /* control type: ring, callback function: binsRing_CB */
+#define  MAINPANEL_AVGBOX                 7       /* control type: numeric, callback function: (none) */
+#define  MAINPANEL_VDCOEFFBOX             8       /* control type: numeric, callback function: (none) */
+#define  MAINPANEL_VGCOEFFBOX             9       /* control type: numeric, callback function: (none) */
+#define  MAINPANEL_MEASCOUNTDISP          10      /* control type: textMsg, callback function: (none) */
 
 
      /* Control Arrays: */
