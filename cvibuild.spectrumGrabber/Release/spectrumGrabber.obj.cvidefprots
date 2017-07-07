@@ -1,0 +1,24 @@
+[main]
+Class="Function"
+Prototype="int main(int argc, char **argv);"
+
+[picoscopeInit]
+Class="Function"
+Prototype="void picoscopeInit();"
+
+[dataAvailableCallback]
+Class="Function"
+Prototype="void dataAvailableCallback(short handle, unsigned int status, void *pParameter);"
+
+[binsRing_CB]
+Class="Function"
+Prototype="int binsRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[runButton_CB]
+Class="Function"
+Prototype="int runButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[mainpanel_CB]
+Class="Function"
+Prototype="int mainpanel_CB(int panel, int event, void *callbackData, int eventData1, int eventData2);"
+

@@ -48,7 +48,7 @@ Batch Build Debug = False
 [File 0001]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"
 File Type = "User Interface Resource"
-Disk Date = 3582283913
+Disk Date = 3582295419
 In Projects = "1,"
 Window Top = 62
 Window Left = 26
@@ -59,13 +59,20 @@ Window Z-Order = 2
 [File 0002]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.c"
 File Type = "CSource"
-Disk Date = 3582287235
+Disk Date = 3582296889
 In Projects = "1,"
 Window Top = 32
 Window Left = 10
 Window Z-Order = 1
-Source Window State = "1,138,139,139,71,71,71,0,0,172,0,0,0,0,0,45,114,0,139,69,349,715,1,0,"
-Breakpoint 0001 = "161,0,enabled,"
+Source Window State = "1,267,271,271,8,26,26,0,0,172,0,0,0,0,0,45,70,0,93,8,349,715,1,0,"
+Breakpoint 0001 = "139,0,enabled,"
+Breakpoint 0002 = "142,0,enabled,"
+Breakpoint 0003 = "153,0,enabled,"
+Breakpoint 0004 = "164,0,enabled,"
+Breakpoint 0005 = "174,0,enabled,"
+Breakpoint 0006 = "179,0,enabled,"
+Breakpoint 0007 = "255,0,enabled,"
+Breakpoint 0008 = "269,0,enabled,"
 
 [File 0003]
 Path = "/c/Program Files (x86)/Pico Technology/SDK/inc/ps6000Api.h"
@@ -74,7 +81,7 @@ Disk Date = 3516620848
 In Projects = "1,"
 Window Top = 182
 Window Left = 90
-Source Window State = "1,52,52,52,10,15,15,0,3,80,0,0,0,0,0,25,28,0,52,10,349,715,1,0,"
+Source Window State = "1,52,52,52,10,15,15,0,3,0,0,0,0,0,0,0,28,0,52,10,349,715,1,0,"
 
 [File 0004]
 Path = "/c/Program Files (x86)/Pico Technology/SDK/lib/ps6000.lib"

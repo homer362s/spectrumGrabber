@@ -90,7 +90,8 @@ int main (int argc, char *argv[])
 	for (int i = 0;i < measuredPoints;i++) {
 		//timeValues[i] = 1/(float) (time/1e9);
 		timeValues[i] = time/1e9;
-		freqValues[i] = i/(measuredPoints*timeInterval_ns/1e9);
+		f
+		reqValues[i] = i/(measuredPoints*timeInterval_ns/1e9);
 		time += timeInterval_ns;
 	}
 
