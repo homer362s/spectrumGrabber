@@ -18,6 +18,38 @@ Prototype="int binsRing_CB(int panel, int control, int event, void *callbackData
 Class="Function"
 Prototype="void handleMeasurement();"
 
+[loadConditions]
+Class="Function"
+Prototype="void loadConditions();"
+
+[calculateVgStepSize]
+Class="Function"
+Prototype="void calculateVgStepSize();"
+
+[calculateVdStepSize]
+Class="Function"
+Prototype="void calculateVdStepSize();"
+
+[clearConditions]
+Class="Function"
+Prototype="void clearConditions();"
+
+[loadButton_CB]
+Class="Function"
+Prototype="int loadButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[clearButton_CB]
+Class="Function"
+Prototype="int clearButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[addrowButton_CB]
+Class="Function"
+Prototype="int addrowButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[nextButton_CB]
+Class="Function"
+Prototype="int nextButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
 [runButton_CB]
 Class="Function"
 Prototype="int runButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
@@ -26,7 +58,27 @@ Prototype="int runButton_CB(int panel, int control, int event, void *callbackDat
 Class="Function"
 Prototype="int stopButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
+[buildtableButton_CB]
+Class="Function"
+Prototype="int buildtableButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[editVgBox_CB]
+Class="Function"
+Prototype="int editVgBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[editVdBox_CB]
+Class="Function"
+Prototype="int editVdBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
 [mainpanel_CB]
 Class="Function"
 Prototype="int mainpanel_CB(int panel, int event, void *callbackData, int eventData1, int eventData2);"
+
+[getInputNew]
+Class="Function"
+Prototype="int getInputNew(char *FileInput, int *pointer, char **line);"
+
+[fileread]
+Class="Function"
+Prototype="char *fileread(char *name, char *access);"
 

@@ -7,10 +7,12 @@
 #include "spectrumGrabber.h"
 #include "toolbox.h"
 #include "ps6000Api.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 #define DACBOARD 1
-#define VGOUT 1
-#define VDOUT 2
+#define VGOUT 0
+#define VDOUT 1
 
 //#define measuredPoints 20000
 
@@ -27,11 +29,16 @@ float *freqValues;
 
 char measuring = 0;
 char userRequestedStop = 0;
+char userRequestedNext = 0;
 
 static int panelHandle = 0;
 int16_t scopeHandle;
 
+FILE * fp;
+
 void picoscopeInit();
+int getInputNew(char FileInput[], int *pointer, char **line);
+char *fileread(char name[], char access[]);
 
 int main (int argc, char *argv[])
 {
@@ -123,6 +130,9 @@ void picoscopeInit()
 
 void PREF4 dataAvailableCallback(int16_t handle, PICO_STATUS status, void* pParameter)
 {
+	if (measuring == 0) {
+		printf("seasuring == 0 in dataAvailableCallback()!");
+	}
 	uint32_t nSamples = measuredPoints;
 	status = ps6000GetValues(handle, 0, &nSamples, 1, PS6000_RATIO_MODE_NONE, 0, NULL);
 	
@@ -145,6 +155,16 @@ int CVICALLBACK binsRing_CB(int panel, int control, int event, void *callbackDat
 			timeValues = realloc(timeValues, measuredPoints * sizeof(float));
 			freqValues = realloc(freqValues, measuredPoints * sizeof(float));
 			
+			// Update time related stuff
+			float timeInterval_ns = 0;
+			ps6000GetTimebase2(scopeHandle, timebase, measuredPoints, &timeInterval_ns, 0, NULL, 0);
+			int time = timeInterval_ns;
+			for (int i = 0;i < measuredPoints/2;i++) {
+				timeValues[i] = time/1e9;
+				freqValues[i] = i/(measuredPoints*timeInterval_ns/1e9);
+				time += timeInterval_ns;
+			}
+			
 			// Update the data bufer
 			ps6000SetDataBuffer(scopeHandle, PS6000_CHANNEL_A, rawDataBuffer, measuredPoints, PS6000_RATIO_MODE_NONE);
 			break;
@@ -160,10 +180,25 @@ void handleMeasurement()
 	// Disable the run button
 	SetCtrlAttribute(panelHandle, MAINPANEL_STOPBUTTON, ATTR_DIMMED, FALSE);
 	SetCtrlAttribute(panelHandle, MAINPANEL_RUNBUTTON, ATTR_DIMMED, TRUE);
+	SetCtrlAttribute(panelHandle, MAINPANEL_NEXTBUTTON, ATTR_DIMMED, FALSE);
+	SetCtrlAttribute(panelHandle, MAINPANEL_BINSRING, ATTR_DIMMED, TRUE);
+	
+	
 	userRequestedStop = 0;
 	
 	int nBias;
 	GetNumTableRows(panelHandle, MAINPANEL_TABLE, &nBias);
+	
+	// Save frequency row
+	char outputFile[512];
+	GetCtrlVal(panelHandle, MAINPANEL_FILEPREFIX, outputFile);
+	fp = fopen(outputFile, "w+");     
+	fprintf(fp, "%f", freqValues[0]);
+	
+	for(int i=1; i<measuredPoints; i++) {
+		fprintf(fp, ",%f", freqValues[i]);	
+	}
+	
 	
 	// Loop over bias conditions measuring at each
 	for(int i = 0; i < nBias; i++) {
@@ -176,21 +211,23 @@ void handleMeasurement()
 	
 		sprintf(tmpstr, "0/%d Completed", averages);
 		SetCtrlVal(panelHandle, MAINPANEL_MEASCOUNTDISP, tmpstr);
-	
+		
 		// Go to requested bias
 		double Vg, Vd;
 		double VgCoeff, VdCoeff;
-		GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(i+1,1), &Vg);
-		GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(i+1,2), &Vd);
+		GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(1,i+1), &Vg);
+		GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(2,i+1), &Vd);
 		GetCtrlVal(panelHandle, MAINPANEL_VGCOEFFBOX, &VgCoeff);
 		GetCtrlVal(panelHandle, MAINPANEL_VDCOEFFBOX, &VdCoeff);
 		
-		cbVOut(DACBOARD, VGOUT, BIP10VOLTS, Vg/VgCoeff, 0);
-		cbVOut(DACBOARD, VDOUT, BIP10VOLTS, Vd/VdCoeff, 0);
+		cbVOut(DACBOARD, VGOUT, BIP10VOLTS, Vg/VgCoeff*0.001, 0);
+		cbVOut(DACBOARD, VDOUT, BIP10VOLTS, Vd/VdCoeff*0.001, 0);
 		
-		// Loop over a single sias condition and average
+		// Loop over a single bias condition and average
 		for(nMeasured = 0; nMeasured < averages; nMeasured++) {
 			if (userRequestedStop)
+				break;
+			if(userRequestedNext)
 				break;
 		
 			measuring = 1;
@@ -208,13 +245,18 @@ void handleMeasurement()
 				ProcessSystemEvents();
 				if (userRequestedStop) {
 					// Update progress counter
-				sprintf(tmpstr, "%d/%d Completed", nMeasured, nMeasured);
-				SetCtrlVal(panelHandle, MAINPANEL_MEASCOUNTDISP, tmpstr);
+					sprintf(tmpstr, "%d/%d Completed", nMeasured, nMeasured);
+					SetCtrlVal(panelHandle, MAINPANEL_MEASCOUNTDISP, tmpstr);
 					break;
 				}
+				
+				if(userRequestedNext) 
+					break;
 			}
 	
 			if (userRequestedStop)
+				break;
+			if(userRequestedNext)
 				break;
 		
 			// Convert values to double
@@ -237,16 +279,6 @@ void handleMeasurement()
 				avgSpectrum[i] = (avgSpectrum[i] * ((double) nMeasured / (double) averages) + dataValues[i] * (1 / (double) averages)) * ((double) averages) / ((double) nMeasured + 1);
 			}
 	
-			// Calculate time related stuff
-			float timeInterval_ns = 0;
-			ps6000GetTimebase2(scopeHandle, timebase, measuredPoints, &timeInterval_ns, 0, NULL, 0);
-			int time = timeInterval_ns;
-			for (int i = 0;i < measuredPoints/2;i++) {
-				timeValues[i] = time/1e9;
-				freqValues[i] = i/(measuredPoints*timeInterval_ns/1e9);
-				time += timeInterval_ns;
-			}
-	
 			DeleteGraphPlot(panelHandle, MAINPANEL_GRAPH, -1, VAL_DELAYED_DRAW);
 			PlotXY(panelHandle, MAINPANEL_GRAPH, freqValues, avgSpectrum, measuredPoints/2, VAL_FLOAT, VAL_DOUBLE, VAL_THIN_LINE, VAL_NO_POINT, VAL_SOLID, 1, VAL_BLACK); 
 		
@@ -254,6 +286,20 @@ void handleMeasurement()
 			sprintf(tmpstr, "%d/%d Completed", nMeasured + 1, averages);
 			SetCtrlVal(panelHandle, MAINPANEL_MEASCOUNTDISP, tmpstr);
 		}
+		
+		// Save average spectrum
+		fprintf(fp, "\n%f", avgSpectrum[0]);
+	
+		for(int i=1; i<measuredPoints; i++) {
+			fprintf(fp, ",%f", avgSpectrum[i]);	
+		}
+		
+		if(userRequestedNext){
+			userRequestedNext = 0;
+			// Tell the scope to stop
+			ps6000Stop(scopeHandle);
+			measuring = 0;
+		}	
 		
 		if (userRequestedStop)
 			break;
@@ -263,15 +309,144 @@ void handleMeasurement()
 	ps6000Stop(scopeHandle);
 	measuring = 0;
 	
+	fclose(fp);
+	
 	// Re-enable the run button
 	SetCtrlAttribute(panelHandle, MAINPANEL_STOPBUTTON, ATTR_DIMMED, TRUE);
 	SetCtrlAttribute(panelHandle, MAINPANEL_RUNBUTTON, ATTR_DIMMED, FALSE);
+	SetCtrlAttribute(panelHandle, MAINPANEL_NEXTBUTTON, ATTR_DIMMED, TRUE);
+	SetCtrlAttribute(panelHandle, MAINPANEL_BINSRING, ATTR_DIMMED, FALSE);
+}
+
+
+void loadConditions(){
+	char biasFilename[MAX_PATHNAME_LEN];
+	int selectionStatus = FileSelectPopupEx("", "*.csv", "*.csv; *.*", "Select Bias Conditions", VAL_LOAD_BUTTON, 0, 0, biasFilename); 
+
+	if(selectionStatus == VAL_NO_FILE_SELECTED){
+		return;		
+	}
+	
+	char *record = NULL, *line = NULL, *InputFile = NULL;
+	int filepointer = 0, lineLength = 0;
+	
+	DeleteTableRows(panelHandle, MAINPANEL_TABLE, 1, -1);
+	
+	int rowCount = 1;
+	InputFile = fileread(biasFilename, "r");
+	while((lineLength = getInputNew(InputFile, &filepointer, &line)) != 0){
+		if (lineLength == EOF)
+			break;
+		
+		InsertTableRows(panelHandle, MAINPANEL_TABLE, -1, 1, VAL_USE_MASTER_CELL_TYPE);	
+		
+		record = strtok(line, ",");
+		SetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(1,rowCount), atof(record));
+		
+		record = strtok(NULL, ",");
+		SetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(2,rowCount), atof(record));
+		
+		rowCount++;
+	}
+	
+	free(InputFile);
+}
+
+void calculateVgStepSize() {
+	int NumVgSteps; 
+	double VgStart, VgStop, VgStepSize;
+
+	//Get start, stop, and number of steps from textboxes
+	GetCtrlVal(panelHandle, MAINPANEL_VGSTARTBOX, &VgStart);  
+	GetCtrlVal(panelHandle, MAINPANEL_VGSTOPBOX, &VgStop);
+	GetCtrlVal(panelHandle, MAINPANEL_NUMVGSTEPBOX, &NumVgSteps);
+
+	//Calclate and set step size
+	if(NumVgSteps != 0.00) {
+		VgStepSize = (VgStop - VgStart)/(NumVgSteps - 1);
+		SetCtrlVal(panelHandle, MAINPANEL_VGSTEPSIZEBOX, VgStepSize);
+	}
+	else {
+		SetCtrlVal(panelHandle, MAINPANEL_VGSTEPSIZEBOX, 0.00);
+	}	
+}
+
+
+void calculateVdStepSize() {
+	int NumVdSteps;
+	double VdStart, VdStop, VdStepSize;
+
+	//Get start, stop, and number of steps from textboxes 
+	GetCtrlVal(panelHandle, MAINPANEL_VDSTARTBOX, &VdStart);  
+	GetCtrlVal(panelHandle, MAINPANEL_VDSTOPBOX, &VdStop);
+	GetCtrlVal(panelHandle, MAINPANEL_NUMVDSTEPBOX, &NumVdSteps);
+
+	//Calclate and set step size
+	if(NumVdSteps != 0.00) {
+		VdStepSize = (VdStop - VdStart)/(NumVdSteps - 1);
+		SetCtrlVal(panelHandle, MAINPANEL_VDSTEPSIZEBOX, VdStepSize);
+	}
+	else {
+		SetCtrlVal(panelHandle, MAINPANEL_VDSTEPSIZEBOX, 0.00);
+	}	
+}
+
+
+void clearConditions(){
+	DeleteTableRows(panelHandle, MAINPANEL_TABLE, 1, -1);
+	InsertTableRows(panelHandle, MAINPANEL_TABLE, -1, 1, VAL_USE_MASTER_CELL_TYPE);	
+	SetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(1,1), 0.0);
+	SetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(2,1), 0.0);
+}
+
+
+int CVICALLBACK loadButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch(event){
+		case EVENT_COMMIT:
+			loadConditions();
+			break;
+	}	
+	return 0;
+}
+
+int CVICALLBACK clearButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch(event){
+		case EVENT_COMMIT:
+			clearConditions();
+			break;
+	}	
+	return 0;
+}
+
+int CVICALLBACK addrowButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch(event){
+		case EVENT_COMMIT:
+			InsertTableRows(panelHandle, MAINPANEL_TABLE, -1, 1, VAL_USE_MASTER_CELL_TYPE);	
+			break;
+	}	
+	return 0;
+}
+
+int CVICALLBACK nextButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch(event){
+		case EVENT_COMMIT:
+			userRequestedNext = 1;
+			break;
+	}	
+	return 0;
 }
 
 int CVICALLBACK runButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
 {
 	switch (event) {
 		case EVENT_COMMIT:
+			char saveFilename[512];
+			FileSelectPopupEx("", "*.csv", "*.csv;*.*", "Select save file", VAL_SAVE_BUTTON, 0, 0, saveFilename);
+			SetCtrlVal(panelHandle, MAINPANEL_FILEPREFIX, saveFilename);
 			handleMeasurement();
 			break;
 	}
@@ -290,6 +465,36 @@ int CVICALLBACK stopButton_CB(int panel, int control, int event, void *callbackD
 	return 0;
 }
 
+int CVICALLBACK buildtableButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch(event){
+		case EVENT_COMMIT:
+			//buildTable();
+			break;
+	}	
+	return 0;
+}
+
+int CVICALLBACK editVgBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch(event){
+		case EVENT_VAL_CHANGED:
+			calculateVgStepSize();
+			break;
+	}	
+	return 0;
+}
+
+int CVICALLBACK editVdBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch(event){
+		case EVENT_VAL_CHANGED:
+			calculateVdStepSize();
+			break;
+	}	
+	return 0;
+}
+
 int CVICALLBACK mainpanel_CB (int panel, int event, void *callbackData,
 		int eventData1, int eventData2)
 {
@@ -298,4 +503,94 @@ int CVICALLBACK mainpanel_CB (int panel, int event, void *callbackData,
 		QuitUserInterface (0);
 	}
 	return 0;
+}
+
+int getInputNew(char FileInput[], int *pointer, char **line) {
+    
+    // Fuction to get a line of data from a file
+    
+    int length,c,i,start;
+    
+    if (line[0] == '\0' && (*pointer) > 0)
+        return EOF;
+    
+    
+    if ((*line) != NULL) {
+        free((*line));  // If line is in use, free the space
+        *line = NULL;
+    }
+    
+    start = *pointer;
+    c = FileInput[*pointer];
+    if (c=='\0') {
+        ;
+    }
+    i=0;
+    while (c != '\0' && c != '\n' && c!= '\r') {  //increment pointer to find end of line
+        (*pointer)++;
+        i++;
+        c = FileInput[*pointer];
+    }
+    
+    length = i;
+    (*line) = (char *) malloc((length+1)*sizeof(char)); //allocate space for line
+    for (i=0; i<length;i++) {
+        (*line)[i] = FileInput[start+i];
+    }
+    (*line)[i] = '\0'; // append termination
+    if (c != '\0')(*pointer)++; //increment file pointer to skip end of line
+    while (FileInput[*pointer] == '\n' || FileInput[*pointer]== '\r') (*pointer)++; //increment again if there is extra linefeeds or CRs
+    
+    if (c == '\0' && i == 0)
+        length = EOF;
+    /*else
+     length = i;*/
+    
+    return length;
+}
+
+char *fileread(char name[], char access[]) {
+    
+    // Function to read a file
+#define bufferlength 256  // max buffer length
+#define MAX_FILENAME 1024  // max buffer length
+    int ioerr_loc, i, c;
+    char buffer[bufferlength];
+    char *pFileData;
+    FILE *pFile;
+    
+    pFileData = (char*) malloc(bufferlength*sizeof(char));
+    pFileData[0] = '\0';
+    pFile = fopen(name, access);
+    if (pFile == NULL) {
+        ioerr_loc = errno;
+        //printf("File error %i\n",ferror);
+        perror("error");
+        return NULL;
+    }
+    else
+        ioerr_loc = 0;
+    
+    for (i=0;i<bufferlength-1 && (c=getc(pFile)) != EOF; i++) // load the first chuck of data, up to 256 bytes
+        pFileData[i] = (char) c;
+    //if (c !=EOF)
+    pFileData[i] = '\0';  //close off the first string
+    //else
+    //   pFileData[i] = EOF;
+    
+    while (c !=EOF) {
+        i=0;
+        for (i=0;i<bufferlength-1 && (c=getc(pFile)) != EOF ;i++) // load the next chuck of data, up to 256 bytes
+            buffer[i] = (char) c;
+        //if (c !=EOF)
+        buffer[i] = '\0';  //close off the string
+        //else
+        // buffer[i] = EOF;
+        pFileData = (char *) realloc(pFileData, (strlen(pFileData)+bufferlength+1)*sizeof(char));
+        strcat(pFileData, buffer);
+    }
+    
+    fclose(pFile);
+    
+    return pFileData;
 }
