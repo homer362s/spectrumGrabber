@@ -33,12 +33,15 @@
 #define  MAINPANEL_LOADBUTTON             18      /* control type: command, callback function: loadButton_CB */
 #define  MAINPANEL_RUNBUTTON              19      /* control type: command, callback function: runButton_CB */
 #define  MAINPANEL_CLEARBUTTON            20      /* control type: command, callback function: clearButton_CB */
-#define  MAINPANEL_DELROWBUTTON           21      /* control type: command, callback function: (none) */
-#define  MAINPANEL_ADDROWBUTTON           22      /* control type: command, callback function: addrowButton_CB */
-#define  MAINPANEL_VDSTEPSIZEBOX          23      /* control type: numeric, callback function: (none) */
-#define  MAINPANEL_VGSTEPSIZEBOX          24      /* control type: numeric, callback function: (none) */
-#define  MAINPANEL_MEASCOUNTDISP          25      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_DECORATION             26      /* control type: deco, callback function: (none) */
+#define  MAINPANEL_SAVETABLEBUTTON_2      21      /* control type: command, callback function: savetableButton_CB */
+#define  MAINPANEL_DELROWBUTTON           22      /* control type: command, callback function: delrowButton_CB */
+#define  MAINPANEL_ADDROWBUTTON           23      /* control type: command, callback function: addrowButton_CB */
+#define  MAINPANEL_VDSTEPSIZEBOX          24      /* control type: numeric, callback function: (none) */
+#define  MAINPANEL_VGSTEPSIZEBOX          25      /* control type: numeric, callback function: (none) */
+#define  MAINPANEL_MEASCOUNTDISP          26      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_DECORATION             27      /* control type: deco, callback function: (none) */
+#define  MAINPANEL_DECORATION_2           28      /* control type: deco, callback function: (none) */
+#define  MAINPANEL_BOARDNUM               29      /* control type: numeric, callback function: boardNum_CB */
 
 
      /* Control Arrays: */
@@ -55,14 +58,17 @@
 
 int  CVICALLBACK addrowButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK binsRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
+int  CVICALLBACK boardNum_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK buildtableButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK clearButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
+int  CVICALLBACK delrowButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK editVdBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK editVgBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK loadButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK mainpanel_CB(int panel, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK nextButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK runButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
+int  CVICALLBACK savetableButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK stopButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 
 

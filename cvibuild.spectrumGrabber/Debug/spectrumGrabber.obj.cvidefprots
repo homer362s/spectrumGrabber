@@ -22,6 +22,10 @@ Prototype="void handleMeasurement();"
 Class="Function"
 Prototype="void loadConditions();"
 
+[buildTable]
+Class="Function"
+Prototype="void buildTable();"
+
 [calculateVgStepSize]
 Class="Function"
 Prototype="void calculateVgStepSize();"
@@ -30,9 +34,13 @@ Prototype="void calculateVgStepSize();"
 Class="Function"
 Prototype="void calculateVdStepSize();"
 
-[clearConditions]
+[saveTable]
 Class="Function"
-Prototype="void clearConditions();"
+Prototype="void saveTable(char *savetableFilename);"
+
+[delRows]
+Class="Function"
+Prototype="void delRows();"
 
 [loadButton_CB]
 Class="Function"
@@ -46,6 +54,14 @@ Prototype="int clearButton_CB(int panel, int control, int event, void *callbackD
 Class="Function"
 Prototype="int addrowButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
+[boardNum_CB]
+Class="Function"
+Prototype="int boardNum_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[delrowButton_CB]
+Class="Function"
+Prototype="int delrowButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
 [nextButton_CB]
 Class="Function"
 Prototype="int nextButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
@@ -53,6 +69,10 @@ Prototype="int nextButton_CB(int panel, int control, int event, void *callbackDa
 [runButton_CB]
 Class="Function"
 Prototype="int runButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[savetableButton_CB]
+Class="Function"
+Prototype="int savetableButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
 [stopButton_CB]
 Class="Function"

@@ -1,5 +1,6 @@
 
 #include "cbw.h" 
+#include <cviauto.h>
 #include <analysis.h>
 #include <ansi_c.h>
 #include <cvirte.h>		
@@ -10,7 +11,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DACBOARD 1
 #define VGOUT 0
 #define VDOUT 1
 
@@ -31,10 +31,12 @@ char measuring = 0;
 char userRequestedStop = 0;
 char userRequestedNext = 0;
 
+int dacBoard = 1;
 static int panelHandle = 0;
 int16_t scopeHandle;
 
-FILE * fp;
+FILE *fp;
+FILE *tablefp;
 
 void picoscopeInit();
 int getInputNew(char FileInput[], int *pointer, char **line);
@@ -126,6 +128,8 @@ void picoscopeInit()
 	// Set up data buffer
 	status = ps6000SetDataBuffer(scopeHandle, PS6000_CHANNEL_A, rawDataBuffer, measuredPoints, PS6000_RATIO_MODE_NONE);
 	
+	ps6000Stop(scopeHandle);
+	
 }
 
 void PREF4 dataAvailableCallback(int16_t handle, PICO_STATUS status, void* pParameter)
@@ -193,9 +197,9 @@ void handleMeasurement()
 	char outputFile[512];
 	GetCtrlVal(panelHandle, MAINPANEL_FILEPREFIX, outputFile);
 	fp = fopen(outputFile, "w+");     
-	fprintf(fp, "%f", freqValues[0]);
 	
-	for(int i=1; i<measuredPoints; i++) {
+	fprintf(fp, "%f", freqValues[0]);
+	for(int i=1; i<measuredPoints/2; i++) {
 		fprintf(fp, ",%f", freqValues[i]);	
 	}
 	
@@ -220,8 +224,18 @@ void handleMeasurement()
 		GetCtrlVal(panelHandle, MAINPANEL_VGCOEFFBOX, &VgCoeff);
 		GetCtrlVal(panelHandle, MAINPANEL_VDCOEFFBOX, &VdCoeff);
 		
-		cbVOut(DACBOARD, VGOUT, BIP10VOLTS, Vg/VgCoeff*0.001, 0);
-		cbVOut(DACBOARD, VDOUT, BIP10VOLTS, Vd/VdCoeff*0.001, 0);
+		SetActiveTableCell(panelHandle, MAINPANEL_TABLE, MakePoint(1,i+1));
+		
+		// Highlight background of bias in progress
+		if(i==0) {
+			SetTableCellRangeAttribute(panelHandle, MAINPANEL_TABLE, MakeRect(1,1,nBias,2), ATTR_TEXT_BGCOLOR, VAL_WHITE);   
+		 }else{
+			SetTableCellRangeAttribute(panelHandle, MAINPANEL_TABLE, VAL_TABLE_ROW_RANGE(i), ATTR_TEXT_BGCOLOR, VAL_WHITE); 
+		 }
+		 SetTableCellRangeAttribute(panelHandle, MAINPANEL_TABLE, VAL_TABLE_ROW_RANGE(i+1), ATTR_TEXT_BGCOLOR, VAL_PANEL_GRAY);
+		
+		cbVOut(dacBoard, VGOUT, BIP10VOLTS, Vg/VgCoeff*0.001, 0);
+		cbVOut(dacBoard, VDOUT, BIP10VOLTS, Vd/VdCoeff*0.001, 0);
 		
 		// Loop over a single bias condition and average
 		for(nMeasured = 0; nMeasured < averages; nMeasured++) {
@@ -290,7 +304,7 @@ void handleMeasurement()
 		// Save average spectrum
 		fprintf(fp, "\n%f", avgSpectrum[0]);
 	
-		for(int i=1; i<measuredPoints; i++) {
+		for(int i=1; i<measuredPoints/2; i++) {
 			fprintf(fp, ",%f", avgSpectrum[i]);	
 		}
 		
@@ -321,7 +335,7 @@ void handleMeasurement()
 
 void loadConditions(){
 	char biasFilename[MAX_PATHNAME_LEN];
-	int selectionStatus = FileSelectPopupEx("", "*.csv", "*.csv; *.*", "Select Bias Conditions", VAL_LOAD_BUTTON, 0, 0, biasFilename); 
+	int selectionStatus = FileSelectPopup("", "*.csv", "*.csv; *.cfg; *.*", "Select Bias Conditions", VAL_LOAD_BUTTON, 0, 0, 1, 1, biasFilename); 
 
 	if(selectionStatus == VAL_NO_FILE_SELECTED){
 		return;		
@@ -349,8 +363,57 @@ void loadConditions(){
 		rowCount++;
 	}
 	
+	free(line);
 	free(InputFile);
+	InputFile = NULL;
 }
+
+void buildTable(){
+	int NumVgSteps, NumVdSteps; 
+	double VgStart, VgStop, VgStepSize;
+	double VdStart, VdStop, VdStepSize;
+	 
+	//get start, stop, and step size values from boxes
+	GetCtrlVal(panelHandle, MAINPANEL_VGSTARTBOX, &VgStart);  
+	GetCtrlVal(panelHandle, MAINPANEL_VGSTOPBOX, &VgStop);
+	GetCtrlVal(panelHandle, MAINPANEL_NUMVGSTEPBOX, &NumVgSteps);
+	GetCtrlVal(panelHandle, MAINPANEL_VGSTEPSIZEBOX, &VgStepSize);
+	
+	GetCtrlVal(panelHandle, MAINPANEL_VDSTARTBOX, &VdStart);  
+	GetCtrlVal(panelHandle, MAINPANEL_VDSTOPBOX, &VdStop);
+	GetCtrlVal(panelHandle, MAINPANEL_NUMVDSTEPBOX, &NumVdSteps);
+	GetCtrlVal(panelHandle, MAINPANEL_VDSTEPSIZEBOX, &VdStepSize);
+
+	//build array of Vg and Vd
+	double VgVals[NumVgSteps+1];
+	double VdVals[NumVdSteps+1];
+	
+	VgVals[0] = VgStart;
+	VdVals[0] = VdStart;
+	
+	for(int k=1; k<NumVgSteps; k++){
+		VgVals[k] = VgVals[k-1] + VgStepSize;		
+	}
+	
+	for(int k=1; k<NumVdSteps; k++){
+		VdVals[k] = VdVals[k-1] + VdStepSize;		
+	}
+	
+	//loop through arrays and construct table
+	DeleteTableRows(panelHandle, MAINPANEL_TABLE, 1, -1);
+	
+	int rowCount = 0;
+	
+	for(int i=0; i<NumVgSteps; i++){
+		for(int	j=0; j<NumVdSteps; j++){
+			InsertTableRows(panelHandle, MAINPANEL_TABLE, -1, 1, VAL_USE_MASTER_CELL_TYPE);
+			rowCount++;
+			
+			SetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(1,rowCount), VgVals[i]);
+			SetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(2,rowCount), VdVals[j]);		
+		}	
+	}	
+}	
 
 void calculateVgStepSize() {
 	int NumVgSteps; 
@@ -362,7 +425,7 @@ void calculateVgStepSize() {
 	GetCtrlVal(panelHandle, MAINPANEL_NUMVGSTEPBOX, &NumVgSteps);
 
 	//Calclate and set step size
-	if(NumVgSteps != 0.00) {
+	if(NumVgSteps != 1) {
 		VgStepSize = (VgStop - VgStart)/(NumVgSteps - 1);
 		SetCtrlVal(panelHandle, MAINPANEL_VGSTEPSIZEBOX, VgStepSize);
 	}
@@ -382,7 +445,7 @@ void calculateVdStepSize() {
 	GetCtrlVal(panelHandle, MAINPANEL_NUMVDSTEPBOX, &NumVdSteps);
 
 	//Calclate and set step size
-	if(NumVdSteps != 0.00) {
+	if(NumVdSteps != 1) {
 		VdStepSize = (VdStop - VdStart)/(NumVdSteps - 1);
 		SetCtrlVal(panelHandle, MAINPANEL_VDSTEPSIZEBOX, VdStepSize);
 	}
@@ -391,13 +454,44 @@ void calculateVdStepSize() {
 	}	
 }
 
+void saveTable(char *savetableFilename) {
+	double Vg, Vd; 
+	int nBias;
+	GetNumTableRows(panelHandle, MAINPANEL_TABLE, &nBias);
+	
+	tablefp = fopen(savetableFilename, "w+");   
+												  //MakePoint(col,row)  
+	GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(1,1), &Vg);
+	GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(2,1), &Vd);
+	
+	fprintf(tablefp, "%f", Vg);
+	fprintf(tablefp, ",%f", Vd);
+	
+	for(int i=1; i<nBias; i++) {
+		GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(1,i+1), &Vg);
+		GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(2,i+1), &Vd);
+		
+		fprintf(tablefp, "\n%f", Vg);
+		fprintf(tablefp, ",%f", Vd);	
+	}
+	
+	fclose(tablefp); 
+}	
 
-void clearConditions(){
-	DeleteTableRows(panelHandle, MAINPANEL_TABLE, 1, -1);
-	InsertTableRows(panelHandle, MAINPANEL_TABLE, -1, 1, VAL_USE_MASTER_CELL_TYPE);	
-	SetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(1,1), 0.0);
-	SetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(2,1), 0.0);
-}
+void delRows(){
+	Rect cellrange;
+	Point activecell;
+	
+	GetTableSelection(panelHandle, MAINPANEL_TABLE, &cellrange); 
+	
+	if(cellrange.height == 0) {
+		GetActiveTableCell(panelHandle, MAINPANEL_TABLE, &activecell);
+		DeleteTableRows(panelHandle, MAINPANEL_TABLE, activecell.y, 1);
+	}else {
+		DeleteTableRows(panelHandle, MAINPANEL_TABLE, cellrange.top, cellrange.height);
+	}
+}	
+
 
 
 int CVICALLBACK loadButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
@@ -414,7 +508,10 @@ int CVICALLBACK clearButton_CB(int panel, int control, int event, void *callback
 {
 	switch(event){
 		case EVENT_COMMIT:
-			clearConditions();
+			DeleteTableRows(panelHandle, MAINPANEL_TABLE, 1, -1);
+			InsertTableRows(panelHandle, MAINPANEL_TABLE, -1, 1, VAL_USE_MASTER_CELL_TYPE);	
+			SetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(1,1), 0.0);
+			SetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(2,1), 0.0);
 			break;
 	}	
 	return 0;
@@ -430,6 +527,27 @@ int CVICALLBACK addrowButton_CB(int panel, int control, int event, void *callbac
 	return 0;
 }
 
+int CVICALLBACK boardNum_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch(event){
+		case EVENT_COMMIT:
+			GetCtrlVal(panelHandle, MAINPANEL_BOARDNUM, &dacBoard);
+			break;
+	}	
+	return 0;
+}
+
+int CVICALLBACK delrowButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch(event){
+		case EVENT_COMMIT:
+			delRows();
+			break;
+	}	
+	return 0;
+}
+
+
 int CVICALLBACK nextButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
 {
 	switch(event){
@@ -444,10 +562,30 @@ int CVICALLBACK runButton_CB(int panel, int control, int event, void *callbackDa
 {
 	switch (event) {
 		case EVENT_COMMIT:
-			char saveFilename[512];
-			FileSelectPopupEx("", "*.csv", "*.csv;*.*", "Select save file", VAL_SAVE_BUTTON, 0, 0, saveFilename);
-			SetCtrlVal(panelHandle, MAINPANEL_FILEPREFIX, saveFilename);
-			handleMeasurement();
+			char saveFilename[MAX_PATHNAME_LEN];
+			char configFilename[MAX_PATHNAME_LEN+4];
+			int status = FileSelectPopup("", "*.csv", "*.csv;*.*", "Select save file", VAL_SAVE_BUTTON, 0, 0, 1, 1, saveFilename);
+			if (status) {
+				SetCtrlVal(panelHandle, MAINPANEL_FILEPREFIX, saveFilename);
+				strcpy(configFilename, saveFilename);
+				strcat(configFilename, ".cfg");
+				saveTable(configFilename);
+				handleMeasurement();
+			}
+			break;
+	}
+	
+	return 0;
+}
+
+int CVICALLBACK savetableButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch (event) {
+		case EVENT_COMMIT:
+			char savetableFilename[512];
+			int status = FileSelectPopup("", "*.csv", "*.csv;*.*", "Select save file", VAL_SAVE_BUTTON, 0, 0, 1, 1, savetableFilename);
+			if (status)
+				saveTable(savetableFilename);
 			break;
 	}
 	
@@ -469,7 +607,7 @@ int CVICALLBACK buildtableButton_CB(int panel, int control, int event, void *cal
 {
 	switch(event){
 		case EVENT_COMMIT:
-			//buildTable();
+			buildTable();
 			break;
 	}	
 	return 0;
