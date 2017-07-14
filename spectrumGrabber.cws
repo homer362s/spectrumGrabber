@@ -52,19 +52,19 @@ Disk Date = 3582888240
 In Projects = "1,"
 Window Top = 32
 Window Left = 10
-Window Z-Order = 1
-Source Window State = "1,67,68,67,12,15,12,0,0,195,0,203,0,0,0,56,24,0,68,52,271,555,1,13,"
+Window Z-Order = 2
+Source Window State = "1,67,68,67,12,15,12,0,0,60,0,203,0,0,0,19,24,0,68,52,271,555,1,13,"
 
 [File 0002]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"
 File Type = "User Interface Resource"
-Disk Date = 3582813787
+Disk Date = 3582888247
 In Projects = "1,"
 Window Top = 62
 Window Left = 26
 Window Height = 349
 Window Width = 715
-Window Z-Order = 2
+Window Z-Order = 1
 
 [File 0003]
 Path = "/z/Experimental_software/p6404v_may5/PS6404wbu.c"
