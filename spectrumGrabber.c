@@ -11,9 +11,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define VGOUT 0
-#define VDOUT 1
-
 //#define measuredPoints 20000
 
 int measuredPoints = 0;
@@ -31,7 +28,9 @@ char measuring = 0;
 char userRequestedStop = 0;
 char userRequestedNext = 0;
 
-int dacBoard = 1;
+int dacBoard;
+int vgOut;
+int vdOut;
 static int panelHandle = 0;
 int16_t scopeHandle;
 
@@ -63,6 +62,11 @@ int main (int argc, char *argv[])
 	
 	// Initialize picoscope
 	picoscopeInit();
+	
+	// Initialize DAC stuff
+	GetCtrlVal(panelHandle, MAINPANEL_BOARDNUM, &dacBoard);
+	GetCtrlVal(panelHandle, MAINPANEL_VGNUM, &vgOut);
+	GetCtrlVal(panelHandle, MAINPANEL_VDNUM, &vdOut);
 	
 	/* display the panel and run the user interface */
 	errChk (DisplayPanel (panelHandle));
@@ -234,8 +238,8 @@ void handleMeasurement()
 		 }
 		 SetTableCellRangeAttribute(panelHandle, MAINPANEL_TABLE, VAL_TABLE_ROW_RANGE(i+1), ATTR_TEXT_BGCOLOR, VAL_PANEL_GRAY);
 		
-		cbVOut(dacBoard, VGOUT, BIP10VOLTS, Vg/VgCoeff*0.001, 0);
-		cbVOut(dacBoard, VDOUT, BIP10VOLTS, Vd/VdCoeff*0.001, 0);
+		cbVOut(dacBoard, vgOut, BIP10VOLTS, Vg/VgCoeff*0.001, 0);
+		cbVOut(dacBoard, vdOut, BIP10VOLTS, Vd/VdCoeff*0.001, 0);
 		
 		// Loop over a single bias condition and average
 		for(nMeasured = 0; nMeasured < averages; nMeasured++) {
@@ -532,6 +536,8 @@ int CVICALLBACK boardNum_CB(int panel, int control, int event, void *callbackDat
 	switch(event){
 		case EVENT_COMMIT:
 			GetCtrlVal(panelHandle, MAINPANEL_BOARDNUM, &dacBoard);
+			GetCtrlVal(panelHandle, MAINPANEL_VGNUM, &vgOut);
+			GetCtrlVal(panelHandle, MAINPANEL_VDNUM, &vdOut);
 			break;
 	}	
 	return 0;

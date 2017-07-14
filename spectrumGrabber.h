@@ -41,7 +41,10 @@
 #define  MAINPANEL_MEASCOUNTDISP          26      /* control type: textMsg, callback function: (none) */
 #define  MAINPANEL_DECORATION             27      /* control type: deco, callback function: (none) */
 #define  MAINPANEL_DECORATION_2           28      /* control type: deco, callback function: (none) */
-#define  MAINPANEL_BOARDNUM               29      /* control type: numeric, callback function: boardNum_CB */
+#define  MAINPANEL_VDNUM                  29      /* control type: numeric, callback function: boardNum_CB */
+#define  MAINPANEL_VGNUM                  30      /* control type: numeric, callback function: boardNum_CB */
+#define  MAINPANEL_BOARDNUM               31      /* control type: numeric, callback function: boardNum_CB */
+#define  MAINPANEL_DECORATION_3           32      /* control type: deco, callback function: (none) */
 
 
      /* Control Arrays: */
