@@ -45,6 +45,8 @@
 #define  MAINPANEL_VGNUM                  30      /* control type: numeric, callback function: boardNum_CB */
 #define  MAINPANEL_BOARDNUM               31      /* control type: numeric, callback function: boardNum_CB */
 #define  MAINPANEL_DECORATION_3           32      /* control type: deco, callback function: (none) */
+#define  MAINPANEL_TEXTMSG                33      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_TEXTMSG_2              34      /* control type: textMsg, callback function: (none) */
 
 
      /* Control Arrays: */
