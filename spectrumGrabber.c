@@ -10,12 +10,12 @@
 #include "ps6000Api.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 //#define measuredPoints 20000
 
 int measuredPoints = 0;
 
-//uint32_t timebase = 1566;
 uint32_t timebase = 7816;
 int16_t *rawDataBuffer;   // Stores data from the scope
 double *zeros;			  // Stores zeros for FFT
@@ -44,6 +44,7 @@ char *fileread(char name[], char access[]);
 int main (int argc, char *argv[])
 {
 	int error = 0;
+	float timeInterval_ns;
 	
 	/* initialize and load resources */
 	nullChk (InitCVIRTE (0, argv, 0));
@@ -62,6 +63,8 @@ int main (int argc, char *argv[])
 	
 	// Initialize picoscope
 	picoscopeInit();
+	ps6000GetTimebase2(scopeHandle, timebase, measuredPoints, &timeInterval_ns, 0, NULL, 0);
+	SetCtrlVal(panelHandle, MAINPANEL_RATEBOX, 1/(timeInterval_ns*1e-9));
 	
 	// Initialize DAC stuff
 	GetCtrlVal(panelHandle, MAINPANEL_BOARDNUM, &dacBoard);
@@ -124,7 +127,7 @@ void picoscopeInit()
 	}
 
 	// Set up the measurement
-	status = ps6000SetChannel(scopeHandle, PS6000_CHANNEL_A, TRUE, PS6000_DC_1M, PS6000_50MV, 0, PS6000_BW_20MHZ); 
+	status = ps6000SetChannel(scopeHandle, PS6000_CHANNEL_A, TRUE, PS6000_AC, PS6000_50MV, 0, PS6000_BW_20MHZ); 
 	status = ps6000SetChannel(scopeHandle, PS6000_CHANNEL_B, FALSE, PS6000_DC_1M, PS6000_100MV, 0, PS6000_BW_20MHZ); 
 	status = ps6000SetChannel(scopeHandle, PS6000_CHANNEL_C, FALSE, PS6000_DC_1M, PS6000_100MV, 0, PS6000_BW_20MHZ); 
 	status = ps6000SetChannel(scopeHandle, PS6000_CHANNEL_D, FALSE, PS6000_DC_1M, PS6000_100MV, 0, PS6000_BW_20MHZ); 
@@ -190,6 +193,7 @@ void handleMeasurement()
 	SetCtrlAttribute(panelHandle, MAINPANEL_RUNBUTTON, ATTR_DIMMED, TRUE);
 	SetCtrlAttribute(panelHandle, MAINPANEL_NEXTBUTTON, ATTR_DIMMED, FALSE);
 	SetCtrlAttribute(panelHandle, MAINPANEL_BINSRING, ATTR_DIMMED, TRUE);
+	SetCtrlAttribute(panelHandle, MAINPANEL_RATEBOX, ATTR_DIMMED, TRUE);
 	
 	
 	userRequestedStop = 0;
@@ -278,8 +282,10 @@ void handleMeasurement()
 				break;
 		
 			// Convert values to double
+			double fullScale;
+			GetCtrlVal(panelHandle, MAINPANEL_RANGERING, &fullScale);
 			for (int i = 0;i < measuredPoints;i++) {
-				dataValues[i] = (double) rawDataBuffer[i] / 32767 * 0.05;
+				dataValues[i] = (double) rawDataBuffer[i] / 32767 * fullScale;
 			}
 	
 			// Take FFT
@@ -291,9 +297,13 @@ void handleMeasurement()
 			// From now on we only care about the first half of the points
 			for(int i = 0;i < measuredPoints/2; i++) {
 				// Get magnitude
-				dataValues[i] = 20*log10((sqrt(pow(dataValues[i],2) + pow(zeros[i],2))) / measuredPoints);
+				dataValues[i] = 20*log10((sqrt(dataValues[i]*dataValues[i] + zeros[i]*zeros[i])) / measuredPoints);
 		
 				// Average spectra
+				// Somebody made a change that broke the code at this point.
+				// I can see why you might want to average before the dBV conversion, but this does not do that
+				// It tries to average in the new raw magnitude with the alreade dBV average, then convert that to dBV
+				// Which fails if there are any negative values
 				avgSpectrum[i] = (avgSpectrum[i] * ((double) nMeasured / (double) averages) + dataValues[i] * (1 / (double) averages)) * ((double) averages) / ((double) nMeasured + 1);
 			}
 	
@@ -334,6 +344,7 @@ void handleMeasurement()
 	SetCtrlAttribute(panelHandle, MAINPANEL_RUNBUTTON, ATTR_DIMMED, FALSE);
 	SetCtrlAttribute(panelHandle, MAINPANEL_NEXTBUTTON, ATTR_DIMMED, TRUE);
 	SetCtrlAttribute(panelHandle, MAINPANEL_BINSRING, ATTR_DIMMED, FALSE);
+	SetCtrlAttribute(panelHandle, MAINPANEL_RATEBOX, ATTR_DIMMED, FALSE);
 }
 
 
@@ -559,6 +570,70 @@ int CVICALLBACK nextButton_CB(int panel, int control, int event, void *callbackD
 	switch(event){
 		case EVENT_COMMIT:
 			userRequestedNext = 1;
+			break;
+	}	
+	return 0;
+}
+
+int CVICALLBACK rateBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	float sampleRate;
+	float timeInterval_ns;
+	uint32_t nearestTimebase; 
+	switch(event){
+		case EVENT_COMMIT:
+			GetCtrlVal(panelHandle, MAINPANEL_RATEBOX, &sampleRate);
+			nearestTimebase = RoundRealToNearestInteger(sampleRate * 156250000 + 4);
+			ps6000GetTimebase2(scopeHandle, nearestTimebase,measuredPoints, &timeInterval_ns, 0, NULL, 0);
+			sampleRate = 1/(timeInterval_ns*1e-9);
+			SetCtrlVal(panelHandle, MAINPANEL_RATEBOX, sampleRate);
+			break;
+	}	
+	return 0;
+}
+
+int CVICALLBACK rangeRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	double fullScale;
+	int scaleSetting;
+	switch(event){
+		case EVENT_COMMIT:
+			GetCtrlVal(panelHandle, MAINPANEL_RANGERING, &fullScale);
+			switch ((int)(fullScale*1000)) {
+				case 50:
+					scaleSetting = PS6000_50MV;
+					break;
+				case 100:
+					scaleSetting = PS6000_100MV;
+					break;
+				case 200:
+					scaleSetting = PS6000_200MV;
+					break;
+				case 500:
+					scaleSetting = PS6000_500MV;
+					break;
+				case 1000:
+					scaleSetting = PS6000_1V;
+					break;
+				case 2000:
+					scaleSetting = PS6000_2V;
+					break;
+				case 5000:
+					scaleSetting = PS6000_5V;
+					break;
+				case 10000:
+					scaleSetting = PS6000_10V;
+					break;
+				case 20000:
+					scaleSetting = PS6000_20V;
+					break;
+			}
+			// Set up the measurement
+			ps6000SetChannel(scopeHandle, PS6000_CHANNEL_A, TRUE, PS6000_AC, scaleSetting, 0, PS6000_BW_20MHZ); 
+	
+	
+			// Set up data buffer
+			ps6000SetDataBuffer(scopeHandle, PS6000_CHANNEL_A, rawDataBuffer, measuredPoints, PS6000_RATIO_MODE_NONE);
 			break;
 	}	
 	return 0;

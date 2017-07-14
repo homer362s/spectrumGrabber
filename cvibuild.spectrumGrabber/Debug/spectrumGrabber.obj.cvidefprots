@@ -66,6 +66,14 @@ Prototype="int delrowButton_CB(int panel, int control, int event, void *callback
 Class="Function"
 Prototype="int nextButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
+[rateBox_CB]
+Class="Function"
+Prototype="int rateBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[rangeRing_CB]
+Class="Function"
+Prototype="int rangeRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
 [runButton_CB]
 Class="Function"
 Prototype="int runButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"

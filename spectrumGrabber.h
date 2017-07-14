@@ -44,9 +44,11 @@
 #define  MAINPANEL_VDNUM                  29      /* control type: numeric, callback function: boardNum_CB */
 #define  MAINPANEL_VGNUM                  30      /* control type: numeric, callback function: boardNum_CB */
 #define  MAINPANEL_BOARDNUM               31      /* control type: numeric, callback function: boardNum_CB */
-#define  MAINPANEL_DECORATION_3           32      /* control type: deco, callback function: (none) */
-#define  MAINPANEL_TEXTMSG                33      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_TEXTMSG_2              34      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_RATEBOX                32      /* control type: numeric, callback function: rateBox_CB */
+#define  MAINPANEL_RANGERING              33      /* control type: ring, callback function: rangeRing_CB */
+#define  MAINPANEL_DECORATION_3           34      /* control type: deco, callback function: (none) */
+#define  MAINPANEL_TEXTMSG                35      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_TEXTMSG_2              36      /* control type: textMsg, callback function: (none) */
 
 
      /* Control Arrays: */
@@ -72,6 +74,8 @@ int  CVICALLBACK editVgBox_CB(int panel, int control, int event, void *callbackD
 int  CVICALLBACK loadButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK mainpanel_CB(int panel, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK nextButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
+int  CVICALLBACK rangeRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
+int  CVICALLBACK rateBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK runButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK savetableButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK stopButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);

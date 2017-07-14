@@ -30,7 +30,7 @@ Save Changes Before Compiling = "Always"
 Hide Windows = False
 Break At First Statement = False
 Sort Type = "File Name"
-Number of Opened Files = 4
+Number of Opened Files = 5
 Window Confinement Region Enabled = True
 MainColumnWidth = 209
 FileDateColumnWidth = 70
@@ -48,23 +48,23 @@ Batch Build Debug = False
 [File 0001]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.c"
 File Type = "CSource"
-Disk Date = 3582888240
+Disk Date = 3582901562
 In Projects = "1,"
 Window Top = 32
 Window Left = 10
-Window Z-Order = 2
-Source Window State = "1,67,68,67,12,15,12,0,0,60,0,203,0,0,0,19,24,0,68,52,271,555,1,13,"
+Window Z-Order = 1
+Source Window State = "1,611,611,611,21,24,24,0,0,195,0,230,0,0,0,56,598,0,626,26,271,555,1,13,"
 
 [File 0002]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"
 File Type = "User Interface Resource"
-Disk Date = 3582888247
+Disk Date = 3582901516
 In Projects = "1,"
 Window Top = 62
 Window Left = 26
 Window Height = 349
 Window Width = 715
-Window Z-Order = 1
+Window Z-Order = 2
 
 [File 0003]
 Path = "/z/Experimental_software/p6404v_may5/PS6404wbu.c"
@@ -73,7 +73,7 @@ Disk Date = 3577136965
 In Projects = ""
 Window Top = 182
 Window Left = 90
-Window Z-Order = 4
+Window Z-Order = 5
 Source Window State = "1,0,0,0,0,0,0,0,0,80,0,0,0,0,0,25,733,0,0,0,349,715,1,0,"
 
 [File 0004]
@@ -106,10 +106,21 @@ File Type = "Library"
 Disk Date = 3516620848
 In Projects = "1,"
 
+[File 0008]
+Path = "/c/Program Files (x86)/National Instruments/CVI2015/include/ansi/math.h"
+File Type = "Include"
+Disk Date = 3548901600
+In Projects = ""
+Window Top = 92
+Window Left = 42
+Window Z-Order = 3
+Source Window State = "1,92,92,92,22,27,27,0,3,80,0,0,0,0,0,25,80,0,92,22,349,715,1,0,"
+
 [Tab Order]
 Tab 0001 = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"
 Tab 0002 = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.c"
 Tab 0003 = "/z/Experimental_software/p6404v_may5/PS6404wbu.c"
+Tab 0004 = "/c/Program Files (x86)/National Instruments/CVI2015/include/ansi/math.h"
 
 [Default Build Config 0001 Debug]
 Generate Browse Info = True
