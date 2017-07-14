@@ -42,6 +42,10 @@ Prototype="void saveTable(char *savetableFilename);"
 Class="Function"
 Prototype="void delRows();"
 
+[updateTimeAxis]
+Class="Function"
+Prototype="void updateTimeAxis();"
+
 [loadButton_CB]
 Class="Function"
 Prototype="int loadButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"

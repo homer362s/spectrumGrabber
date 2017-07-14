@@ -40,6 +40,7 @@ FILE *tablefp;
 void picoscopeInit();
 int getInputNew(char FileInput[], int *pointer, char **line);
 char *fileread(char name[], char access[]);
+void updateTimeAxis();
 
 int main (int argc, char *argv[])
 {
@@ -116,15 +117,7 @@ void picoscopeInit()
 	}
 
 	// Initialize some values
-	float timeInterval_ns = 0;
-	ps6000GetTimebase2(scopeHandle, timebase, measuredPoints, &timeInterval_ns, 0, NULL, 0);
-	int time = timeInterval_ns;
-	for (int i = 0;i < measuredPoints;i++) {
-		//timeValues[i] = 1/(float) (time/1e9);
-		timeValues[i] = time/1e9;
-		freqValues[i] = i/(measuredPoints*timeInterval_ns/1e9);
-		time += timeInterval_ns;
-	}
+	updateTimeAxis();
 
 	// Set up the measurement
 	status = ps6000SetChannel(scopeHandle, PS6000_CHANNEL_A, TRUE, PS6000_AC, PS6000_50MV, 0, PS6000_BW_20MHZ); 
@@ -166,15 +159,7 @@ int CVICALLBACK binsRing_CB(int panel, int control, int event, void *callbackDat
 			timeValues = realloc(timeValues, measuredPoints * sizeof(float));
 			freqValues = realloc(freqValues, measuredPoints * sizeof(float));
 			
-			// Update time related stuff
-			float timeInterval_ns = 0;
-			ps6000GetTimebase2(scopeHandle, timebase, measuredPoints, &timeInterval_ns, 0, NULL, 0);
-			int time = timeInterval_ns;
-			for (int i = 0;i < measuredPoints/2;i++) {
-				timeValues[i] = time/1e9;
-				freqValues[i] = i/(measuredPoints*timeInterval_ns/1e9);
-				time += timeInterval_ns;
-			}
+			updateTimeAxis();
 			
 			// Update the data bufer
 			ps6000SetDataBuffer(scopeHandle, PS6000_CHANNEL_A, rawDataBuffer, measuredPoints, PS6000_RATIO_MODE_NONE);
@@ -507,7 +492,17 @@ void delRows(){
 	}
 }	
 
-
+void updateTimeAxis()
+{
+	float timeInterval_ns = 0;
+	ps6000GetTimebase2(scopeHandle, timebase, measuredPoints, &timeInterval_ns, 0, NULL, 0);
+	int time = timeInterval_ns;
+	for (int i = 0;i < measuredPoints/2;i++) {
+		timeValues[i] = time/1e9;
+		freqValues[i] = i/(measuredPoints*timeInterval_ns/1e9);
+		time += timeInterval_ns;
+	}
+}
 
 int CVICALLBACK loadButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
 {
@@ -577,16 +572,16 @@ int CVICALLBACK nextButton_CB(int panel, int control, int event, void *callbackD
 
 int CVICALLBACK rateBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
 {
-	float sampleRate;
+	double sampleRate;
 	float timeInterval_ns;
-	uint32_t nearestTimebase; 
 	switch(event){
 		case EVENT_COMMIT:
 			GetCtrlVal(panelHandle, MAINPANEL_RATEBOX, &sampleRate);
-			nearestTimebase = RoundRealToNearestInteger(sampleRate * 156250000 + 4);
-			ps6000GetTimebase2(scopeHandle, nearestTimebase,measuredPoints, &timeInterval_ns, 0, NULL, 0);
+			timebase = RoundRealToNearestInteger(156250000/sampleRate + 4);
+			ps6000GetTimebase2(scopeHandle, timebase,measuredPoints, &timeInterval_ns, 0, NULL, 0);
 			sampleRate = 1/(timeInterval_ns*1e-9);
 			SetCtrlVal(panelHandle, MAINPANEL_RATEBOX, sampleRate);
+			updateTimeAxis();
 			break;
 	}	
 	return 0;
@@ -630,7 +625,6 @@ int CVICALLBACK rangeRing_CB(int panel, int control, int event, void *callbackDa
 			}
 			// Set up the measurement
 			ps6000SetChannel(scopeHandle, PS6000_CHANNEL_A, TRUE, PS6000_AC, scaleSetting, 0, PS6000_BW_20MHZ); 
-	
 	
 			// Set up data buffer
 			ps6000SetDataBuffer(scopeHandle, PS6000_CHANNEL_A, rawDataBuffer, measuredPoints, PS6000_RATIO_MODE_NONE);
