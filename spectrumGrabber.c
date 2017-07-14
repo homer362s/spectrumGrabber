@@ -285,10 +285,6 @@ void handleMeasurement()
 				dataValues[i] = 20*log10((sqrt(dataValues[i]*dataValues[i] + zeros[i]*zeros[i])) / measuredPoints);
 		
 				// Average spectra
-				// Somebody made a change that broke the code at this point.
-				// I can see why you might want to average before the dBV conversion, but this does not do that
-				// It tries to average in the new raw magnitude with the alreade dBV average, then convert that to dBV
-				// Which fails if there are any negative values
 				avgSpectrum[i] = (avgSpectrum[i] * ((double) nMeasured / (double) averages) + dataValues[i] * (1 / (double) averages)) * ((double) averages) / ((double) nMeasured + 1);
 			}
 	
@@ -296,8 +292,10 @@ void handleMeasurement()
 			PlotXY(panelHandle, MAINPANEL_GRAPH, freqValues, avgSpectrum, measuredPoints/2, VAL_FLOAT, VAL_DOUBLE, VAL_THIN_LINE, VAL_NO_POINT, VAL_SOLID, 1, VAL_BLACK); 
 		
 			// Update progress counter
+			GetCtrlVal(panelHandle, MAINPANEL_AVGBOX, &averages);
 			sprintf(tmpstr, "%d/%d Completed", nMeasured + 1, averages);
 			SetCtrlVal(panelHandle, MAINPANEL_MEASCOUNTDISP, tmpstr);
+			
 		}
 		
 		// Save average spectrum
@@ -316,6 +314,9 @@ void handleMeasurement()
 		
 		if (userRequestedStop)
 			break;
+		
+		// Check if the number of bias points changed
+		GetNumTableRows(panelHandle, MAINPANEL_TABLE, &nBias);
 	}
 	
 	// Tell the scope to stop
@@ -712,6 +713,7 @@ int CVICALLBACK mainpanel_CB (int panel, int event, void *callbackData,
 		int eventData1, int eventData2)
 {
 	if (event == EVENT_CLOSE) {
+		userRequestedStop = 1;
 		ps6000CloseUnit(scopeHandle);
 		QuitUserInterface (0);
 	}
