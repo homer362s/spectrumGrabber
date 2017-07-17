@@ -20,7 +20,8 @@ uint32_t timebase = 7816;
 int16_t *rawDataBuffer;   // Stores data from the scope
 double *zeros;			  // Stores zeros for FFT
 double *dataValues;		  // Stores specctrum data for a single measurement
-double *avgSpectrum;	  // Stores the average specturm
+double *avgSpectrum;	  // Stores the average specturm magnitude
+double *avgSpectrumDisplay;	// Stores the average spectrum in display units (dBV)
 float *timeValues;
 float *freqValues;
 
@@ -59,6 +60,7 @@ int main (int argc, char *argv[])
 	zeros = malloc(measuredPoints * sizeof(double));
 	dataValues = malloc(measuredPoints * sizeof(double));
 	avgSpectrum = malloc(measuredPoints * sizeof(double));
+	avgSpectrumDisplay = malloc(measuredPoints * sizeof(double));
 	timeValues = malloc(measuredPoints * sizeof(float));
 	freqValues = malloc(measuredPoints * sizeof(float));
 	
@@ -152,12 +154,21 @@ int CVICALLBACK binsRing_CB(int panel, int control, int event, void *callbackDat
 			GetCtrlVal(panelHandle, MAINPANEL_BINSRING, &measuredPoints);
 			measuredPoints = measuredPoints * 2;
 	
-			rawDataBuffer = realloc(rawDataBuffer, measuredPoints * sizeof(int16_t));
-			zeros = realloc(zeros, measuredPoints * sizeof(double));
-			dataValues = realloc(dataValues, measuredPoints * sizeof(double));
-			avgSpectrum = realloc(avgSpectrum, measuredPoints * sizeof(double));
-			timeValues = realloc(timeValues, measuredPoints * sizeof(float));
-			freqValues = realloc(freqValues, measuredPoints * sizeof(float));
+			free(rawDataBuffer);
+			free(zeros);
+			free(dataValues);
+			free(avgSpectrum);
+			free(avgSpectrumDisplay);
+			free(timeValues);
+			free(freqValues);
+			
+			rawDataBuffer = malloc(measuredPoints * sizeof(int16_t));
+			zeros = malloc(measuredPoints * sizeof(double));
+			dataValues = malloc(measuredPoints * sizeof(double));
+			avgSpectrum = malloc(measuredPoints * sizeof(double));
+			avgSpectrumDisplay = malloc(measuredPoints * sizeof(double));
+			timeValues = malloc(measuredPoints * sizeof(float));
+			freqValues = malloc(measuredPoints * sizeof(float));
 			
 			updateTimeAxis();
 			
@@ -282,14 +293,17 @@ void handleMeasurement()
 			// From now on we only care about the first half of the points
 			for(int i = 0;i < measuredPoints/2; i++) {
 				// Get magnitude
-				dataValues[i] = 20*log10((sqrt(dataValues[i]*dataValues[i] + zeros[i]*zeros[i])) / measuredPoints);
+				dataValues[i] = (sqrt(dataValues[i]*dataValues[i] + zeros[i]*zeros[i])) / measuredPoints;
 		
 				// Average spectra
 				avgSpectrum[i] = (avgSpectrum[i] * ((double) nMeasured / (double) averages) + dataValues[i] * (1 / (double) averages)) * ((double) averages) / ((double) nMeasured + 1);
+				
+				// Display units
+				avgSpectrumDisplay[i] = 20*log10(avgSpectrum[i]);
 			}
 	
 			DeleteGraphPlot(panelHandle, MAINPANEL_GRAPH, -1, VAL_DELAYED_DRAW);
-			PlotXY(panelHandle, MAINPANEL_GRAPH, freqValues, avgSpectrum, measuredPoints/2, VAL_FLOAT, VAL_DOUBLE, VAL_THIN_LINE, VAL_NO_POINT, VAL_SOLID, 1, VAL_BLACK); 
+			PlotXY(panelHandle, MAINPANEL_GRAPH, freqValues, avgSpectrumDisplay, measuredPoints/2, VAL_FLOAT, VAL_DOUBLE, VAL_THIN_LINE, VAL_NO_POINT, VAL_SOLID, 1, VAL_BLACK); 
 		
 			// Update progress counter
 			GetCtrlVal(panelHandle, MAINPANEL_AVGBOX, &averages);
