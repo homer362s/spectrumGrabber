@@ -46,9 +46,10 @@
 #define  MAINPANEL_BOARDNUM               31      /* control type: numeric, callback function: boardNum_CB */
 #define  MAINPANEL_RATEBOX                32      /* control type: numeric, callback function: rateBox_CB */
 #define  MAINPANEL_RANGERING              33      /* control type: ring, callback function: rangeRing_CB */
-#define  MAINPANEL_DECORATION_3           34      /* control type: deco, callback function: (none) */
-#define  MAINPANEL_TEXTMSG                35      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_TEXTMSG_2              36      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_DACBUTTON              34      /* control type: textButton, callback function: (none) */
+#define  MAINPANEL_DECORATION_3           35      /* control type: deco, callback function: (none) */
+#define  MAINPANEL_TEXTMSG                36      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_TEXTMSG_2              37      /* control type: textMsg, callback function: (none) */
 
 
      /* Control Arrays: */

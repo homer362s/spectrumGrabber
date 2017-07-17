@@ -191,20 +191,23 @@ void handleMeasurement()
 	SetCtrlAttribute(panelHandle, MAINPANEL_BINSRING, ATTR_DIMMED, TRUE);
 	SetCtrlAttribute(panelHandle, MAINPANEL_RATEBOX, ATTR_DIMMED, TRUE);
 	
-	
 	userRequestedStop = 0;
 	
-	int nBias;
-	GetNumTableRows(panelHandle, MAINPANEL_TABLE, &nBias);
+	int dacEnabled = 0;
+	int nBias = 1;
+	GetCtrlVal(panelHandle, MAINPANEL_DACBUTTON, &dacEnabled);
+	
+	if (dacEnabled)
+		GetNumTableRows(panelHandle, MAINPANEL_TABLE, &nBias);
 	
 	// Save frequency row
 	char outputFile[512];
 	GetCtrlVal(panelHandle, MAINPANEL_FILEPREFIX, outputFile);
 	fp = fopen(outputFile, "w+");     
 	
-	fprintf(fp, "%f", freqValues[0]);
+	fprintf(fp, "%e", freqValues[0]);
 	for(int i=1; i<measuredPoints/2; i++) {
-		fprintf(fp, ",%f", freqValues[i]);	
+		fprintf(fp, ",%e", freqValues[i]);	
 	}
 	
 	
@@ -223,23 +226,26 @@ void handleMeasurement()
 		// Go to requested bias
 		double Vg, Vd;
 		double VgCoeff, VdCoeff;
-		GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(1,i+1), &Vg);
-		GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(2,i+1), &Vd);
-		GetCtrlVal(panelHandle, MAINPANEL_VGCOEFFBOX, &VgCoeff);
-		GetCtrlVal(panelHandle, MAINPANEL_VDCOEFFBOX, &VdCoeff);
-		
-		SetActiveTableCell(panelHandle, MAINPANEL_TABLE, MakePoint(1,i+1));
-		
-		// Highlight background of bias in progress
-		if(i==0) {
-			SetTableCellRangeAttribute(panelHandle, MAINPANEL_TABLE, MakeRect(1,1,nBias,2), ATTR_TEXT_BGCOLOR, VAL_WHITE);   
-		 }else{
-			SetTableCellRangeAttribute(panelHandle, MAINPANEL_TABLE, VAL_TABLE_ROW_RANGE(i), ATTR_TEXT_BGCOLOR, VAL_WHITE); 
+		if (dacEnabled) {
+			
+			GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(1,i+1), &Vg);
+			GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(2,i+1), &Vd);
+			GetCtrlVal(panelHandle, MAINPANEL_VGCOEFFBOX, &VgCoeff);
+			GetCtrlVal(panelHandle, MAINPANEL_VDCOEFFBOX, &VdCoeff);
+			
+			SetActiveTableCell(panelHandle, MAINPANEL_TABLE, MakePoint(1,i+1));
+			
+			// Highlight background of bias in progress
+			if(i==0) {
+				SetTableCellRangeAttribute(panelHandle, MAINPANEL_TABLE, MakeRect(1,1,nBias,2), ATTR_TEXT_BGCOLOR, VAL_WHITE);   
+			} else {
+				SetTableCellRangeAttribute(panelHandle, MAINPANEL_TABLE, VAL_TABLE_ROW_RANGE(i), ATTR_TEXT_BGCOLOR, VAL_WHITE); 
+			}
+			SetTableCellRangeAttribute(panelHandle, MAINPANEL_TABLE, VAL_TABLE_ROW_RANGE(i+1), ATTR_TEXT_BGCOLOR, VAL_PANEL_GRAY);
+			
+			cbVOut(dacBoard, vgOut, BIP10VOLTS, Vg/VgCoeff*0.001, 0);
+			cbVOut(dacBoard, vdOut, BIP10VOLTS, Vd/VdCoeff*0.001, 0);
 		 }
-		 SetTableCellRangeAttribute(panelHandle, MAINPANEL_TABLE, VAL_TABLE_ROW_RANGE(i+1), ATTR_TEXT_BGCOLOR, VAL_PANEL_GRAY);
-		
-		cbVOut(dacBoard, vgOut, BIP10VOLTS, Vg/VgCoeff*0.001, 0);
-		cbVOut(dacBoard, vdOut, BIP10VOLTS, Vd/VdCoeff*0.001, 0);
 		
 		// Loop over a single bias condition and average
 		for(nMeasured = 0; nMeasured < averages; nMeasured++) {
@@ -313,10 +319,10 @@ void handleMeasurement()
 		}
 		
 		// Save average spectrum
-		fprintf(fp, "\n%f", avgSpectrum[0]);
+		fprintf(fp, "\n%e", avgSpectrum[0]);
 	
 		for(int i=1; i<measuredPoints/2; i++) {
-			fprintf(fp, ",%f", avgSpectrum[i]);	
+			fprintf(fp, ",%e", avgSpectrum[i]);	
 		}
 		
 		if(userRequestedNext){
@@ -329,8 +335,9 @@ void handleMeasurement()
 		if (userRequestedStop)
 			break;
 		
-		// Check if the number of bias points changed
-		GetNumTableRows(panelHandle, MAINPANEL_TABLE, &nBias);
+		// Check if the number of bias points changed 
+		if (dacEnabled)
+			GetNumTableRows(panelHandle, MAINPANEL_TABLE, &nBias);
 	}
 	
 	// Tell the scope to stop
@@ -479,15 +486,15 @@ void saveTable(char *savetableFilename) {
 	GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(1,1), &Vg);
 	GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(2,1), &Vd);
 	
-	fprintf(tablefp, "%f", Vg);
-	fprintf(tablefp, ",%f", Vd);
+	fprintf(tablefp, "%e", Vg);
+	fprintf(tablefp, ",%e", Vd);
 	
 	for(int i=1; i<nBias; i++) {
 		GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(1,i+1), &Vg);
 		GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(2,i+1), &Vd);
 		
-		fprintf(tablefp, "\n%f", Vg);
-		fprintf(tablefp, ",%f", Vd);	
+		fprintf(tablefp, "\n%e", Vg);
+		fprintf(tablefp, ",%e", Vd);	
 	}
 	
 	fclose(tablefp); 
@@ -524,6 +531,7 @@ int CVICALLBACK loadButton_CB(int panel, int control, int event, void *callbackD
 	switch(event){
 		case EVENT_COMMIT:
 			loadConditions();
+			SetCtrlVal(panelHandle, MAINPANEL_DACBUTTON, 1);
 			break;
 	}	
 	return 0;
