@@ -14,7 +14,7 @@
      /* Panels and Controls: */
 
 #define  MAINPANEL                        1       /* callback function: mainpanel_CB */
-#define  MAINPANEL_GRAPH                  2       /* control type: graph, callback function: (none) */
+#define  MAINPANEL_FREQGRAPH              2       /* control type: graph, callback function: (none) */
 #define  MAINPANEL_VGSTARTBOX             3       /* control type: numeric, callback function: editVgBox_CB */
 #define  MAINPANEL_VGSTOPBOX              4       /* control type: numeric, callback function: editVgBox_CB */
 #define  MAINPANEL_NUMVGSTEPBOX           5       /* control type: numeric, callback function: editVgBox_CB */
@@ -38,24 +38,27 @@
 #define  MAINPANEL_ADDROWBUTTON           23      /* control type: command, callback function: addrowButton_CB */
 #define  MAINPANEL_VDSTEPSIZEBOX          24      /* control type: numeric, callback function: (none) */
 #define  MAINPANEL_VGSTEPSIZEBOX          25      /* control type: numeric, callback function: (none) */
-#define  MAINPANEL_MEASCOUNTDISP          26      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_DECORATION             27      /* control type: deco, callback function: (none) */
-#define  MAINPANEL_DECORATION_2           28      /* control type: deco, callback function: (none) */
-#define  MAINPANEL_VDNUM                  29      /* control type: numeric, callback function: boardNum_CB */
-#define  MAINPANEL_VGNUM                  30      /* control type: numeric, callback function: boardNum_CB */
-#define  MAINPANEL_BOARDNUM               31      /* control type: numeric, callback function: boardNum_CB */
-#define  MAINPANEL_RATEBOX                32      /* control type: numeric, callback function: rateBox_CB */
-#define  MAINPANEL_RANGERING              33      /* control type: ring, callback function: rangeRing_CB */
-#define  MAINPANEL_DACBUTTON              34      /* control type: textButton, callback function: (none) */
+#define  MAINPANEL_DECORATION             26      /* control type: deco, callback function: (none) */
+#define  MAINPANEL_DECORATION_2           27      /* control type: deco, callback function: (none) */
+#define  MAINPANEL_VDNUM                  28      /* control type: numeric, callback function: boardNum_CB */
+#define  MAINPANEL_VGNUM                  29      /* control type: numeric, callback function: boardNum_CB */
+#define  MAINPANEL_BOARDNUM               30      /* control type: numeric, callback function: boardNum_CB */
+#define  MAINPANEL_RATEBOX                31      /* control type: numeric, callback function: rateBox_CB */
+#define  MAINPANEL_RANGERING              32      /* control type: ring, callback function: rangeRing_CB */
+#define  MAINPANEL_DACBUTTON              33      /* control type: textButton, callback function: (none) */
+#define  MAINPANEL_STORETIMEBOX           34      /* control type: radioButton, callback function: (none) */
 #define  MAINPANEL_DECORATION_3           35      /* control type: deco, callback function: (none) */
-#define  MAINPANEL_TEXTMSG                36      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_TEXTMSG_2              37      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_STOREFREQBOX           36      /* control type: radioButton, callback function: (none) */
+#define  MAINPANEL_TEXTMSG                37      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_TEXTMSG_2              38      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_TEXTMSG_3              39      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_DECORATION_4           40      /* control type: deco, callback function: (none) */
+#define  MAINPANEL_MEASCOUNTDISP          41      /* control type: textMsg, callback function: (none) */
 
 
      /* Control Arrays: */
 
-          /* (no control arrays in the resource file) */
-
+#define  CTRLARRAY                        1
 
      /* Menu Bars, Menus, and Menu Items: */
 
