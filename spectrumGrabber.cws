@@ -48,17 +48,17 @@ Batch Build Debug = False
 [File 0001]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.c"
 File Type = "CSource"
-Disk Date = 3583332919
+Disk Date = 3583334599
 In Projects = "1,"
 Window Top = 32
 Window Left = 10
 Window Z-Order = 1
-Source Window State = "1,723,723,723,0,53,53,0,0,195,0,179,0,0,0,56,711,0,740,126,271,555,1,13,"
+Source Window State = "1,251,254,251,5,61,5,0,0,195,0,179,0,0,0,56,490,0,254,64,271,555,1,13,"
 
 [File 0002]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"
 File Type = "User Interface Resource"
-Disk Date = 3583332215
+Disk Date = 3583333947
 In Projects = "1,"
 Window Top = 62
 Window Left = 26
@@ -99,7 +99,7 @@ In Projects = "1,"
 [File 0007]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.h"
 File Type = "Include"
-Disk Date = 3583332216
+Disk Date = 3583333947
 In Projects = ""
 Window Top = 122
 Window Left = 58

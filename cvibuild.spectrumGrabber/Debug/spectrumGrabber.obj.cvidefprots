@@ -6,6 +6,14 @@ Prototype="int main(int argc, char **argv);"
 Class="Function"
 Prototype="void picoscopeInit();"
 
+[setupScopeChannel]
+Class="Function"
+Prototype="void setupScopeChannel(int scopeChannel, int enabled, int rangeRing, int couplingRing);"
+
+[setupScopeChannels]
+Class="Function"
+Prototype="void setupScopeChannels();"
+
 [dataAvailableCallback]
 Class="Function"
 Prototype="void dataAvailableCallback(short handle, unsigned int status, void *pParameter);"
@@ -53,6 +61,10 @@ Prototype="int loadButton_CB(int panel, int control, int event, void *callbackDa
 [clearButton_CB]
 Class="Function"
 Prototype="int clearButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[couplingRing_CB]
+Class="Function"
+Prototype="int couplingRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
 [addrowButton_CB]
 Class="Function"

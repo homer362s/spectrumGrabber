@@ -25,9 +25,9 @@ double *avgSpectrumDisplay;	// Stores the average spectrum in display units (dBV
 float *timeValues;
 float *freqValues;
 
-char measuring = 0;
-char userRequestedStop = 0;
-char userRequestedNext = 0;
+int measurementInProgress = 0;
+int userRequestedStop = 0;
+int userRequestedNext = 0;
 
 int dacBoard;
 int vgOut;
@@ -39,6 +39,7 @@ void picoscopeInit();
 int getInputNew(char FileInput[], int *pointer, char **line);
 char *fileread(char name[], char access[]);
 void updateTimeAxis();
+void setupScopeChannels();
 
 int main (int argc, char *argv[])
 {
@@ -85,27 +86,10 @@ Error:
 
 void picoscopeInit()
 {
-	//int8_t serials[128];
-	//int16_t scopeCount;
-	//int16_t serialLth = 256;
-
 	int8_t *serial = (int8_t*) "AP231/007\0";
 
 	PICO_STATUS status;
 	
-	// Get list of connected picoscopes 
-	// This causes a general protection fault to occur when the function returns
-	//status = ps6000EnumerateUnits(&scopeCount, serials, &serialLth);
-
-	//switch (status) {
-	//	case PICO_OK:
-	//		break;
-	//	default:
-	//		break;
-	//}
-
-	// Open the first picoscope (probably only works if there is just a single scope)
-	//serial = serials;
 	status = ps6000OpenUnit(&scopeHandle, serial);
 
 	switch (status) {
@@ -118,29 +102,90 @@ void picoscopeInit()
 	// Initialize some values
 	updateTimeAxis();
 
-	// Set up the measurement
-	status = ps6000SetChannel(scopeHandle, PS6000_CHANNEL_A, TRUE, PS6000_AC, PS6000_50MV, 0, PS6000_BW_20MHZ); 
-	status = ps6000SetChannel(scopeHandle, PS6000_CHANNEL_B, FALSE, PS6000_DC_1M, PS6000_100MV, 0, PS6000_BW_20MHZ); 
-	status = ps6000SetChannel(scopeHandle, PS6000_CHANNEL_C, FALSE, PS6000_DC_1M, PS6000_100MV, 0, PS6000_BW_20MHZ); 
-	status = ps6000SetChannel(scopeHandle, PS6000_CHANNEL_D, FALSE, PS6000_DC_1M, PS6000_100MV, 0, PS6000_BW_20MHZ); 
+	setupScopeChannels();
 	
 	// Set up data buffer
-	status = ps6000SetDataBuffer(scopeHandle, PS6000_CHANNEL_A, rawDataBuffer, measuredPoints, PS6000_RATIO_MODE_NONE);
+	ps6000SetDataBuffer(scopeHandle, PS6000_CHANNEL_A, rawDataBuffer, measuredPoints, PS6000_RATIO_MODE_NONE);
 	
 	ps6000Stop(scopeHandle);
 	
 }
 
+void setupScopeChannel(int scopeChannel, int enabled, int rangeRing, int couplingRing)
+{
+	// Get range
+	double fullScale;
+	int scaleSetting;
+	GetCtrlVal(panelHandle, rangeRing, &fullScale);
+	switch ((int)(fullScale*1000)) {
+		case 50:
+			scaleSetting = PS6000_50MV;
+			break;
+		case 100:
+			scaleSetting = PS6000_100MV;
+			break;
+		case 200:
+			scaleSetting = PS6000_200MV;
+			break;
+		case 500:
+			scaleSetting = PS6000_500MV;
+			break;
+		case 1000:
+			scaleSetting = PS6000_1V;
+			break;
+		case 2000:
+			scaleSetting = PS6000_2V;
+			break;
+		case 5000:
+			scaleSetting = PS6000_5V;
+			break;
+		case 10000:
+			scaleSetting = PS6000_10V;
+			break;
+		case 20000:
+			scaleSetting = PS6000_20V;
+			break;
+	}
+	
+	// Get Coupling
+	int coupling = 0;
+	GetCtrlVal(panelHandle, couplingRing, &coupling);
+	switch (coupling) {
+		case 1:
+			coupling = PS6000_AC;
+			break;
+		case 2:
+			coupling = PS6000_DC_1M;
+			break;
+	}
+	
+	// Set the channel
+	ps6000SetChannel(scopeHandle, scopeChannel, enabled, coupling, scaleSetting, 0, PS6000_BW_20MHZ);
+}
+
+void setupScopeChannels()
+{
+
+	// Set up data buffer
+	ps6000SetDataBuffer(scopeHandle, PS6000_CHANNEL_A, rawDataBuffer, measuredPoints, PS6000_RATIO_MODE_NONE);
+	
+	
+	setupScopeChannel(PS6000_CHANNEL_A, TRUE, MAINPANEL_RANGERING, MAINPANEL_COUPLINGRING);
+	setupScopeChannel(PS6000_CHANNEL_B, FALSE, MAINPANEL_RANGERING, MAINPANEL_COUPLINGRING);
+	setupScopeChannel(PS6000_CHANNEL_C, FALSE, MAINPANEL_RANGERING, MAINPANEL_COUPLINGRING);
+	setupScopeChannel(PS6000_CHANNEL_D, FALSE, MAINPANEL_RANGERING, MAINPANEL_COUPLINGRING);
+}
+
 void PREF4 dataAvailableCallback(int16_t handle, PICO_STATUS status, void* pParameter)
 {
-	if (measuring == 0) {
+	if (measurementInProgress == 0) {
 		printf("seasuring == 0 in dataAvailableCallback()!");
 	}
 	uint32_t nSamples = measuredPoints;
 	status = ps6000GetValues(handle, 0, &nSamples, 1, PS6000_RATIO_MODE_NONE, 0, NULL);
 	
 	// Done with the current measurement
-	measuring = 0;
+	measurementInProgress = 0;
 }
 
 int CVICALLBACK binsRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
@@ -250,7 +295,7 @@ void handleMeasurement()
 		}
 	}
 	
-	// Loop over bias conditions measuring at each
+	// Loop over bias conditions measurementInProgress at each
 	for(int i = 0; i < nBias; i++) {
 		short averages = 1;
 		int nMeasured = 0;
@@ -293,7 +338,7 @@ void handleMeasurement()
 			if(userRequestedNext)
 				break;
 		
-			measuring = 1;
+			measurementInProgress = 1;
 			status = ps6000RunBlock(scopeHandle, measuredPoints/2, measuredPoints/2, timebase, 1, 0, 0, dataAvailableCallback, 0);
 
 			switch (status) {
@@ -303,7 +348,7 @@ void handleMeasurement()
 					break;
 			}
 	
-			while(measuring) {
+			while(measurementInProgress) {
 				// Handle events
 				ProcessSystemEvents();
 				if (userRequestedStop) {
@@ -382,7 +427,7 @@ void handleMeasurement()
 			userRequestedNext = 0;
 			// Tell the scope to stop
 			ps6000Stop(scopeHandle);
-			measuring = 0;
+			measurementInProgress = 0;
 		}	
 		
 		if (userRequestedStop)
@@ -395,7 +440,7 @@ void handleMeasurement()
 	
 	// Tell the scope to stop
 	ps6000Stop(scopeHandle);
-	measuring = 0;
+	measurementInProgress = 0;
 	
 	if (freqFP)
 		fclose(freqFP);
@@ -610,6 +655,16 @@ int CVICALLBACK clearButton_CB(int panel, int control, int event, void *callback
 	return 0;
 }
 
+int CVICALLBACK couplingRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch(event){
+		case EVENT_COMMIT:
+			setupScopeChannels();
+			break;
+	}	
+	return 0;
+}
+
 int CVICALLBACK addrowButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
 {
 	switch(event){
@@ -672,45 +727,9 @@ int CVICALLBACK rateBox_CB(int panel, int control, int event, void *callbackData
 
 int CVICALLBACK rangeRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
 {
-	double fullScale;
-	int scaleSetting;
 	switch(event){
 		case EVENT_COMMIT:
-			GetCtrlVal(panelHandle, MAINPANEL_RANGERING, &fullScale);
-			switch ((int)(fullScale*1000)) {
-				case 50:
-					scaleSetting = PS6000_50MV;
-					break;
-				case 100:
-					scaleSetting = PS6000_100MV;
-					break;
-				case 200:
-					scaleSetting = PS6000_200MV;
-					break;
-				case 500:
-					scaleSetting = PS6000_500MV;
-					break;
-				case 1000:
-					scaleSetting = PS6000_1V;
-					break;
-				case 2000:
-					scaleSetting = PS6000_2V;
-					break;
-				case 5000:
-					scaleSetting = PS6000_5V;
-					break;
-				case 10000:
-					scaleSetting = PS6000_10V;
-					break;
-				case 20000:
-					scaleSetting = PS6000_20V;
-					break;
-			}
-			// Set up the measurement
-			ps6000SetChannel(scopeHandle, PS6000_CHANNEL_A, TRUE, PS6000_AC, scaleSetting, 0, PS6000_BW_20MHZ); 
-	
-			// Set up data buffer
-			ps6000SetDataBuffer(scopeHandle, PS6000_CHANNEL_A, rawDataBuffer, measuredPoints, PS6000_RATIO_MODE_NONE);
+			setupScopeChannels();
 			break;
 	}	
 	return 0;
