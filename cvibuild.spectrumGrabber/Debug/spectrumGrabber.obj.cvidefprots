@@ -8,7 +8,7 @@ Prototype="void picoscopeInit();"
 
 [setupScopeChannel]
 Class="Function"
-Prototype="void setupScopeChannel(int scopeChannel, int enabled, int rangeRing, int couplingRing);"
+Prototype="void setupScopeChannel(int scopeChannel, int enabledLed, int rangeRing, int couplingRing);"
 
 [setupScopeChannels]
 Class="Function"
@@ -22,9 +22,25 @@ Prototype="void dataAvailableCallback(short handle, unsigned int status, void *p
 Class="Function"
 Prototype="int binsRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
+[processData]
+Class="Function"
+Prototype="void processData(int nMeasured, int averages, FILE **timeFPs);"
+
 [handleMeasurement]
 Class="Function"
-Prototype="void handleMeasurement();"
+Prototype="void handleMeasurement(char *path, char *name, char *ext);"
+
+[fileparts]
+Class="Function"
+Prototype="void fileparts(char *fullfile, char **path, char **name, char **ext);"
+
+[gotoBiasPoint]
+Class="Function"
+Prototype="void gotoBiasPoint(int index);"
+
+[isEnabled]
+Class="Function"
+Prototype="int isEnabled(int panel, int control);"
 
 [loadConditions]
 Class="Function"
@@ -54,17 +70,21 @@ Prototype="void delRows();"
 Class="Function"
 Prototype="void updateTimeAxis();"
 
+[led_CB]
+Class="Function"
+Prototype="int led_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
 [loadButton_CB]
 Class="Function"
 Prototype="int loadButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
+[channel_CB]
+Class="Function"
+Prototype="int channel_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
 [clearButton_CB]
 Class="Function"
 Prototype="int clearButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
-
-[couplingRing_CB]
-Class="Function"
-Prototype="int couplingRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
 [addrowButton_CB]
 Class="Function"
@@ -86,10 +106,6 @@ Prototype="int nextButton_CB(int panel, int control, int event, void *callbackDa
 Class="Function"
 Prototype="int rateBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
-[rangeRing_CB]
-Class="Function"
-Prototype="int rangeRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
-
 [runButton_CB]
 Class="Function"
 Prototype="int runButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
@@ -102,6 +118,10 @@ Prototype="int savetableButton_CB(int panel, int control, int event, void *callb
 Class="Function"
 Prototype="int stopButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
+[tgPanel_CB]
+Class="Function"
+Prototype="int tgPanel_CB(int panel, int event, void *callbackData, int eventData1, int eventData2);"
+
 [buildtableButton_CB]
 Class="Function"
 Prototype="int buildtableButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
@@ -109,6 +129,14 @@ Prototype="int buildtableButton_CB(int panel, int control, int event, void *call
 [editVgBox_CB]
 Class="Function"
 Prototype="int editVgBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[generateButton_CB]
+Class="Function"
+Prototype="int generateButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[generateRing_CB]
+Class="Function"
+Prototype="int generateRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
 [editVdBox_CB]
 Class="Function"

@@ -20,19 +20,29 @@ uint32_t timebase = 7816;
 int16_t *rawDataBuffer;   // Stores data from the scope
 double *zeros;			  // Stores zeros for FFT
 double *dataValues;		  // Stores specctrum data for a single measurement
-double *avgSpectrum;	  // Stores the average specturm magnitude
-double *avgSpectrumDisplay;	// Stores the average spectrum in display units (dBV)
+double *avgSpectrum[4];	  // Stores the average spectrum magnitudes
+double *avgSpectrumDisplay;	// Stores an average spectrum in display units (dBV)
 float *timeValues;
 float *freqValues;
 
 int measurementInProgress = 0;
+int dataReady = 0;
 int userRequestedStop = 0;
 int userRequestedNext = 0;
+
+// Control arrays
+int channelLeds[] = {MAINPANEL_LEDA, MAINPANEL_LEDB, MAINPANEL_LEDC, MAINPANEL_LEDD};
+int channelRanges[] = {MAINPANEL_RANGEA, MAINPANEL_RANGEB, MAINPANEL_RANGEC, MAINPANEL_RANGED};
+int channelCouplings[] = {MAINPANEL_COUPLINGA, MAINPANEL_COUPLINGB, MAINPANEL_COUPLINGC, MAINPANEL_COUPLINGD};
+int channelCoeffs[] = {MAINPANEL_COEFFA, MAINPANEL_COEFFB, MAINPANEL_COEFFC, MAINPANEL_COEFFD};
+int channelMeasFreq[] = {MAINPANEL_FREQA, MAINPANEL_FREQB, MAINPANEL_FREQC, MAINPANEL_FREQD};
+int channelMeasTime[] = {MAINPANEL_TIMEA, MAINPANEL_TIMEB, MAINPANEL_TIMEC, MAINPANEL_TIMED};
 
 int dacBoard;
 int vgOut;
 int vdOut;
 static int panelHandle = 0;
+int tgHandle = 0;
 int16_t scopeHandle;
 
 void picoscopeInit();
@@ -40,6 +50,8 @@ int getInputNew(char FileInput[], int *pointer, char **line);
 char *fileread(char name[], char access[]);
 void updateTimeAxis();
 void setupScopeChannels();
+int isEnabled(int handle, int control);
+void gotoBiasPoint(int index);
 
 int main (int argc, char *argv[])
 {
@@ -57,10 +69,15 @@ int main (int argc, char *argv[])
 	rawDataBuffer = malloc(measuredPoints * sizeof(int16_t));
 	zeros = malloc(measuredPoints * sizeof(double));
 	dataValues = malloc(measuredPoints * sizeof(double));
-	avgSpectrum = malloc(measuredPoints * sizeof(double)/2);
 	avgSpectrumDisplay = malloc(measuredPoints * sizeof(double)/2);
 	timeValues = malloc(measuredPoints * sizeof(float));
 	freqValues = malloc(measuredPoints * sizeof(float)/2);
+	
+	//avgSpectrum[0] = malloc(measuredPoints * sizeof(double)/2);
+	for(int i =0;i<4;i++) {
+		if(isEnabled(panelHandle, channelLeds[i]))
+			avgSpectrum[i] = malloc(measuredPoints * sizeof(double)/2);
+	}
 	
 	// Initialize picoscope
 	picoscopeInit();
@@ -105,17 +122,34 @@ void picoscopeInit()
 	setupScopeChannels();
 	
 	// Set up data buffer
+	ps6000MemorySegments(scopeHandle, 4, NULL);
 	ps6000SetDataBuffer(scopeHandle, PS6000_CHANNEL_A, rawDataBuffer, measuredPoints, PS6000_RATIO_MODE_NONE);
 	
 	ps6000Stop(scopeHandle);
 	
 }
 
-void setupScopeChannel(int scopeChannel, int enabled, int rangeRing, int couplingRing)
+void setupScopeChannel(int scopeChannel, int enabledLed, int rangeRing, int couplingRing)
 {
+	// Get enabled status
+	int enabled = 0;
+	GetCtrlVal(panelHandle, enabledLed, &enabled);
+	
+	// Get Coupling
+	int coupling = 0;
+	GetCtrlVal(panelHandle, couplingRing, &coupling);
+	switch (coupling) {
+		case 1:
+			coupling = PS6000_AC;
+			break;
+		case 2:
+			coupling = PS6000_DC_1M;
+			break;
+	}
+	
 	// Get range
 	double fullScale;
-	int scaleSetting;
+	int scaleSetting = 0;
 	GetCtrlVal(panelHandle, rangeRing, &fullScale);
 	switch ((int)(fullScale*1000)) {
 		case 50:
@@ -147,20 +181,8 @@ void setupScopeChannel(int scopeChannel, int enabled, int rangeRing, int couplin
 			break;
 	}
 	
-	// Get Coupling
-	int coupling = 0;
-	GetCtrlVal(panelHandle, couplingRing, &coupling);
-	switch (coupling) {
-		case 1:
-			coupling = PS6000_AC;
-			break;
-		case 2:
-			coupling = PS6000_DC_1M;
-			break;
-	}
-	
 	// Set the channel
-	ps6000SetChannel(scopeHandle, scopeChannel, enabled, coupling, scaleSetting, 0, PS6000_BW_20MHZ);
+	ps6000SetChannel(scopeHandle, scopeChannel, (short) enabled, coupling, scaleSetting, 0, PS6000_BW_20MHZ);
 }
 
 void setupScopeChannels()
@@ -170,22 +192,17 @@ void setupScopeChannels()
 	ps6000SetDataBuffer(scopeHandle, PS6000_CHANNEL_A, rawDataBuffer, measuredPoints, PS6000_RATIO_MODE_NONE);
 	
 	
-	setupScopeChannel(PS6000_CHANNEL_A, TRUE, MAINPANEL_RANGERING, MAINPANEL_COUPLINGRING);
-	setupScopeChannel(PS6000_CHANNEL_B, FALSE, MAINPANEL_RANGERING, MAINPANEL_COUPLINGRING);
-	setupScopeChannel(PS6000_CHANNEL_C, FALSE, MAINPANEL_RANGERING, MAINPANEL_COUPLINGRING);
-	setupScopeChannel(PS6000_CHANNEL_D, FALSE, MAINPANEL_RANGERING, MAINPANEL_COUPLINGRING);
+	setupScopeChannel(PS6000_CHANNEL_A, MAINPANEL_LEDA, MAINPANEL_RANGEA, MAINPANEL_COUPLINGA);
+	setupScopeChannel(PS6000_CHANNEL_B, MAINPANEL_LEDA, MAINPANEL_RANGEA, MAINPANEL_COUPLINGA);
+	setupScopeChannel(PS6000_CHANNEL_C, MAINPANEL_LEDA, MAINPANEL_RANGEA, MAINPANEL_COUPLINGA);
+	setupScopeChannel(PS6000_CHANNEL_D, MAINPANEL_LEDA, MAINPANEL_RANGEA, MAINPANEL_COUPLINGA);
 }
 
 void PREF4 dataAvailableCallback(int16_t handle, PICO_STATUS status, void* pParameter)
 {
-	if (measurementInProgress == 0) {
-		printf("seasuring == 0 in dataAvailableCallback()!");
-	}
-	uint32_t nSamples = measuredPoints;
-	status = ps6000GetValues(handle, 0, &nSamples, 1, PS6000_RATIO_MODE_NONE, 0, NULL);
-	
-	// Done with the current measurement
+	// Indicate that the measurement is done and therefore data is ready
 	measurementInProgress = 0;
+	dataReady = 1;
 }
 
 int CVICALLBACK binsRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
@@ -199,7 +216,6 @@ int CVICALLBACK binsRing_CB(int panel, int control, int event, void *callbackDat
 			free(rawDataBuffer);
 			free(zeros);
 			free(dataValues);
-			free(avgSpectrum);
 			free(avgSpectrumDisplay);
 			free(timeValues);
 			free(freqValues);
@@ -207,10 +223,16 @@ int CVICALLBACK binsRing_CB(int panel, int control, int event, void *callbackDat
 			rawDataBuffer = malloc(measuredPoints * sizeof(int16_t));
 			zeros = malloc(measuredPoints * sizeof(double));
 			dataValues = malloc(measuredPoints * sizeof(double));
-			avgSpectrum = malloc(measuredPoints * sizeof(double)/2);
 			avgSpectrumDisplay = malloc(measuredPoints * sizeof(double)/2);
 			timeValues = malloc(measuredPoints * sizeof(float));
 			freqValues = malloc(measuredPoints * sizeof(float)/2);
+			
+			for(int i =0;i<4;i++) {
+				free(avgSpectrum[i]);
+				if(isEnabled(panelHandle, channelLeds[i]))
+					avgSpectrum[i] = malloc(measuredPoints * sizeof(double)/2);
+			}
+			
 			
 			updateTimeAxis();
 			
@@ -222,10 +244,69 @@ int CVICALLBACK binsRing_CB(int panel, int control, int event, void *callbackDat
 	return 0;
 }
 
-void handleMeasurement()
+void processData(int nMeasured, int averages, FILE **timeFPs)
 {
-	FILE *freqFP = NULL;
-	FILE *timeFP = NULL;
+	dataReady = 0;
+	
+	// Clear graph in preparation for new plots
+	DeleteGraphPlot(panelHandle, MAINPANEL_FREQGRAPH, -1, VAL_DELAYED_DRAW); 
+	
+	// Loop over each scope input
+	for(int i = 0;i < 4;i++) {
+		// Skip if the input is disabled
+		if(!isEnabled(panelHandle, channelLeds[i]))
+			continue;
+		
+		// Get data from scope
+		uint32_t nPoints = measuredPoints;
+		ps6000GetValues(scopeHandle, 0, &nPoints, 1, PS6000_RATIO_MODE_NONE, i, NULL);
+		
+		// Convert values to double
+		double fullScale;
+		GetCtrlVal(panelHandle, channelRanges[i], &fullScale);
+		double coefficient;
+		GetCtrlVal(panelHandle, channelCoeffs[i], &coefficient);
+		for (int j = 0;j < measuredPoints;j++) {
+			dataValues[j] = (double) rawDataBuffer[j] / 32767 * fullScale / coefficient;
+		}
+	
+		// Save timeValues if time domain saving is requested and this is the first sweep at this bias point
+		if (nMeasured==0 && isEnabled(panelHandle, channelMeasTime[i])) {
+			// Save time domain signal
+			fprintf(timeFPs[i], "\n%e", dataValues[0]);
+
+			for(int j=1; j<measuredPoints; j++) {
+				fprintf(timeFPs[j], ",%e", dataValues[j]);	
+			}
+		}
+
+		// Take FFT
+		for(int j = 0;j < measuredPoints; j++) {
+			zeros[j] = 0;
+		}
+		FFT(dataValues, zeros, measuredPoints);
+
+		// From now on we only care about the first half of the points
+		for(int j = 0;j < measuredPoints/2; j++) {
+			// Get magnitude
+			dataValues[j] = (sqrt(dataValues[j]*dataValues[j] + zeros[j]*zeros[j])) / measuredPoints;
+
+			// Average spectra
+			avgSpectrum[i][j] = (avgSpectrum[i][j] * ((double) nMeasured / (double) averages) + dataValues[j] * (1 / (double) averages)) * ((double) averages) / ((double) nMeasured + 1);
+		
+			// Display units
+			avgSpectrumDisplay[j] = 20*log10(avgSpectrum[i][j]);
+		}
+		
+		// Display the data
+		PlotXY(panelHandle, MAINPANEL_FREQGRAPH, freqValues, avgSpectrumDisplay, measuredPoints/2, VAL_FLOAT, VAL_DOUBLE, VAL_THIN_LINE, VAL_NO_POINT, VAL_SOLID, 1, VAL_BLACK);
+	}
+}
+
+void handleMeasurement(char *path, char *name, char *ext)
+{
+	FILE *freqFPs[4] = {0, 0, 0, 0};
+	FILE *timeFPs[4] = {0, 0, 0, 0};
 	PICO_STATUS status;
 	
 	// Disable the run button
@@ -244,58 +325,49 @@ void handleMeasurement()
 	if (dacEnabled)
 		GetNumTableRows(panelHandle, MAINPANEL_TABLE, &nBias);
 	
-	// Get filename
-	size_t nameLen = 0;
-	char nameExt[16] = "csv";
-	char outputFileBase[512];
-	char outputFileFreq[512];
-	char outputFileTime[512];
-	GetCtrlVal(panelHandle, MAINPANEL_FILEPREFIX, outputFileBase);
-	nameLen = strlen(outputFileBase);
-	int i = 0;
-	for(i = nameLen - 1;i > 0; i--) {
-		if (outputFileBase[i] == '.') {
-			break;
+	char *outputFileFreq = NULL;
+	char *outputFileTime = NULL;
+	int filenameLen = strlen(path) + strlen(name) + 5 + strlen(ext) + 1;
+	
+	// Store frequency and time axes in the files
+	for(int i = 0;i<4;i++) {
+		// Skip if this channel is disabled
+		if (!isEnabled(panelHandle, channelLeds[i]))
+				continue;
+
+		// Save frequency row
+		int storeFreq = 0;
+		GetCtrlVal(panelHandle, channelMeasFreq[i], &storeFreq);
+		if (storeFreq) {
+			outputFileFreq = malloc(filenameLen * sizeof(char));
+			freqFPs[i] = fopen(outputFileFreq, "w+");     
+	
+			fprintf(freqFPs[i], "%e", freqValues[0]);
+			for(int j=1; j<measuredPoints/2; j++) {
+				fprintf(freqFPs[i], ",%e", freqValues[j]);	
+			}
 		}
-	}
 	
-	if (i) {
-		outputFileBase[i] = 0;
-		strcpy(nameExt, outputFileBase+i+1);
-	}
+		// Save time row
+		int storeTime = 0; 
+		GetCtrlVal(panelHandle, channelMeasTime[i], &storeTime);
+		if (storeTime) {
+			outputFileTime = malloc(filenameLen * sizeof(char));
+			timeFPs[i] = fopen(outputFileTime, "w+");     
 	
-	strcpy(outputFileFreq, outputFileBase);
-	strcpy(outputFileTime, outputFileBase);
-	strcat(outputFileFreq, "_freq.");
-	strcat(outputFileTime, "_time.");
-	strcat(outputFileFreq, nameExt);
-	strcat(outputFileTime, nameExt);
-	
-	// Save frequency row
-	int storeFreq = 0;
-	GetCtrlVal(panelHandle, MAINPANEL_STOREFREQBOX, &storeFreq);
-	if (storeFreq) {
-		freqFP = fopen(outputFileFreq, "w+");     
-	
-		fprintf(freqFP, "%e", freqValues[0]);
-		for(int i=1; i<measuredPoints/2; i++) {
-			fprintf(freqFP, ",%e", freqValues[i]);	
+			fprintf(timeFPs[i], "%e", timeValues[0]);
+			for(int j=1; j<measuredPoints; j++) {
+				fprintf(timeFPs[i], ",%e", timeValues[j]);	
+			}
 		}
+		
+		if (outputFileFreq)
+			free(outputFileFreq);
+		if (outputFileTime)
+			free(outputFileTime);
 	}
 	
-	// Save time row
-	int storeTime = 0; 
-	GetCtrlVal(panelHandle, MAINPANEL_STORETIMEBOX, &storeTime);
-	if (storeTime) {
-		timeFP = fopen(outputFileTime, "w+");     
-	
-		fprintf(timeFP, "%e", timeValues[0]);
-		for(int i=1; i<measuredPoints; i++) {
-			fprintf(timeFP, ",%e", timeValues[i]);	
-		}
-	}
-	
-	// Loop over bias conditions measurementInProgress at each
+	// Loop over bias conditions measuring at each
 	for(int i = 0; i < nBias; i++) {
 		short averages = 1;
 		int nMeasured = 0;
@@ -307,29 +379,12 @@ void handleMeasurement()
 		sprintf(tmpstr, "0/%d Completed", averages);
 		SetCtrlVal(panelHandle, MAINPANEL_MEASCOUNTDISP, tmpstr);
 		
-		// Go to requested bias
-		double Vg, Vd;
-		double VgCoeff, VdCoeff;
-		if (dacEnabled) {
-			
-			GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(1,i+1), &Vg);
-			GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(2,i+1), &Vd);
-			GetCtrlVal(panelHandle, MAINPANEL_VGCOEFFBOX, &VgCoeff);
-			GetCtrlVal(panelHandle, MAINPANEL_VDCOEFFBOX, &VdCoeff);
-			
-			SetActiveTableCell(panelHandle, MAINPANEL_TABLE, MakePoint(1,i+1));
-			
-			// Highlight background of bias in progress
-			if(i==0) {
-				SetTableCellRangeAttribute(panelHandle, MAINPANEL_TABLE, MakeRect(1,1,nBias,2), ATTR_TEXT_BGCOLOR, VAL_WHITE);   
-			} else {
-				SetTableCellRangeAttribute(panelHandle, MAINPANEL_TABLE, VAL_TABLE_ROW_RANGE(i), ATTR_TEXT_BGCOLOR, VAL_WHITE); 
-			}
-			SetTableCellRangeAttribute(panelHandle, MAINPANEL_TABLE, VAL_TABLE_ROW_RANGE(i+1), ATTR_TEXT_BGCOLOR, VAL_PANEL_GRAY);
-			
-			cbVOut(dacBoard, vgOut, BIP10VOLTS, Vg/VgCoeff*0.001, 0);
-			cbVOut(dacBoard, vdOut, BIP10VOLTS, Vd/VdCoeff*0.001, 0);
-		 }
+		// Go to bias point `i` in table
+		gotoBiasPoint(i);
+		
+		double delay;
+		GetCtrlVal(panelHandle, MAINPANEL_DELAYBOX, &delay);
+		Delay(delay);
 		
 		// Loop over a single bias condition and average
 		for(nMeasured = 0; nMeasured < averages; nMeasured++) {
@@ -339,6 +394,7 @@ void handleMeasurement()
 				break;
 		
 			measurementInProgress = 1;
+			dataReady = 0;
 			status = ps6000RunBlock(scopeHandle, measuredPoints/2, measuredPoints/2, timebase, 1, 0, 0, dataAvailableCallback, 0);
 
 			switch (status) {
@@ -362,52 +418,14 @@ void handleMeasurement()
 					break;
 			}
 	
-			if (userRequestedStop)
+			if(userRequestedStop)
 				break;
 			if(userRequestedNext)
 				break;
 		
-			// Convert values to double
-			double fullScale;
-			GetCtrlVal(panelHandle, MAINPANEL_RANGERING, &fullScale);
-			for (int i = 0;i < measuredPoints;i++) {
-				dataValues[i] = (double) rawDataBuffer[i] / 32767 * fullScale;
-			}
-			
-			// Save if time domain saving is requested and this is the first sweep at this bias point
-			if (nMeasured == 0) {
-				int status;
-				GetCtrlVal(panelHandle, MAINPANEL_STORETIMEBOX, &status);
-				if (status) {
-					// Save time domain signal
-					fprintf(timeFP, "\n%e", dataValues[0]);
-	
-					for(int i=1; i<measuredPoints; i++) {
-						fprintf(timeFP, ",%e", dataValues[i]);	
-					}
-				}
-			}
-	
-			// Take FFT
-			for(int i = 0;i < measuredPoints; i++) {
-				zeros[i] = 0;
-			}
-			FFT(dataValues, zeros, measuredPoints);
-	
-			// From now on we only care about the first half of the points
-			for(int i = 0;i < measuredPoints/2; i++) {
-				// Get magnitude
-				dataValues[i] = (sqrt(dataValues[i]*dataValues[i] + zeros[i]*zeros[i])) / measuredPoints;
-		
-				// Average spectra
-				avgSpectrum[i] = (avgSpectrum[i] * ((double) nMeasured / (double) averages) + dataValues[i] * (1 / (double) averages)) * ((double) averages) / ((double) nMeasured + 1);
-				
-				// Display units
-				avgSpectrumDisplay[i] = 20*log10(avgSpectrum[i]);
-			}
-	
-			DeleteGraphPlot(panelHandle, MAINPANEL_FREQGRAPH, -1, VAL_DELAYED_DRAW);
-			PlotXY(panelHandle, MAINPANEL_FREQGRAPH, freqValues, avgSpectrumDisplay, measuredPoints/2, VAL_FLOAT, VAL_DOUBLE, VAL_THIN_LINE, VAL_NO_POINT, VAL_SOLID, 1, VAL_BLACK); 
+			// Load and process data into appropriate arrays
+			if (dataReady)
+				processData(nMeasured, averages, timeFPs);
 		
 			// Update progress counter
 			GetCtrlVal(panelHandle, MAINPANEL_AVGBOX, &averages);
@@ -417,10 +435,10 @@ void handleMeasurement()
 		}
 		
 		// Save average spectrum
-		fprintf(freqFP, "\n%e", avgSpectrum[0]);
+		fprintf(freqFPs[0], "\n%e", avgSpectrum[0]);
 	
 		for(int i=1; i<measuredPoints/2; i++) {
-			fprintf(freqFP, ",%e", avgSpectrum[i]);	
+			fprintf(freqFPs[0], ",%e", avgSpectrum[i]);	
 		}
 		
 		if(userRequestedNext){
@@ -442,10 +460,13 @@ void handleMeasurement()
 	ps6000Stop(scopeHandle);
 	measurementInProgress = 0;
 	
-	if (freqFP)
-		fclose(freqFP);
-	if (timeFP)
-		fclose(timeFP);
+	// Close data files
+	for(int i = 0;i<4;i++) {
+		if (freqFPs[i])
+			fclose(freqFPs[i]);
+		if (timeFPs[i])
+			fclose(timeFPs[i]);
+	}
 	
 	// Re-enable the run button
 	SetCtrlAttribute(panelHandle, MAINPANEL_STOPBUTTON, ATTR_DIMMED, TRUE);
@@ -455,6 +476,88 @@ void handleMeasurement()
 	SetCtrlAttribute(panelHandle, MAINPANEL_RATEBOX, ATTR_DIMMED, FALSE);
 }
 
+// Split up a filename into the corresponding parts
+void fileparts(char *fullfile, char **path, char **name, char **ext)
+{
+	//find the length of fullfile
+	int fullfileLen = strlen(fullfile);
+	int pathlen = 0;
+	int namelen = 0;
+	int extlen = 0;
+	
+	//loop to find the last "/" in fullfile to find path
+	int i;
+	for(i=fullfileLen-1; i>=0; i--){
+		if(fullfile[i] == '\\'){
+			fullfile[i] = 0;
+			break;
+		}	
+	}
+	
+	//find path length
+	pathlen = i;
+	
+	//loop to find last "." in fullfile to find ext (if exists)
+	for(i=fullfileLen-1; i>=pathlen; i--){
+		if(fullfile[i] == '.'){
+			fullfile[i] = 0;
+			break;
+		}	
+	}
+	
+	//find ext length
+	extlen = fullfileLen - i - 1;
+	
+	//find name length
+	namelen = fullfileLen - pathlen - extlen - 1;
+	
+	//create arrays
+	*path = malloc((pathlen+2)*sizeof(char));
+	strcpy(*path, fullfile);
+	strcat(*path, "\\");
+	
+	*name = malloc((namelen+1)*sizeof(char));
+	strcpy(*name, fullfile+pathlen+1);
+	
+	*ext = malloc((extlen+2)*sizeof(char));
+	strcpy(*ext, ".");
+	strcat(*ext, fullfile+pathlen+1+namelen);
+}
+
+void gotoBiasPoint(int index)
+{
+	double Vg, Vd;
+	double VgCoeff, VdCoeff;
+	if (isEnabled(panelHandle, MAINPANEL_DACBUTTON)) {
+		
+		GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(1,index+1), &Vg);
+		GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(2,index+1), &Vd);
+		GetCtrlVal(panelHandle, MAINPANEL_VGCOEFFBOX, &VgCoeff);
+		GetCtrlVal(panelHandle, MAINPANEL_VDCOEFFBOX, &VdCoeff);
+		
+		SetActiveTableCell(panelHandle, MAINPANEL_TABLE, MakePoint(1,index+1));
+		
+		// Highlight background of bias in progress
+		int nBias;
+		GetNumTableRows(panelHandle, MAINPANEL_TABLE, &nBias);
+		if(index==0) {
+			SetTableCellRangeAttribute(panelHandle, MAINPANEL_TABLE, MakeRect(1,1,nBias,2), ATTR_TEXT_BGCOLOR, VAL_WHITE);   
+		} else {
+			SetTableCellRangeAttribute(panelHandle, MAINPANEL_TABLE, VAL_TABLE_ROW_RANGE(index), ATTR_TEXT_BGCOLOR, VAL_WHITE); 
+		}
+		SetTableCellRangeAttribute(panelHandle, MAINPANEL_TABLE, VAL_TABLE_ROW_RANGE(index+1), ATTR_TEXT_BGCOLOR, VAL_PANEL_GRAY);
+		
+		cbVOut(dacBoard, vgOut, BIP10VOLTS, Vg/VgCoeff*0.001, 0);
+		cbVOut(dacBoard, vdOut, BIP10VOLTS, Vd/VdCoeff*0.001, 0);
+	 }
+}
+
+int isEnabled(int panel, int control)
+{
+	int enabled;
+	GetCtrlVal(panel, control, &enabled);
+	return enabled;
+}
 
 void loadConditions(){
 	char biasFilename[MAX_PATHNAME_LEN];
@@ -497,15 +600,15 @@ void buildTable(){
 	double VdStart, VdStop, VdStepSize;
 	 
 	//get start, stop, and step size values from boxes
-	GetCtrlVal(panelHandle, MAINPANEL_VGSTARTBOX, &VgStart);  
-	GetCtrlVal(panelHandle, MAINPANEL_VGSTOPBOX, &VgStop);
-	GetCtrlVal(panelHandle, MAINPANEL_NUMVGSTEPBOX, &NumVgSteps);
-	GetCtrlVal(panelHandle, MAINPANEL_VGSTEPSIZEBOX, &VgStepSize);
+	GetCtrlVal(tgHandle, TGPANEL_VGSTARTBOX, &VgStart);  
+	GetCtrlVal(tgHandle, TGPANEL_VGSTOPBOX, &VgStop);
+	GetCtrlVal(tgHandle, TGPANEL_NUMVGSTEPBOX, &NumVgSteps);
+	GetCtrlVal(tgHandle, TGPANEL_VGSTEPSIZEBOX, &VgStepSize);
 	
-	GetCtrlVal(panelHandle, MAINPANEL_VDSTARTBOX, &VdStart);  
-	GetCtrlVal(panelHandle, MAINPANEL_VDSTOPBOX, &VdStop);
-	GetCtrlVal(panelHandle, MAINPANEL_NUMVDSTEPBOX, &NumVdSteps);
-	GetCtrlVal(panelHandle, MAINPANEL_VDSTEPSIZEBOX, &VdStepSize);
+	GetCtrlVal(tgHandle, TGPANEL_VDSTARTBOX, &VdStart);  
+	GetCtrlVal(tgHandle, TGPANEL_VDSTOPBOX, &VdStop);
+	GetCtrlVal(tgHandle, TGPANEL_NUMVDSTEPBOX, &NumVdSteps);
+	GetCtrlVal(tgHandle, TGPANEL_VDSTEPSIZEBOX, &VdStepSize);
 
 	//build array of Vg and Vd
 	double VgVals[NumVgSteps+1];
@@ -543,17 +646,17 @@ void calculateVgStepSize() {
 	double VgStart, VgStop, VgStepSize;
 
 	//Get start, stop, and number of steps from textboxes
-	GetCtrlVal(panelHandle, MAINPANEL_VGSTARTBOX, &VgStart);  
-	GetCtrlVal(panelHandle, MAINPANEL_VGSTOPBOX, &VgStop);
-	GetCtrlVal(panelHandle, MAINPANEL_NUMVGSTEPBOX, &NumVgSteps);
+	GetCtrlVal(tgHandle, TGPANEL_VGSTARTBOX, &VgStart);  
+	GetCtrlVal(tgHandle, TGPANEL_VGSTOPBOX, &VgStop);
+	GetCtrlVal(tgHandle, TGPANEL_NUMVGSTEPBOX, &NumVgSteps);
 
 	//Calclate and set step size
 	if(NumVgSteps != 1) {
 		VgStepSize = (VgStop - VgStart)/(NumVgSteps - 1);
-		SetCtrlVal(panelHandle, MAINPANEL_VGSTEPSIZEBOX, VgStepSize);
+		SetCtrlVal(tgHandle, TGPANEL_VGSTEPSIZEBOX, VgStepSize);
 	}
 	else {
-		SetCtrlVal(panelHandle, MAINPANEL_VGSTEPSIZEBOX, 0.00);
+		SetCtrlVal(tgHandle, TGPANEL_VGSTEPSIZEBOX, 0.00);
 	}	
 }
 
@@ -563,17 +666,17 @@ void calculateVdStepSize() {
 	double VdStart, VdStop, VdStepSize;
 
 	//Get start, stop, and number of steps from textboxes 
-	GetCtrlVal(panelHandle, MAINPANEL_VDSTARTBOX, &VdStart);  
-	GetCtrlVal(panelHandle, MAINPANEL_VDSTOPBOX, &VdStop);
-	GetCtrlVal(panelHandle, MAINPANEL_NUMVDSTEPBOX, &NumVdSteps);
+	GetCtrlVal(tgHandle, TGPANEL_VDSTARTBOX, &VdStart);  
+	GetCtrlVal(tgHandle, TGPANEL_VDSTOPBOX, &VdStop);
+	GetCtrlVal(tgHandle, TGPANEL_NUMVDSTEPBOX, &NumVdSteps);
 
 	//Calclate and set step size
 	if(NumVdSteps != 1) {
 		VdStepSize = (VdStop - VdStart)/(NumVdSteps - 1);
-		SetCtrlVal(panelHandle, MAINPANEL_VDSTEPSIZEBOX, VdStepSize);
+		SetCtrlVal(tgHandle, TGPANEL_VDSTEPSIZEBOX, VdStepSize);
 	}
 	else {
-		SetCtrlVal(panelHandle, MAINPANEL_VDSTEPSIZEBOX, 0.00);
+		SetCtrlVal(tgHandle, TGPANEL_VDSTEPSIZEBOX, 0.00);
 	}	
 }
 
@@ -631,12 +734,80 @@ void updateTimeAxis()
 	}
 }
 
+int CVICALLBACK led_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch(event){
+		case EVENT_COMMIT:
+			printf("click");
+			break;
+	}	
+	return 0;
+}
+
 int CVICALLBACK loadButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
 {
 	switch(event){
 		case EVENT_COMMIT:
 			loadConditions();
 			SetCtrlVal(panelHandle, MAINPANEL_DACBUTTON, 1);
+			break;
+	}	
+	return 0;
+}
+
+int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch(event){
+		case EVENT_COMMIT:
+			int channel = 0;
+			int channelIndex = 0;
+			switch (control) {
+				case MAINPANEL_RANGEA:
+				case MAINPANEL_COUPLINGA:
+				case MAINPANEL_FREQA:
+				case MAINPANEL_TIMEA:
+					channel = PS6000_CHANNEL_A;
+					channelIndex = 0;
+					break;
+				case MAINPANEL_RANGEB:
+				case MAINPANEL_COUPLINGB:
+				case MAINPANEL_FREQB:
+				case MAINPANEL_TIMEB:
+					channel = PS6000_CHANNEL_B;
+					channelIndex = 1;
+					break;
+				case MAINPANEL_RANGEC:
+				case MAINPANEL_COUPLINGC:
+				case MAINPANEL_FREQC:
+				case MAINPANEL_TIMEC:
+					channel = PS6000_CHANNEL_C;
+					channelIndex = 2;
+					break;
+				case MAINPANEL_RANGED:
+				case MAINPANEL_COUPLINGD:
+				case MAINPANEL_FREQD:
+				case MAINPANEL_TIMED:
+					channel = PS6000_CHANNEL_D;
+					channelIndex = 3;
+					break;
+			}
+			
+			if (isEnabled(panelHandle, channelMeasFreq[channelIndex]) || isEnabled(panelHandle, channelMeasTime[channelIndex])) {
+				// Enable the current channel
+				SetCtrlVal(panelHandle, channelLeds[channelIndex], 1);
+				SetCtrlAttribute(panelHandle, channelRanges[channelIndex], ATTR_DIMMED, 0);
+				SetCtrlAttribute(panelHandle, channelCouplings[channelIndex], ATTR_DIMMED, 0);
+				SetCtrlAttribute(panelHandle, channelCoeffs[channelIndex], ATTR_DIMMED, 0);
+			}
+			else {
+				// Disable the current channel
+				SetCtrlVal(panelHandle, channelLeds[channelIndex], 0);
+				SetCtrlAttribute(panelHandle, channelRanges[channelIndex], ATTR_DIMMED, 1);
+				SetCtrlAttribute(panelHandle, channelCouplings[channelIndex], ATTR_DIMMED, 1);
+				SetCtrlAttribute(panelHandle, channelCoeffs[channelIndex], ATTR_DIMMED, 1);
+			}
+			
+			setupScopeChannel(channel, channelLeds[channelIndex], channelRanges[channelIndex], channelCouplings[channelIndex]);
 			break;
 	}	
 	return 0;
@@ -650,16 +821,6 @@ int CVICALLBACK clearButton_CB(int panel, int control, int event, void *callback
 			InsertTableRows(panelHandle, MAINPANEL_TABLE, -1, 1, VAL_USE_MASTER_CELL_TYPE);	
 			SetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(1,1), 0.0);
 			SetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(2,1), 0.0);
-			break;
-	}	
-	return 0;
-}
-
-int CVICALLBACK couplingRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
-{
-	switch(event){
-		case EVENT_COMMIT:
-			setupScopeChannels();
 			break;
 	}	
 	return 0;
@@ -725,16 +886,6 @@ int CVICALLBACK rateBox_CB(int panel, int control, int event, void *callbackData
 	return 0;
 }
 
-int CVICALLBACK rangeRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
-{
-	switch(event){
-		case EVENT_COMMIT:
-			setupScopeChannels();
-			break;
-	}	
-	return 0;
-}
-
 int CVICALLBACK runButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
 {
 	switch (event) {
@@ -744,25 +895,23 @@ int CVICALLBACK runButton_CB(int panel, int control, int event, void *callbackDa
 			if (status) {
 				SetCtrlVal(panelHandle, MAINPANEL_FILEPREFIX, saveFilename);
 				
-				
 				// Get filename
-				size_t nameLen = 0;
-				nameLen = strlen(saveFilename);
-				int i = 0;
-				for(i = nameLen - 1;i > 0; i--) {
-					if (saveFilename[i] == '.') {
-						break;
-					}
-				}
-	
-				if (i) {
-					saveFilename[i] = 0;
-				}
-	
+				char *path, *name, *ext;
+				fileparts(saveFilename, &path, &name, &ext);
+				char *saveFilename = malloc(strlen(path) + strlen(name) + 4 + 1);
+				
+				strcpy(saveFilename, path);
+				strcat(saveFilename, name);
 				strcat(saveFilename, ".cfg");
 				
 				saveTable(saveFilename);
-				handleMeasurement();
+				
+				handleMeasurement(path, name, ext);
+				
+				free(path);
+				free(name);
+				free(ext);
+				free(saveFilename);
 			}
 			break;
 	}
@@ -795,6 +944,23 @@ int CVICALLBACK stopButton_CB(int panel, int control, int event, void *callbackD
 	return 0;
 }
 
+int CVICALLBACK tgPanel_CB (int panel, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch (event) {
+		case EVENT_CLOSE:
+			DiscardPanel(tgHandle);
+			tgHandle = 0;
+			break;
+		case EVENT_KEYPRESS:
+			if (eventData1 == VAL_ESC_VKEY) {
+				HidePanel(tgHandle);
+			}
+			break;
+	}
+	
+	return 0;
+}
+
 int CVICALLBACK buildtableButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
 {
 	switch(event){
@@ -810,6 +976,27 @@ int CVICALLBACK editVgBox_CB(int panel, int control, int event, void *callbackDa
 	switch(event){
 		case EVENT_VAL_CHANGED:
 			calculateVgStepSize();
+			break;
+	}	
+	return 0;
+}
+
+int CVICALLBACK generateButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch(event){
+		case EVENT_COMMIT:
+			if (!tgHandle)
+				tgHandle = LoadPanel(panelHandle, "spectrumGrabber.uir", TGPANEL);
+			DisplayPanel(tgHandle);
+			break;
+	}	
+	return 0;
+}
+
+int CVICALLBACK generateRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch(event){
+		case EVENT_COMMIT:
 			break;
 	}	
 	return 0;
@@ -885,8 +1072,8 @@ char *fileread(char name[], char access[]) {
     // Function to read a file
 #define bufferlength 256  // max buffer length
 #define MAX_FILENAME 1024  // max buffer length
-    int ioerr_loc, i, c;
-    char buffer[bufferlength];
+    int ioerr_loc, i, c = 0;
+    char buffer[bufferlength] = "";
     char *pFileData;
     FILE *pFile;
     
