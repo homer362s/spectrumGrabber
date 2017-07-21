@@ -18,6 +18,18 @@ Prototype="void setupScopeChannels();"
 Class="Function"
 Prototype="void dataAvailableCallback(short handle, unsigned int status, void *pParameter);"
 
+[avgBox_CB]
+Class="Function"
+Prototype="int avgBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[dacButton_CB]
+Class="Function"
+Prototype="int dacButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[updateBiasCount]
+Class="Function"
+Prototype="void updateBiasCount();"
+
 [binsRing_CB]
 Class="Function"
 Prototype="int binsRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
@@ -126,6 +138,10 @@ Prototype="int tgPanel_CB(int panel, int event, void *callbackData, int eventDat
 Class="Function"
 Prototype="int buildtableButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
+[editVdBox_CB]
+Class="Function"
+Prototype="int editVdBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
 [editVgBox_CB]
 Class="Function"
 Prototype="int editVgBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
@@ -134,13 +150,13 @@ Prototype="int editVgBox_CB(int panel, int control, int event, void *callbackDat
 Class="Function"
 Prototype="int generateButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
+[generateMatrix]
+Class="Function"
+Prototype="void generateMatrix(double *VgVals, double *VdVals, int NumVgSteps, int NumVdSteps);"
+
 [generateRing_CB]
 Class="Function"
 Prototype="int generateRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
-
-[editVdBox_CB]
-Class="Function"
-Prototype="int editVdBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
 [mainpanel_CB]
 Class="Function"

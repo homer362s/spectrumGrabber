@@ -30,7 +30,7 @@ Save Changes Before Compiling = "Always"
 Hide Windows = False
 Break At First Statement = False
 Sort Type = "File Name"
-Number of Opened Files = 3
+Number of Opened Files = 4
 Window Confinement Region Enabled = True
 MainColumnWidth = 209
 FileDateColumnWidth = 70
@@ -48,23 +48,24 @@ Batch Build Debug = False
 [File 0001]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.c"
 File Type = "CSource"
-Disk Date = 3583430242
+Disk Date = 3583511238
 In Projects = "1,"
 Window Top = 32
 Window Left = 10
-Window Z-Order = 3
-Source Window State = "1,797,799,799,16,92,92,0,0,60,0,425,0,0,0,19,756,0,806,58,271,555,1,13,"
+Window Z-Order = 1
+Source Window State = "1,648,648,648,40,46,46,0,0,195,0,782,0,0,0,56,620,0,644,47,271,555,1,13,"
+Breakpoint 0001 = "467,0,enabled,"
 
 [File 0002]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"
 File Type = "User Interface Resource"
-Disk Date = 3583430272
+Disk Date = 3583509016
 In Projects = "1,"
 Window Top = 62
 Window Left = 26
 Window Height = 349
 Window Width = 715
-Window Z-Order = 1
+Window Z-Order = 2
 
 [File 0003]
 Path = "/c/Users/Public/Documents/Measurement Computing/DAQ/C/cbw.h"
@@ -99,17 +100,28 @@ In Projects = "1,"
 [File 0007]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.h"
 File Type = "Include"
-Disk Date = 3583430272
+Disk Date = 3583509016
 In Projects = ""
 Window Top = 122
 Window Left = 58
-Window Z-Order = 2
+Window Z-Order = 3
 Source Window State = "1,50,50,50,9,27,27,0,3,80,0,0,0,0,0,25,26,0,50,9,349,715,1,0,"
+
+[File 0008]
+Path = "/c/Program Files (x86)/National Instruments/CVI2015/include/userint.h"
+File Type = "Include"
+Disk Date = 3548901600
+In Projects = ""
+Window Top = 302
+Window Left = 154
+Window Z-Order = 4
+Source Window State = "1,0,0,0,0,0,0,0,0,80,0,0,0,0,0,25,2198,0,2210,74,349,715,1,0,"
 
 [Tab Order]
 Tab 0001 = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"
 Tab 0002 = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.c"
-Tab 0003 = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.h"
+Tab 0003 = "/c/Program Files (x86)/National Instruments/CVI2015/include/userint.h"
+Tab 0004 = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.h"
 
 [Default Build Config 0001 Debug]
 Generate Browse Info = True

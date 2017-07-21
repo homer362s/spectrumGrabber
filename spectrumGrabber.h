@@ -17,7 +17,7 @@
 #define  MAINPANEL_FREQGRAPH              2       /* control type: graph, callback function: (none) */
 #define  MAINPANEL_VGCOEFFBOX             3       /* control type: numeric, callback function: (none) */
 #define  MAINPANEL_VDCOEFFBOX             4       /* control type: numeric, callback function: (none) */
-#define  MAINPANEL_AVGBOX                 5       /* control type: numeric, callback function: (none) */
+#define  MAINPANEL_AVGBOX                 5       /* control type: numeric, callback function: avgBox_CB */
 #define  MAINPANEL_TABLE                  6       /* control type: table, callback function: (none) */
 #define  MAINPANEL_STOPBUTTON             7       /* control type: command, callback function: stopButton_CB */
 #define  MAINPANEL_NEXTBUTTON             8       /* control type: command, callback function: nextButton_CB */
@@ -39,7 +39,7 @@
 #define  MAINPANEL_RANGEC                 24      /* control type: ring, callback function: channel_CB */
 #define  MAINPANEL_RANGEB                 25      /* control type: ring, callback function: channel_CB */
 #define  MAINPANEL_RANGEA                 26      /* control type: ring, callback function: channel_CB */
-#define  MAINPANEL_DACBUTTON              27      /* control type: textButton, callback function: (none) */
+#define  MAINPANEL_DACBUTTON              27      /* control type: textButton, callback function: dacButton_CB */
 #define  MAINPANEL_COUPLINGD              28      /* control type: ring, callback function: channel_CB */
 #define  MAINPANEL_LEDD                   29      /* control type: LED, callback function: (none) */
 #define  MAINPANEL_COEFFD                 30      /* control type: numeric, callback function: channel_CB */
@@ -64,10 +64,9 @@
 #define  MAINPANEL_DELAYBOX               49      /* control type: numeric, callback function: (none) */
 #define  MAINPANEL_TEXTMSG                50      /* control type: textMsg, callback function: (none) */
 #define  MAINPANEL_TEXTMSG_2              51      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_TEXTMSG_3              52      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_DECORATION_4           53      /* control type: deco, callback function: (none) */
-#define  MAINPANEL_MEASCOUNTDISP          54      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_DECORATION             55      /* control type: deco, callback function: (none) */
+#define  MAINPANEL_DECORATION             52      /* control type: deco, callback function: (none) */
+#define  MAINPANEL_AVGCOUNTDISP           53      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_BIASCOUNTDISP          54      /* control type: textMsg, callback function: (none) */
 
 #define  TGPANEL                          2       /* callback function: tgPanel_CB */
 #define  TGPANEL_VGSTARTBOX               2       /* control type: numeric, callback function: editVgBox_CB */
@@ -94,11 +93,13 @@
      /* Callback Prototypes: */
 
 int  CVICALLBACK addrowButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
+int  CVICALLBACK avgBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK binsRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK boardNum_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK buildtableButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK clearButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
+int  CVICALLBACK dacButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK delrowButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK editVdBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK editVgBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
