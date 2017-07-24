@@ -30,10 +30,6 @@ Prototype="int dacButton_CB(int panel, int control, int event, void *callbackDat
 Class="Function"
 Prototype="void updateBiasCount();"
 
-[binsRing_CB]
-Class="Function"
-Prototype="int binsRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
-
 [processData]
 Class="Function"
 Prototype="void processData(int nMeasured, int averages, FILE **timeFPs);"
@@ -77,14 +73,6 @@ Prototype="void saveTable(char *savetableFilename);"
 [delRows]
 Class="Function"
 Prototype="void delRows();"
-
-[updateTimeAxis]
-Class="Function"
-Prototype="void updateTimeAxis();"
-
-[led_CB]
-Class="Function"
-Prototype="int led_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
 [loadButton_CB]
 Class="Function"
@@ -137,6 +125,10 @@ Prototype="int tgPanel_CB(int panel, int event, void *callbackData, int eventDat
 [buildtableButton_CB]
 Class="Function"
 Prototype="int buildtableButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[closetgButton_CB]
+Class="Function"
+Prototype="int closetgButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
 [editVdBox_CB]
 Class="Function"

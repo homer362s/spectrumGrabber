@@ -48,18 +48,17 @@ Batch Build Debug = False
 [File 0001]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.c"
 File Type = "CSource"
-Disk Date = 3583511238
+Disk Date = 3583762976
 In Projects = "1,"
 Window Top = 32
 Window Left = 10
 Window Z-Order = 1
-Source Window State = "1,648,648,648,40,46,46,0,0,195,0,782,0,0,0,56,620,0,644,47,271,555,1,13,"
-Breakpoint 0001 = "467,0,enabled,"
+Source Window State = "1,185,185,185,16,25,25,0,3,195,0,1018,0,0,0,56,157,0,185,16,271,555,1,10,"
 
 [File 0002]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"
 File Type = "User Interface Resource"
-Disk Date = 3583509016
+Disk Date = 3583762355
 In Projects = "1,"
 Window Top = 62
 Window Left = 26
@@ -100,12 +99,12 @@ In Projects = "1,"
 [File 0007]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.h"
 File Type = "Include"
-Disk Date = 3583509016
+Disk Date = 3583762355
 In Projects = ""
 Window Top = 122
 Window Left = 58
 Window Z-Order = 3
-Source Window State = "1,50,50,50,9,27,27,0,3,80,0,0,0,0,0,25,26,0,50,9,349,715,1,0,"
+Source Window State = "1,50,50,50,9,27,27,0,0,80,0,0,0,0,0,25,93,0,105,17,349,715,1,0,"
 
 [File 0008]
 Path = "/c/Program Files (x86)/National Instruments/CVI2015/include/userint.h"

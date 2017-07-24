@@ -37,6 +37,7 @@ int channelCouplings[] = {MAINPANEL_COUPLINGA, MAINPANEL_COUPLINGB, MAINPANEL_CO
 int channelCoeffs[] = {MAINPANEL_COEFFA, MAINPANEL_COEFFB, MAINPANEL_COEFFC, MAINPANEL_COEFFD};
 int channelMeasFreq[] = {MAINPANEL_FREQA, MAINPANEL_FREQB, MAINPANEL_FREQC, MAINPANEL_FREQD};
 int channelMeasTime[] = {MAINPANEL_TIMEA, MAINPANEL_TIMEB, MAINPANEL_TIMEC, MAINPANEL_TIMED};
+int channels[] = {PS6000_CHANNEL_A, PS6000_CHANNEL_B, PS6000_CHANNEL_C, PS6000_CHANNEL_D};
 char channelLabel[][2] = {"A", "B", "C", "D"};
 
 int dacBoard;
@@ -64,23 +65,6 @@ int main (int argc, char *argv[])
 	/* initialize and load resources */
 	nullChk (InitCVIRTE (0, argv, 0));
 	errChk (panelHandle = LoadPanel (0, "spectrumGrabber.uir", MAINPANEL));
-	
-	// Allocate Memory
-	GetCtrlVal(panelHandle, MAINPANEL_BINSRING, &measuredPoints);
-	measuredPoints = measuredPoints * 2;
-	
-	rawDataBuffer = malloc(measuredPoints * sizeof(int16_t));
-	zeros = malloc(measuredPoints * sizeof(double));
-	dataValues = malloc(measuredPoints * sizeof(double));
-	avgSpectrumDisplay = malloc(measuredPoints * sizeof(double)/2);
-	timeValues = malloc(measuredPoints * sizeof(float));
-	freqValues = malloc(measuredPoints * sizeof(float)/2);
-	
-	//avgSpectrum[0] = malloc(measuredPoints * sizeof(double)/2);
-	for(int i =0;i<4;i++) {
-		if(isEnabled(panelHandle, channelLeds[i]))
-			avgSpectrum[i] = malloc(measuredPoints * sizeof(double)/2);
-	}
 	
 	// Initialize picoscope
 	picoscopeInit();
@@ -119,14 +103,10 @@ void picoscopeInit()
 			break;
 	}
 
-	// Initialize some values
-	updateTimeAxis();
-
 	setupScopeChannels();
 	
 	// Set up data buffer
-	ps6000MemorySegments(scopeHandle, 4, NULL);
-	ps6000SetDataBuffer(scopeHandle, PS6000_CHANNEL_A, rawDataBuffer, measuredPoints, PS6000_RATIO_MODE_NONE);
+	ps6000MemorySegments(scopeHandle, 1, NULL);
 	
 	ps6000Stop(scopeHandle);
 	
@@ -190,15 +170,10 @@ void setupScopeChannel(int scopeChannel, int enabledLed, int rangeRing, int coup
 
 void setupScopeChannels()
 {
-
-	// Set up data buffer
-	ps6000SetDataBuffer(scopeHandle, PS6000_CHANNEL_A, rawDataBuffer, measuredPoints, PS6000_RATIO_MODE_NONE);
-	
-	
 	setupScopeChannel(PS6000_CHANNEL_A, MAINPANEL_LEDA, MAINPANEL_RANGEA, MAINPANEL_COUPLINGA);
-	setupScopeChannel(PS6000_CHANNEL_B, MAINPANEL_LEDA, MAINPANEL_RANGEA, MAINPANEL_COUPLINGA);
-	setupScopeChannel(PS6000_CHANNEL_C, MAINPANEL_LEDA, MAINPANEL_RANGEA, MAINPANEL_COUPLINGA);
-	setupScopeChannel(PS6000_CHANNEL_D, MAINPANEL_LEDA, MAINPANEL_RANGEA, MAINPANEL_COUPLINGA);
+	setupScopeChannel(PS6000_CHANNEL_B, MAINPANEL_LEDB, MAINPANEL_RANGEB, MAINPANEL_COUPLINGB);
+	setupScopeChannel(PS6000_CHANNEL_C, MAINPANEL_LEDC, MAINPANEL_RANGEC, MAINPANEL_COUPLINGC);
+	setupScopeChannel(PS6000_CHANNEL_D, MAINPANEL_LEDD, MAINPANEL_RANGED, MAINPANEL_COUPLINGD);
 }
 
 void PREF4 dataAvailableCallback(int16_t handle, PICO_STATUS status, void* pParameter)
@@ -248,61 +223,32 @@ void updateBiasCount(){
 	}		
 }	
 
-int CVICALLBACK binsRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
-{
-	switch (event) {
-		case EVENT_COMMIT:
-			//Reallocate Arrays
-			GetCtrlVal(panelHandle, MAINPANEL_BINSRING, &measuredPoints);
-			measuredPoints = measuredPoints * 2;
-	
-			free(rawDataBuffer);
-			free(zeros);
-			free(dataValues);
-			free(avgSpectrumDisplay);
-			free(timeValues);
-			free(freqValues);
-			
-			rawDataBuffer = malloc(measuredPoints * sizeof(int16_t));
-			zeros = malloc(measuredPoints * sizeof(double));
-			dataValues = malloc(measuredPoints * sizeof(double));
-			avgSpectrumDisplay = malloc(measuredPoints * sizeof(double)/2);
-			timeValues = malloc(measuredPoints * sizeof(float));
-			freqValues = malloc(measuredPoints * sizeof(float)/2);
-			
-			for(int i =0;i<4;i++) {
-				free(avgSpectrum[i]);
-				if(isEnabled(panelHandle, channelLeds[i]))
-					avgSpectrum[i] = malloc(measuredPoints * sizeof(double)/2);
-			}
-			
-			
-			updateTimeAxis();
-			
-			// Update the data bufer
-			ps6000SetDataBuffer(scopeHandle, PS6000_CHANNEL_A, rawDataBuffer, measuredPoints, PS6000_RATIO_MODE_NONE);
-			break;
-	}
-	
-	return 0;
-}
-
 void processData(int nMeasured, int averages, FILE **timeFPs)
 {
 	dataReady = 0;
 	
 	// Clear graph in preparation for new plots
-	DeleteGraphPlot(panelHandle, MAINPANEL_FREQGRAPH, -1, VAL_DELAYED_DRAW); 
+	DeleteGraphPlot(panelHandle, MAINPANEL_FREQGRAPH, -1, VAL_NO_DRAW); 
 	
 	// Loop over each scope input
 	for(int i = 0;i < 4;i++) {
 		// Skip if the input is disabled
-		if(!isEnabled(panelHandle, channelLeds[i]))
+		if(!isEnabled(panelHandle, channelMeasFreq[i]) && !isEnabled(panelHandle, channelMeasTime[i]))
 			continue;
 		
 		// Get data from scope
 		uint32_t nPoints = measuredPoints;
-		ps6000GetValues(scopeHandle, 0, &nPoints, 1, PS6000_RATIO_MODE_NONE, i, NULL);
+		
+		ps6000SetDataBuffer(scopeHandle, channels[i], rawDataBuffer, measuredPoints, PS6000_RATIO_MODE_NONE);
+		ps6000GetValues(scopeHandle, 0, &nPoints, 1, PS6000_RATIO_MODE_NONE, 0, NULL);
+		ps6000SetDataBuffer(scopeHandle, channels[i], NULL, measuredPoints, PS6000_RATIO_MODE_NONE);    
+		
+		// Log the raw data
+		FILE *logfp = fopen("dataLog.log", "w");
+		for(int j = 0;j<nPoints;j++) {
+			fprintf(logfp, "%d\n", rawDataBuffer[j]);
+		}
+		fclose(logfp);
 		
 		// Convert values to double
 		double fullScale;
@@ -319,7 +265,7 @@ void processData(int nMeasured, int averages, FILE **timeFPs)
 			fprintf(timeFPs[i], "\n%e", dataValues[0]);
 
 			for(int j=1; j<measuredPoints; j++) {
-				fprintf(timeFPs[j], ",%e", dataValues[j]);	
+				fprintf(timeFPs[i], ",%e", dataValues[j]);	
 			}
 		}
 
@@ -347,6 +293,8 @@ void processData(int nMeasured, int averages, FILE **timeFPs)
 			PlotXY(panelHandle, MAINPANEL_FREQGRAPH, freqValues, avgSpectrumDisplay, measuredPoints/2, VAL_FLOAT, VAL_DOUBLE, VAL_THIN_LINE, VAL_NO_POINT, VAL_SOLID, 1, VAL_BLACK);
 		}
 	}
+	//SetCtrlAttribute(panelHandle, MAINPANEL_FREQGRAPH, ATTR_REFRESH_GRAPH, TRUE);
+	RefreshGraph(panelHandle, MAINPANEL_FREQGRAPH);
 }
 
 void handleMeasurement(char *path, char *name, char *ext)
@@ -361,8 +309,37 @@ void handleMeasurement(char *path, char *name, char *ext)
 	SetCtrlAttribute(panelHandle, MAINPANEL_NEXTBUTTON, ATTR_DIMMED, FALSE);
 	SetCtrlAttribute(panelHandle, MAINPANEL_BINSRING, ATTR_DIMMED, TRUE);
 	SetCtrlAttribute(panelHandle, MAINPANEL_RATEBOX, ATTR_DIMMED, TRUE);
-	
 	userRequestedStop = 0;
+	
+	// Allocate required memory
+	GetCtrlVal(panelHandle, MAINPANEL_BINSRING, &measuredPoints);
+	measuredPoints = measuredPoints * 2;
+
+	rawDataBuffer = malloc(measuredPoints * sizeof(int16_t));
+	zeros = malloc(measuredPoints * sizeof(double));
+	dataValues = malloc(measuredPoints * sizeof(double));
+	avgSpectrumDisplay = malloc(measuredPoints * sizeof(double)/2);
+	timeValues = malloc(measuredPoints * sizeof(float));
+	freqValues = malloc(measuredPoints * sizeof(float)/2);
+	
+	for(int i =0;i<4;i++) {
+		if(isEnabled(panelHandle, channelMeasFreq[i]))
+			avgSpectrum[i] = malloc(measuredPoints * sizeof(double)/2);
+	}
+	
+	// Initialize time axis values
+	float timeInterval_ns = 0;
+	ps6000GetTimebase2(scopeHandle, timebase, measuredPoints, &timeInterval_ns, 0, NULL, 0);
+	int time = timeInterval_ns;
+	for (int i = 0;i < measuredPoints/2;i++) {
+		timeValues[i] = (time-timeInterval_ns)/1e9;
+		freqValues[i] = i/(measuredPoints*timeInterval_ns/1e9);
+		time += timeInterval_ns;
+	}
+	for (int i = measuredPoints/2;i < measuredPoints;i++) {
+		timeValues[i] = time/1e9;
+		time += timeInterval_ns;  
+	}
 	
 	int dacEnabled = 0;
 	int nBias = 1;
@@ -421,7 +398,7 @@ void handleMeasurement(char *path, char *name, char *ext)
 			}
 		}
 	}
-	
+			
 	// Loop over bias conditions measuring at each
 	for(int i = 0; i < nBias; i++) {
 		short averages = 1;
@@ -441,7 +418,7 @@ void handleMeasurement(char *path, char *name, char *ext)
 		GetCtrlVal(panelHandle, MAINPANEL_DELAYBOX, &delay);
 		Delay(delay);
 		
-		// Loop over a single bias condition and average
+		// Loop within a single bias condition and average
 		for(nMeasured = 0; nMeasured < averages; nMeasured++) {
 			if (userRequestedStop)
 				break;
@@ -450,7 +427,8 @@ void handleMeasurement(char *path, char *name, char *ext)
 		
 			measurementInProgress = 1;
 			dataReady = 0;
-			status = ps6000RunBlock(scopeHandle, measuredPoints/2, measuredPoints/2, timebase, 1, 0, 0, dataAvailableCallback, 0);
+			
+			status = ps6000RunBlock(scopeHandle, 0, measuredPoints, timebase, 1, 0, 0, dataAvailableCallback, NULL);
 
 			switch (status) {
 				case PICO_OK:
@@ -489,11 +467,16 @@ void handleMeasurement(char *path, char *name, char *ext)
 			
 		}
 		
-		// Save average spectrum
-		fprintf(freqFPs[0], "\n%e", avgSpectrum[0]);
+		// Save average spectra
+		for (int j =0;j < 4;j++) {
+			if(isEnabled(panelHandle, channelMeasFreq[j])) {
+				// Save average spectrum
+				fprintf(freqFPs[j], "\n%e", avgSpectrum[j][0]);
 	
-		for(int i=1; i<measuredPoints/2; i++) {
-			fprintf(freqFPs[0], ",%e", avgSpectrum[i]);	
+				for(int k=1; k<measuredPoints/2; k++) {
+					fprintf(freqFPs[j], ",%e", avgSpectrum[j][k]);	
+				}
+			}
 		}
 		
 		if(userRequestedNext){
@@ -509,6 +492,21 @@ void handleMeasurement(char *path, char *name, char *ext)
 		// Check if the number of bias points changed 
 		if (dacEnabled)
 			GetNumTableRows(panelHandle, MAINPANEL_TABLE, &nBias);
+	}
+	
+	// Free memory
+	free(rawDataBuffer);		rawDataBuffer = NULL;
+	free(zeros);				zeros = NULL;
+	free(dataValues);			dataValues = NULL;
+	free(avgSpectrumDisplay);   avgSpectrumDisplay = NULL;
+	free(timeValues);			timeValues = NULL;
+	free(freqValues);			freqValues = NULL;
+	
+	for(int i =0;i<4;i++) {
+		if(avgSpectrum) {
+			free(avgSpectrum[i]);
+			avgSpectrum[i] = NULL;
+		}
 	}
 	
 	// Tell the scope to stop
@@ -799,32 +797,6 @@ void delRows(){
 	}
 }	
 
-void updateTimeAxis()
-{
-	float timeInterval_ns = 0;
-	ps6000GetTimebase2(scopeHandle, timebase, measuredPoints, &timeInterval_ns, 0, NULL, 0);
-	int time = timeInterval_ns;
-	for (int i = 0;i < measuredPoints/2;i++) {
-		timeValues[i] = (time-timeInterval_ns)/1e9;
-		freqValues[i] = i/(measuredPoints*timeInterval_ns/1e9);
-		time += timeInterval_ns;
-	}
-	for (int i = measuredPoints/2;i < measuredPoints;i++) {
-		timeValues[i] = time/1e9;
-		time += timeInterval_ns;  
-	}
-}
-
-int CVICALLBACK led_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
-{
-	switch(event){
-		case EVENT_COMMIT:
-			printf("click");
-			break;
-	}	
-	return 0;
-}
-
 int CVICALLBACK loadButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
 {
 	switch(event){
@@ -841,6 +813,9 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 {
 	switch(event){
 		case EVENT_COMMIT:
+			// Stop current capture
+			ps6000Stop(scopeHandle);
+			
 			int channel = 0;
 			int channelIndex = 0;
 			switch (control) {
@@ -890,6 +865,11 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 			}
 			
 			setupScopeChannel(channel, channelLeds[channelIndex], channelRanges[channelIndex], channelCouplings[channelIndex]);
+			
+			// Resume capture if in progress
+			if(measurementInProgress)
+				ps6000RunBlock(scopeHandle, 0, measuredPoints, timebase, 1, 0, 0, dataAvailableCallback, NULL); 
+			
 			break;
 	}	
 	return 0;
@@ -960,12 +940,12 @@ int CVICALLBACK rateBox_CB(int panel, int control, int event, void *callbackData
 	float timeInterval_ns;
 	switch(event){
 		case EVENT_COMMIT:
+			// Find nearest timebase and change value to corresponding sample rate
 			GetCtrlVal(panelHandle, MAINPANEL_RATEBOX, &sampleRate);
 			timebase = RoundRealToNearestInteger(156250000/sampleRate + 4);
 			ps6000GetTimebase2(scopeHandle, timebase,measuredPoints, &timeInterval_ns, 0, NULL, 0);
 			sampleRate = 1/(timeInterval_ns*1e-9);
 			SetCtrlVal(panelHandle, MAINPANEL_RATEBOX, sampleRate);
-			updateTimeAxis();
 			break;
 	}	
 	return 0;
@@ -1054,6 +1034,16 @@ int CVICALLBACK buildtableButton_CB(int panel, int control, int event, void *cal
 			updateBiasCount();  
 			break;
 	}	
+	return 0;
+}
+
+int CVICALLBACK closetgButton_CB (int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch (event) {
+		case EVENT_COMMIT:
+			HidePanel(tgHandle);
+			break;
+	}
 	return 0;
 }
 
