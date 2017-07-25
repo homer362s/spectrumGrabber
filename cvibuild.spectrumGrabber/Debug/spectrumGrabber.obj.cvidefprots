@@ -114,6 +114,10 @@ Prototype="int rateBox_CB(int panel, int control, int event, void *callbackData,
 Class="Function"
 Prototype="int runButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
+[dirButton_CB]
+Class="Function"
+Prototype="int dirButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
 [savetableButton_CB]
 Class="Function"
 Prototype="int savetableButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"

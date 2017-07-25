@@ -21,7 +21,7 @@
 #define  MAINPANEL_STOPBUTTON             6       /* control type: command, callback function: stopButton_CB */
 #define  MAINPANEL_NEXTBUTTON             7       /* control type: command, callback function: nextButton_CB */
 #define  MAINPANEL_BINSRING               8       /* control type: ring, callback function: binsRing_CB */
-#define  MAINPANEL_FILEPREFIX             9       /* control type: string, callback function: (none) */
+#define  MAINPANEL_FILEPATH               9       /* control type: string, callback function: (none) */
 #define  MAINPANEL_GENERATEBUTTON         10      /* control type: command, callback function: generateButton_CB */
 #define  MAINPANEL_LOADBUTTON             11      /* control type: command, callback function: loadButton_CB */
 #define  MAINPANEL_RUNBUTTON              12      /* control type: command, callback function: runButton_CB */
@@ -60,25 +60,34 @@
 #define  MAINPANEL_COEFFA                 45      /* control type: numeric, callback function: channel_CB */
 #define  MAINPANEL_DELAYBOX               46      /* control type: numeric, callback function: delayBox_CB */
 #define  MAINPANEL_TEXTMSG_3              47      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_DECORATION             48      /* control type: deco, callback function: (none) */
-#define  MAINPANEL_DECORATION_3           49      /* control type: deco, callback function: (none) */
-#define  MAINPANEL_DECORATION_4           50      /* control type: deco, callback function: (none) */
-#define  MAINPANEL_BIASCOUNTDISP          51      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_TEXTMSG                52      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_AVGCOUNTDISP           53      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_TEXTMSG_2              54      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_DECORATION_2           55      /* control type: deco, callback function: (none) */
-#define  MAINPANEL_TAB                    56      /* control type: tab, callback function: (none) */
-#define  MAINPANEL_DECORATION_5           57      /* control type: deco, callback function: (none) */
-#define  MAINPANEL_OVERLOADLED            58      /* control type: LED, callback function: (none) */
-#define  MAINPANEL_BINSIZETEXT            59      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_CAPTIMETEXT            60      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_TOTALTIMETEXT          61      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_BIASTIMETEXT           62      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_BINSIZETEXTLABEL       63      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_CAPTIMETEXTLABEL       64      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_TOTALTIMETEXTLABEL     65      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_BIASTIMETEXTLABEL      66      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_DECORATION_3           48      /* control type: deco, callback function: (none) */
+#define  MAINPANEL_DECORATION_4           49      /* control type: deco, callback function: (none) */
+#define  MAINPANEL_BIASCOUNTDISP          50      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_TEXTMSG                51      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_AVGCOUNTDISP           52      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_DECORATION_2           53      /* control type: deco, callback function: (none) */
+#define  MAINPANEL_TAB                    54      /* control type: tab, callback function: (none) */
+#define  MAINPANEL_DECORATION_5           55      /* control type: deco, callback function: (none) */
+#define  MAINPANEL_BINSIZETEXT            56      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_CAPTIMETEXT            57      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_TOTALTIMETEXT          58      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_BIASTIMETEXT           59      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_DIRBUTTON              60      /* control type: command, callback function: dirButton_CB */
+#define  MAINPANEL_BINSIZETEXTLABEL       61      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_FILEPREFIX             62      /* control type: string, callback function: (none) */
+#define  MAINPANEL_OLLEDD                 63      /* control type: LED, callback function: (none) */
+#define  MAINPANEL_OLLEDC                 64      /* control type: LED, callback function: (none) */
+#define  MAINPANEL_OLLEDB                 65      /* control type: LED, callback function: (none) */
+#define  MAINPANEL_OLLEDA                 66      /* control type: LED, callback function: (none) */
+#define  MAINPANEL_CAPTIMETEXTLABEL       67      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_TOTALTIMETEXTLABEL     68      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_DECORATION             69      /* control type: deco, callback function: (none) */
+#define  MAINPANEL_TEXTMSG_4              70      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_TEXTMSG_5              71      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_TEXTMSG_7              72      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_TEXTMSG_6              73      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_TEXTMSG_2              74      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_BIASTIMETEXTLABEL      75      /* control type: textMsg, callback function: (none) */
 
 #define  TGPANEL                          2       /* callback function: tgPanel_CB */
 #define  TGPANEL_VGSTARTBOX               2       /* control type: numeric, callback function: editVgBox_CB */
@@ -94,6 +103,9 @@
 #define  TGPANEL_CLOSETGBUTTON            12      /* control type: command, callback function: closetgButton_CB */
 #define  TGPANEL_TEXTMSG                  13      /* control type: textMsg, callback function: (none) */
 #define  TGPANEL_TEXTMSG_2                14      /* control type: textMsg, callback function: (none) */
+#define  TGPANEL_TEXTMSG_3                15      /* control type: textMsg, callback function: (none) */
+#define  TGPANEL_TEXTMSG_4                16      /* control type: textMsg, callback function: (none) */
+#define  TGPANEL_TEXTMSG_5                17      /* control type: textMsg, callback function: (none) */
 
      /* tab page panel controls */
 #define  FREQTAB_FREQGRAPH                2       /* control type: graph, callback function: (none) */
@@ -126,6 +138,7 @@ int  CVICALLBACK closetgButton_CB(int panel, int control, int event, void *callb
 int  CVICALLBACK dacButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK delayBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK delrowButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
+int  CVICALLBACK dirButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK editVdBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK editVgBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK generateButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);

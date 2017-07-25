@@ -30,13 +30,14 @@ int userRequestedNext = 0;
 
 // Control arrays
 int channelLeds[] = {MAINPANEL_LEDA, MAINPANEL_LEDB, MAINPANEL_LEDC, MAINPANEL_LEDD};
+int overloadLeds[] = {MAINPANEL_OLLEDA, MAINPANEL_OLLEDB, MAINPANEL_OLLEDC, MAINPANEL_OLLEDD};
 int channelRanges[] = {MAINPANEL_RANGEA, MAINPANEL_RANGEB, MAINPANEL_RANGEC, MAINPANEL_RANGED};
 int channelCouplings[] = {MAINPANEL_COUPLINGA, MAINPANEL_COUPLINGB, MAINPANEL_COUPLINGC, MAINPANEL_COUPLINGD};
 int channelCoeffs[] = {MAINPANEL_COEFFA, MAINPANEL_COEFFB, MAINPANEL_COEFFC, MAINPANEL_COEFFD};
 int channelMeasFreq[] = {MAINPANEL_FREQA, MAINPANEL_FREQB, MAINPANEL_FREQC, MAINPANEL_FREQD};
 int channelMeasTime[] = {MAINPANEL_TIMEA, MAINPANEL_TIMEB, MAINPANEL_TIMEC, MAINPANEL_TIMED};
 int channels[] = {PS6000_CHANNEL_A, PS6000_CHANNEL_B, PS6000_CHANNEL_C, PS6000_CHANNEL_D};
-int colors[] = {VAL_BLACK, VAL_RED, VAL_BLUE, VAL_DK_GREEN};
+int colors[] = {VAL_MAGENTA, VAL_CYAN, VAL_BLUE, VAL_DK_GREEN};
 char channelLabel[][2] = {"A", "B", "C", "D"};
 
 int dacBoard;
@@ -237,6 +238,7 @@ int CVICALLBACK delayBox_CB(int panel, int control, int event, void *callbackDat
 void processData(int nMeasured, int averages, FILE **timeFPs)
 {
 	dataReady = 0;
+	short overflow = 0;
 	
 	int freqTabHandle, timeTabHandle;
 	GetPanelHandleFromTabPage(panelHandle, MAINPANEL_TAB, 0, &freqTabHandle);
@@ -258,8 +260,13 @@ void processData(int nMeasured, int averages, FILE **timeFPs)
 		uint32_t nPoints = measuredPoints;
 		
 		ps6000SetDataBuffer(scopeHandle, channels[i], rawDataBuffer, measuredPoints, PS6000_RATIO_MODE_NONE);
-		ps6000GetValues(scopeHandle, 0, &nPoints, 1, PS6000_RATIO_MODE_NONE, 0, NULL);
-		ps6000SetDataBuffer(scopeHandle, channels[i], NULL, measuredPoints, PS6000_RATIO_MODE_NONE);    
+		ps6000GetValues(scopeHandle, 0, &nPoints, 1, PS6000_RATIO_MODE_NONE, 0, &overflow);
+		ps6000SetDataBuffer(scopeHandle, channels[i], NULL, measuredPoints, PS6000_RATIO_MODE_NONE); 
+		
+		 for(int i=0; i<4; i++) {
+			if(overflow & (1<<i))
+				SetCtrlVal(panelHandle, overloadLeds[i], 1);
+		}
 		
 		// Log the raw data
 		//FILE *logfp = fopen("dataLog.log", "w");
@@ -488,9 +495,10 @@ void handleMeasurement(char *path, char *name, char *ext)
 			sprintf(tmpstr, "%d/%d Averages", nMeasured + 1, averages);
 			SetCtrlVal(panelHandle, MAINPANEL_AVGCOUNTDISP, tmpstr);
 			
-			sprintf(tmpstr, "%d/%d Bias Points", i + 1, nBias); 
-			SetCtrlVal(panelHandle, MAINPANEL_BIASCOUNTDISP, tmpstr);
-			
+			if(isEnabled(panelHandle, MAINPANEL_DACBUTTON)) {
+				sprintf(tmpstr, "%d/%d Bias Points", i + 1, nBias); 
+				SetCtrlVal(panelHandle, MAINPANEL_BIASCOUNTDISP, tmpstr);
+			}
 		}
 		
 		// Save average spectra
@@ -882,6 +890,7 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 				SetCtrlAttribute(panelHandle, channelRanges[channelIndex], ATTR_DIMMED, 0);
 				SetCtrlAttribute(panelHandle, channelCouplings[channelIndex], ATTR_DIMMED, 0);
 				SetCtrlAttribute(panelHandle, channelCoeffs[channelIndex], ATTR_DIMMED, 0);
+				SetCtrlAttribute(panelHandle, overloadLeds[channelIndex], ATTR_DIMMED, 0);
 			}
 			else {
 				// Disable the current channel
@@ -889,6 +898,7 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 				SetCtrlAttribute(panelHandle, channelRanges[channelIndex], ATTR_DIMMED, 1);
 				SetCtrlAttribute(panelHandle, channelCouplings[channelIndex], ATTR_DIMMED, 1);
 				SetCtrlAttribute(panelHandle, channelCoeffs[channelIndex], ATTR_DIMMED, 1);
+				SetCtrlAttribute(panelHandle, overloadLeds[channelIndex], ATTR_DIMMED, 1);
 			}
 			
 			setupScopeChannel(channel, channelLeds[channelIndex], channelRanges[channelIndex], channelCouplings[channelIndex]);
@@ -999,31 +1009,41 @@ int CVICALLBACK runButton_CB(int panel, int control, int event, void *callbackDa
 	switch (event) {
 		case EVENT_COMMIT:
 			char saveFilename[MAX_PATHNAME_LEN];
-			int status = FileSelectPopup("", "*.csv", "*.csv;*.*", "Select save file", VAL_SAVE_BUTTON, 0, 0, 1, 1, saveFilename);
-			if (status) {
-				SetCtrlVal(panelHandle, MAINPANEL_FILEPREFIX, saveFilename);
-				
-				// Get filename
-				char *path, *name, *ext;
-				fileparts(saveFilename, &path, &name, &ext);
-				char *saveFilename = malloc((strlen(path) + strlen(name) + 4 + 1) * sizeof(char));
-				
-				strcpy(saveFilename, path);
-				strcat(saveFilename, name);
-				strcat(saveFilename, ".cfg");
-				
-				saveTable(saveFilename);
-				
-				handleMeasurement(path, name, ext);
-				
-				free(path);
-				free(name);
-				free(ext);
-				free(saveFilename);
+			char path[512], name[30];
+			
+			for(int i=0; i<4; i++) {
+				SetCtrlVal(panelHandle, overloadLeds[i], 0);
 			}
+			
+			GetCtrlVal(panelHandle, MAINPANEL_FILEPATH, path);
+			GetCtrlVal(panelHandle, MAINPANEL_FILEPREFIX, name); 
+			
+			if (strcmp(path, "") == 0) {
+				sprintf(saveFilename, "%s.cfg", name);
+				saveTable(saveFilename);
+			} else {
+				sprintf(saveFilename, "%s\\%s.cfg", path, name);
+				saveTable(saveFilename);
+			}
+			
+			handleMeasurement(path, name, ".csv");
+				
 			break;
 	}
 	
+	return 0;
+}
+
+int CVICALLBACK dirButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch (event) {
+		case EVENT_COMMIT:
+			char saveFilepath[MAX_PATHNAME_LEN];
+			DirSelectPopup("", "Select File Location", 1, 1, saveFilepath);
+			strcat(saveFilepath, "\\");
+			SetCtrlVal(panelHandle, MAINPANEL_FILEPATH, saveFilepath);
+			break;
+	}
 	return 0;
 }
 
