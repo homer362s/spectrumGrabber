@@ -48,17 +48,17 @@ Batch Build Debug = False
 [File 0001]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.c"
 File Type = "CSource"
-Disk Date = 3583762976
+Disk Date = 3583847434
 In Projects = "1,"
 Window Top = 32
 Window Left = 10
 Window Z-Order = 1
-Source Window State = "1,185,185,185,16,25,25,0,3,195,0,1018,0,0,0,56,157,0,185,16,271,555,1,10,"
+Source Window State = "1,1184,1184,1184,16,35,35,0,0,195,0,0,0,0,0,56,221,0,230,18,271,555,1,0,"
 
 [File 0002]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"
 File Type = "User Interface Resource"
-Disk Date = 3583762355
+Disk Date = 3583847421
 In Projects = "1,"
 Window Top = 62
 Window Left = 26
@@ -67,6 +67,26 @@ Window Width = 715
 Window Z-Order = 2
 
 [File 0003]
+Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.h"
+File Type = "Include"
+Disk Date = 3583847421
+In Projects = ""
+Window Top = 122
+Window Left = 58
+Window Z-Order = 3
+Source Window State = "1,50,50,50,9,27,27,0,0,80,0,0,0,0,0,25,108,0,120,17,349,715,1,0,"
+
+[File 0004]
+Path = "/c/Program Files (x86)/National Instruments/CVI2015/include/userint.h"
+File Type = "Include"
+Disk Date = 3548901600
+In Projects = ""
+Window Top = 302
+Window Left = 154
+Window Z-Order = 4
+Source Window State = "1,0,0,0,0,0,0,0,0,80,0,0,0,0,0,25,2843,23,2855,82,349,715,1,0,"
+
+[File 0005]
 Path = "/c/Users/Public/Documents/Measurement Computing/DAQ/C/cbw.h"
 File Type = "Include"
 Disk Date = 3567178027
@@ -75,46 +95,26 @@ Window Top = 392
 Window Left = 202
 Source Window State = "1,622,622,622,8,18,18,0,3,0,0,0,0,0,0,0,594,0,622,8,349,715,1,0,"
 
-[File 0004]
+[File 0006]
 Path = "/c/Program Files (x86)/Pico Technology/SDK/inc/ps6000Api.h"
 File Type = "Include"
 Disk Date = 3516620848
 In Projects = "1,"
 Window Top = 182
 Window Left = 90
-Source Window State = "1,124,124,124,9,13,9,0,0,80,0,0,0,0,0,25,114,0,124,22,349,715,1,0,"
+Source Window State = "1,124,124,124,9,13,9,0,0,0,0,0,0,0,0,0,114,0,124,22,349,715,1,0,"
 
-[File 0005]
+[File 0007]
 Path = "/c/Users/Public/Documents/Measurement Computing/DAQ/C/cbw32.lib"
 File Type = "Library"
 Disk Date = 3559043316
 In Projects = "1,"
 
-[File 0006]
+[File 0008]
 Path = "/c/Program Files (x86)/Pico Technology/SDK/lib/ps6000.lib"
 File Type = "Library"
 Disk Date = 3516620848
 In Projects = "1,"
-
-[File 0007]
-Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.h"
-File Type = "Include"
-Disk Date = 3583762355
-In Projects = ""
-Window Top = 122
-Window Left = 58
-Window Z-Order = 3
-Source Window State = "1,50,50,50,9,27,27,0,0,80,0,0,0,0,0,25,93,0,105,17,349,715,1,0,"
-
-[File 0008]
-Path = "/c/Program Files (x86)/National Instruments/CVI2015/include/userint.h"
-File Type = "Include"
-Disk Date = 3548901600
-In Projects = ""
-Window Top = 302
-Window Left = 154
-Window Z-Order = 4
-Source Window State = "1,0,0,0,0,0,0,0,0,80,0,0,0,0,0,25,2198,0,2210,74,349,715,1,0,"
 
 [Tab Order]
 Tab 0001 = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"

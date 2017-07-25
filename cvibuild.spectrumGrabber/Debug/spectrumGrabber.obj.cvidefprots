@@ -26,9 +26,9 @@ Prototype="int avgBox_CB(int panel, int control, int event, void *callbackData, 
 Class="Function"
 Prototype="int dacButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
-[updateBiasCount]
+[delayBox_CB]
 Class="Function"
-Prototype="void updateBiasCount();"
+Prototype="int delayBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
 [processData]
 Class="Function"
@@ -90,6 +90,10 @@ Prototype="int clearButton_CB(int panel, int control, int event, void *callbackD
 Class="Function"
 Prototype="int addrowButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
+[binsRing_CB]
+Class="Function"
+Prototype="int binsRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
 [boardNum_CB]
 Class="Function"
 Prototype="int boardNum_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
@@ -121,6 +125,22 @@ Prototype="int stopButton_CB(int panel, int control, int event, void *callbackDa
 [tgPanel_CB]
 Class="Function"
 Prototype="int tgPanel_CB(int panel, int event, void *callbackData, int eventData1, int eventData2);"
+
+[updateBiasCount]
+Class="Function"
+Prototype="void updateBiasCount();"
+
+[formatFloat]
+Class="Function"
+Prototype="void formatFloat(float num, char *unit, char *outstr);"
+
+[updateTimeDisplay]
+Class="Function"
+Prototype="void updateTimeDisplay();"
+
+[updateTimeAxis_CB]
+Class="Function"
+Prototype="int updateTimeAxis_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
 [buildtableButton_CB]
 Class="Function"

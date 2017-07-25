@@ -12,8 +12,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-//#define measuredPoints 20000
-
 int measuredPoints = 0;
 
 uint32_t timebase = 7816;
@@ -38,6 +36,7 @@ int channelCoeffs[] = {MAINPANEL_COEFFA, MAINPANEL_COEFFB, MAINPANEL_COEFFC, MAI
 int channelMeasFreq[] = {MAINPANEL_FREQA, MAINPANEL_FREQB, MAINPANEL_FREQC, MAINPANEL_FREQD};
 int channelMeasTime[] = {MAINPANEL_TIMEA, MAINPANEL_TIMEB, MAINPANEL_TIMEC, MAINPANEL_TIMED};
 int channels[] = {PS6000_CHANNEL_A, PS6000_CHANNEL_B, PS6000_CHANNEL_C, PS6000_CHANNEL_D};
+int colors[] = {VAL_BLACK, VAL_RED, VAL_BLUE, VAL_DK_GREEN};
 char channelLabel[][2] = {"A", "B", "C", "D"};
 
 int dacBoard;
@@ -56,6 +55,7 @@ int isEnabled(int handle, int control);
 void gotoBiasPoint(int index);
 void generateMatrix(double *VgVals, double *VdVals, int NumVgSteps, int NumVdSteps); 
 void updateBiasCount();  
+void updateTimeDisplay();
 
 int main (int argc, char *argv[])
 {
@@ -68,13 +68,25 @@ int main (int argc, char *argv[])
 	
 	// Initialize picoscope
 	picoscopeInit();
-	ps6000GetTimebase2(scopeHandle, timebase, measuredPoints, &timeInterval_ns, 0, NULL, 0);
-	SetCtrlVal(panelHandle, MAINPANEL_RATEBOX, 1/(timeInterval_ns*1e-9));
+	
+	// Read the number of requested points from the UI
+	GetCtrlVal(panelHandle, MAINPANEL_BINSRING, &measuredPoints);
+	measuredPoints = measuredPoints * 2;
+	
+	// Set up sample rate according to the UI values
+	double sampleRate;
+	GetCtrlVal(panelHandle, MAINPANEL_RATEBOX, &sampleRate);
+	timebase = RoundRealToNearestInteger(156250000/sampleRate + 4);
+	ps6000GetTimebase2(scopeHandle, timebase,measuredPoints, &timeInterval_ns, 0, NULL, 0);
+	sampleRate = 1/(timeInterval_ns*1e-9);
+	SetCtrlVal(panelHandle, MAINPANEL_RATEBOX, sampleRate);
 	
 	// Initialize DAC stuff
 	GetCtrlVal(panelHandle, MAINPANEL_BOARDNUM, &dacBoard);
 	GetCtrlVal(panelHandle, MAINPANEL_VGNUM, &vgOut);
 	GetCtrlVal(panelHandle, MAINPANEL_VDNUM, &vdOut);
+	
+	updateTimeDisplay();
 	
 	/* display the panel and run the user interface */
 	errChk (DisplayPanel (panelHandle));
@@ -170,10 +182,10 @@ void setupScopeChannel(int scopeChannel, int enabledLed, int rangeRing, int coup
 
 void setupScopeChannels()
 {
-	setupScopeChannel(PS6000_CHANNEL_A, MAINPANEL_LEDA, MAINPANEL_RANGEA, MAINPANEL_COUPLINGA);
-	setupScopeChannel(PS6000_CHANNEL_B, MAINPANEL_LEDB, MAINPANEL_RANGEB, MAINPANEL_COUPLINGB);
-	setupScopeChannel(PS6000_CHANNEL_C, MAINPANEL_LEDC, MAINPANEL_RANGEC, MAINPANEL_COUPLINGC);
-	setupScopeChannel(PS6000_CHANNEL_D, MAINPANEL_LEDD, MAINPANEL_RANGED, MAINPANEL_COUPLINGD);
+	// Set up scope channels according to UI defaults
+	for(int i =0;i<4;i++) {
+		setupScopeChannel(channels[i], channelLeds[i], channelRanges[i], channelCouplings[i]);
+	}
 }
 
 void PREF4 dataAvailableCallback(int16_t handle, PICO_STATUS status, void* pParameter)
@@ -196,6 +208,7 @@ int CVICALLBACK avgBox_CB(int panel, int control, int event, void *callbackData,
 				sprintf(tmpstr, "%d/%d Averages", 0, averages);
 				SetCtrlVal(panelHandle, MAINPANEL_AVGCOUNTDISP, tmpstr);
 			}
+			updateTimeDisplay();
 		break;
 	}
 	return 0;
@@ -211,24 +224,29 @@ int CVICALLBACK dacButton_CB(int panel, int control, int event, void *callbackDa
 	return 0;
 }
 
-void updateBiasCount(){
-	if(isEnabled(panelHandle, MAINPANEL_DACBUTTON)){
-		int nBias;
-		GetNumTableRows(panelHandle, MAINPANEL_TABLE, &nBias);
-		char tmpstr[128];
-		sprintf(tmpstr, "0/%d Bias Points", nBias);
-		SetCtrlVal(panelHandle, MAINPANEL_BIASCOUNTDISP, tmpstr);	
-	}else{
-		SetCtrlVal(panelHandle, MAINPANEL_BIASCOUNTDISP, "Bias Disabled");  	
-	}		
-}	
+int CVICALLBACK delayBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch (event) {
+		case EVENT_COMMIT:
+			updateTimeDisplay();
+		break;
+	}
+	return 0;
+}
 
 void processData(int nMeasured, int averages, FILE **timeFPs)
 {
 	dataReady = 0;
 	
+	int freqTabHandle, timeTabHandle;
+	GetPanelHandleFromTabPage(panelHandle, MAINPANEL_TAB, 0, &freqTabHandle);
+	GetPanelHandleFromTabPage(panelHandle, MAINPANEL_TAB, 1, &timeTabHandle);
+	
 	// Clear graph in preparation for new plots
-	DeleteGraphPlot(panelHandle, MAINPANEL_FREQGRAPH, -1, VAL_NO_DRAW); 
+	DeleteGraphPlot(freqTabHandle, FREQTAB_FREQGRAPH, -1, VAL_NO_DRAW);
+	
+	if(nMeasured==0)
+		DeleteGraphPlot(timeTabHandle, TIMETAB_TIMEGRAPH, -1, VAL_DELAYED_DRAW);
 	
 	// Loop over each scope input
 	for(int i = 0;i < 4;i++) {
@@ -244,11 +262,11 @@ void processData(int nMeasured, int averages, FILE **timeFPs)
 		ps6000SetDataBuffer(scopeHandle, channels[i], NULL, measuredPoints, PS6000_RATIO_MODE_NONE);    
 		
 		// Log the raw data
-		FILE *logfp = fopen("dataLog.log", "w");
-		for(int j = 0;j<nPoints;j++) {
-			fprintf(logfp, "%d\n", rawDataBuffer[j]);
-		}
-		fclose(logfp);
+		//FILE *logfp = fopen("dataLog.log", "w");
+		//for(int j = 0;j<nPoints;j++) {
+		//	fprintf(logfp, "%d\n", rawDataBuffer[j]);
+		//}
+		//fclose(logfp);
 		
 		// Convert values to double
 		double fullScale;
@@ -269,6 +287,11 @@ void processData(int nMeasured, int averages, FILE **timeFPs)
 			}
 		}
 
+		// Plot the time domain
+		if ((isEnabled(panelHandle, channelMeasFreq[i]) || isEnabled(panelHandle, channelMeasTime[i])) && nMeasured==0) { 
+			PlotXY(timeTabHandle, TIMETAB_TIMEGRAPH, timeValues, dataValues, measuredPoints, VAL_FLOAT, VAL_DOUBLE, VAL_THIN_LINE, VAL_NO_POINT, VAL_SOLID, 1, colors[i]);
+		}	
+		
 		// Compute FFT if the FFT is requested
 		if (isEnabled(panelHandle, channelMeasFreq[i])) {
 			// Take FFT
@@ -290,11 +313,11 @@ void processData(int nMeasured, int averages, FILE **timeFPs)
 			}
 		
 			// Display the data
-			PlotXY(panelHandle, MAINPANEL_FREQGRAPH, freqValues, avgSpectrumDisplay, measuredPoints/2, VAL_FLOAT, VAL_DOUBLE, VAL_THIN_LINE, VAL_NO_POINT, VAL_SOLID, 1, VAL_BLACK);
+			PlotXY(freqTabHandle, FREQTAB_FREQGRAPH, freqValues, avgSpectrumDisplay, measuredPoints/2, VAL_FLOAT, VAL_DOUBLE, VAL_THIN_LINE, VAL_NO_POINT, VAL_SOLID, 1, colors[i]);
 		}
 	}
 	//SetCtrlAttribute(panelHandle, MAINPANEL_FREQGRAPH, ATTR_REFRESH_GRAPH, TRUE);
-	RefreshGraph(panelHandle, MAINPANEL_FREQGRAPH);
+	RefreshGraph(freqTabHandle, FREQTAB_FREQGRAPH);
 }
 
 void handleMeasurement(char *path, char *name, char *ext)
@@ -408,7 +431,7 @@ void handleMeasurement(char *path, char *name, char *ext)
 		// Get number of requested averages
 		GetCtrlVal(panelHandle, MAINPANEL_AVGBOX, &averages);
 	
-		sprintf(tmpstr, "0/%d Completed", averages);
+		sprintf(tmpstr, "0/%d Averages", averages);
 		SetCtrlVal(panelHandle, MAINPANEL_AVGCOUNTDISP, tmpstr);
 		
 		// Go to bias point `i` in table
@@ -442,7 +465,7 @@ void handleMeasurement(char *path, char *name, char *ext)
 				ProcessSystemEvents();
 				if (userRequestedStop) {
 					// Update progress counter
-					sprintf(tmpstr, "%d/%d Completed", nMeasured, nMeasured);
+					sprintf(tmpstr, "%d/%d Averages", nMeasured, nMeasured);
 					SetCtrlVal(panelHandle, MAINPANEL_AVGCOUNTDISP, tmpstr);
 					break;
 				}
@@ -464,6 +487,9 @@ void handleMeasurement(char *path, char *name, char *ext)
 			GetCtrlVal(panelHandle, MAINPANEL_AVGBOX, &averages);
 			sprintf(tmpstr, "%d/%d Averages", nMeasured + 1, averages);
 			SetCtrlVal(panelHandle, MAINPANEL_AVGCOUNTDISP, tmpstr);
+			
+			sprintf(tmpstr, "%d/%d Bias Points", i + 1, nBias); 
+			SetCtrlVal(panelHandle, MAINPANEL_BIASCOUNTDISP, tmpstr);
 			
 		}
 		
@@ -804,6 +830,7 @@ int CVICALLBACK loadButton_CB(int panel, int control, int event, void *callbackD
 			loadConditions();
 			SetCtrlVal(panelHandle, MAINPANEL_DACBUTTON, 1);
 			updateBiasCount();
+			updateTimeDisplay();
 			break;
 	}	
 	return 0;
@@ -884,6 +911,7 @@ int CVICALLBACK clearButton_CB(int panel, int control, int event, void *callback
 			SetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(1,1), 0.0);
 			SetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(2,1), 0.0);
 			updateBiasCount(); 
+			updateTimeDisplay();
 			break;
 	}	
 	return 0;
@@ -895,6 +923,19 @@ int CVICALLBACK addrowButton_CB(int panel, int control, int event, void *callbac
 		case EVENT_COMMIT:
 			InsertTableRows(panelHandle, MAINPANEL_TABLE, -1, 1, VAL_USE_MASTER_CELL_TYPE);	
 			updateBiasCount();
+			updateTimeDisplay();
+			break;
+	}	
+	return 0;
+}
+
+int CVICALLBACK binsRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch(event){
+		case EVENT_COMMIT:
+			GetCtrlVal(panelHandle, MAINPANEL_BINSRING, &measuredPoints);
+			measuredPoints = measuredPoints * 2;
+			updateTimeDisplay();
 			break;
 	}	
 	return 0;
@@ -917,7 +958,8 @@ int CVICALLBACK delrowButton_CB(int panel, int control, int event, void *callbac
 	switch(event){
 		case EVENT_COMMIT:
 			delRows();
-			updateBiasCount();  
+			updateBiasCount(); 
+			updateTimeDisplay();
 			break;
 	}	
 	return 0;
@@ -946,6 +988,7 @@ int CVICALLBACK rateBox_CB(int panel, int control, int event, void *callbackData
 			ps6000GetTimebase2(scopeHandle, timebase,measuredPoints, &timeInterval_ns, 0, NULL, 0);
 			sampleRate = 1/(timeInterval_ns*1e-9);
 			SetCtrlVal(panelHandle, MAINPANEL_RATEBOX, sampleRate);
+			updateTimeDisplay();
 			break;
 	}	
 	return 0;
@@ -1026,12 +1069,126 @@ int CVICALLBACK tgPanel_CB (int panel, int event, void *callbackData, int eventD
 	return 0;
 }
 
+void updateBiasCount(){
+	if(isEnabled(panelHandle, MAINPANEL_DACBUTTON)){
+		int nBias;
+		GetNumTableRows(panelHandle, MAINPANEL_TABLE, &nBias);
+		char tmpstr[128];
+		sprintf(tmpstr, "0/%d Bias Points", nBias);
+		SetCtrlVal(panelHandle, MAINPANEL_BIASCOUNTDISP, tmpstr);	
+	}else{
+		SetCtrlVal(panelHandle, MAINPANEL_BIASCOUNTDISP, "Bias Disabled");  	
+	}		
+}
+
+void formatFloat(float num, char *unit, char *outstr)
+{
+	char *unitstr;
+	int precision = 0;
+	
+	if (num < 1e-12) {
+		num = num / 1e-15;
+		unitstr = "f";
+	} else if (num < 1e-9) {
+		num = num / 1e-12;
+		unitstr = "p";
+	} else if (num < 1e-6) {
+		num = num / 1e-9;
+		unitstr = "n";
+	} else if (num < 1e-3) {
+		num = num / 1e-6;
+		unitstr = "u";
+	} else if (num < 1) {
+		num = num / 1e-3;
+		unitstr = "m";
+	} else if (num < 1e3) {
+		num = num;
+		unitstr = "";
+	} else if (num < 1e6) {
+		num = num / 1e3;
+		unitstr = "k";
+	} else {
+		num = num / 1e6;
+		unitstr = "M";
+	}
+	
+	if (num < 10) {
+		precision = 2;
+	} else if (num < 100) {
+		precision = 1;
+	} else {
+		precision = 0;
+	}
+	
+	sprintf(outstr, "%%.%df %%s%s", precision, unit);
+	sprintf(outstr, outstr, num, unitstr);
+}
+
+void updateTimeDisplay()
+{
+	char outstr[64];
+	double sampleRate = 0;
+	short averages = 0;
+	double delay;
+	int biasPoints;
+	
+	GetCtrlVal(panelHandle, MAINPANEL_RATEBOX, &sampleRate);
+	GetCtrlVal(panelHandle, MAINPANEL_AVGBOX, &averages);
+	GetCtrlVal(panelHandle, MAINPANEL_DELAYBOX, &delay);
+	GetNumTableRows(panelHandle, MAINPANEL_TABLE, &biasPoints);
+	
+	// Calculate bin size
+	float timeInterval_ns = 0;
+	ps6000GetTimebase2(scopeHandle, timebase, measuredPoints, &timeInterval_ns, 0, NULL, 0);
+	float binWidth = 1/(measuredPoints*timeInterval_ns/1e9);
+	
+	formatFloat(binWidth, "Hz", outstr);
+	SetCtrlVal(panelHandle, MAINPANEL_BINSIZETEXT, outstr);
+	
+	// Calculate capture time for one spectrum
+	formatFloat(measuredPoints / sampleRate, "s", outstr);
+	SetCtrlVal(panelHandle, MAINPANEL_CAPTIMETEXT, outstr);
+	
+	// Calculate time per bias point
+	formatFloat(measuredPoints / sampleRate * averages, "s", outstr);
+	SetCtrlVal(panelHandle, MAINPANEL_BIASTIMETEXT, outstr);
+	
+	// Calculate total time
+	formatFloat(measuredPoints / sampleRate * averages * biasPoints + delay * biasPoints, "s", outstr);
+	SetCtrlVal(panelHandle, MAINPANEL_TOTALTIMETEXT, outstr);
+}
+
+int CVICALLBACK updateTimeAxis_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)       
+{
+	switch(event){
+		case EVENT_VAL_CHANGED:
+			double timemin, timemax;
+			int timeTabHandle;
+	
+			GetPanelHandleFromTabPage(panelHandle, MAINPANEL_TAB, 1, &timeTabHandle);
+
+			GetCtrlVal(timeTabHandle, TIMETAB_MINTIMEBOX, &timemin);
+			GetCtrlVal(timeTabHandle, TIMETAB_MAXTIMEBOX, &timemax);
+
+			if(timemin < timemax) {
+				SetAxisScalingMode(timeTabHandle, TIMETAB_TIMEGRAPH, VAL_BOTTOM_XAXIS, VAL_MANUAL, timemin, timemax);
+			}else {
+				SetAxisScalingMode(timeTabHandle, TIMETAB_TIMEGRAPH, VAL_BOTTOM_XAXIS, VAL_MANUAL, timemax, timemin);
+				SetCtrlVal(timeTabHandle, TIMETAB_MINTIMEBOX, timemax);
+				SetCtrlVal(timeTabHandle, TIMETAB_MAXTIMEBOX, timemin);
+			}
+		break;
+	}	
+	return 0;
+}
+
 int CVICALLBACK buildtableButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
 {
 	switch(event){
 		case EVENT_COMMIT:
 			buildTable();
-			updateBiasCount();  
+			updateBiasCount();
+			updateTimeDisplay();
 			break;
 	}	
 	return 0;
