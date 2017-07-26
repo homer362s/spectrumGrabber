@@ -695,6 +695,8 @@ void loadConditions(){
 	free(line);
 	free(InputFile);
 	InputFile = NULL;
+	
+	SetCtrlVal(panelHandle, MAINPANEL_DACBUTTON, 1);
 }
 
 void buildTable(){
@@ -836,7 +838,6 @@ int CVICALLBACK loadButton_CB(int panel, int control, int event, void *callbackD
 	switch(event){
 		case EVENT_COMMIT:
 			loadConditions();
-			SetCtrlVal(panelHandle, MAINPANEL_DACBUTTON, 1);
 			updateBiasCount();
 			updateTimeDisplay();
 			break;
@@ -1009,24 +1010,33 @@ int CVICALLBACK runButton_CB(int panel, int control, int event, void *callbackDa
 	switch (event) {
 		case EVENT_COMMIT:
 			char saveFilename[MAX_PATHNAME_LEN];
-			char path[512], name[30];
+			char path[512], name[30], tstmpName[50];
+			int month, day, year, hour, min, sec;
 			
 			for(int i=0; i<4; i++) {
 				SetCtrlVal(panelHandle, overloadLeds[i], 0);
 			}
 			
+			// Get file location and name(suffix)
 			GetCtrlVal(panelHandle, MAINPANEL_FILEPATH, path);
 			GetCtrlVal(panelHandle, MAINPANEL_FILEPREFIX, name); 
 			
+			// Get timestamp
+			GetSystemDate(&month, &day, &year);
+			GetSystemTime(&hour, &min, &sec);
+			
+			// Modify name
+			sprintf(tstmpName, "%04d-%02d-%02d_%02d.%02d.%02d_%s", year, month, day, hour, min, sec, name);
+			
 			if (strcmp(path, "") == 0) {
-				sprintf(saveFilename, "%s.cfg", name);
+				sprintf(saveFilename, "%s.cfg", tstmpName);
 				saveTable(saveFilename);
 			} else {
-				sprintf(saveFilename, "%s\\%s.cfg", path, name);
+				sprintf(saveFilename, "%s\\%s.cfg", path, tstmpName);
 				saveTable(saveFilename);
 			}
 			
-			handleMeasurement(path, name, ".csv");
+			handleMeasurement(path, tstmpName, ".csv");
 				
 			break;
 	}
@@ -1039,9 +1049,11 @@ int CVICALLBACK dirButton_CB(int panel, int control, int event, void *callbackDa
 	switch (event) {
 		case EVENT_COMMIT:
 			char saveFilepath[MAX_PATHNAME_LEN];
-			DirSelectPopup("", "Select File Location", 1, 1, saveFilepath);
-			strcat(saveFilepath, "\\");
-			SetCtrlVal(panelHandle, MAINPANEL_FILEPATH, saveFilepath);
+			if(DirSelectPopup("", "Select File Location", 1, 1, saveFilepath))
+			{
+				strcat(saveFilepath, "\\");
+				SetCtrlVal(panelHandle, MAINPANEL_FILEPATH, saveFilepath);
+			}
 			break;
 	}
 	return 0;
