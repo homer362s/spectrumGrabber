@@ -8,7 +8,7 @@ Prototype="void picoscopeInit();"
 
 [setupScopeChannel]
 Class="Function"
-Prototype="void setupScopeChannel(int scopeChannel, int enabledLed, int rangeRing, int couplingRing);"
+Prototype="void setupScopeChannel(int channelIndex, int enabledLed, int rangeRing, int couplingRing);"
 
 [setupScopeChannels]
 Class="Function"
@@ -49,6 +49,10 @@ Prototype="void gotoBiasPoint(int index);"
 [isEnabled]
 Class="Function"
 Prototype="int isEnabled(int panel, int control);"
+
+[isChannelEnabled]
+Class="Function"
+Prototype="int isChannelEnabled(int channelIndex);"
 
 [loadConditions]
 Class="Function"
@@ -105,6 +109,10 @@ Prototype="int delrowButton_CB(int panel, int control, int event, void *callback
 [nextButton_CB]
 Class="Function"
 Prototype="int nextButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[picoscopeRing_CB]
+Class="Function"
+Prototype="int picoscopeRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
 [rateBox_CB]
 Class="Function"

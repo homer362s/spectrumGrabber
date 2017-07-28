@@ -1,3 +1,4 @@
+picoscopes.obj
 spectrumGrabber.obj
 cvi.lib
 analysis.lib

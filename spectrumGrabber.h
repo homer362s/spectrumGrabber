@@ -87,7 +87,8 @@
 #define  MAINPANEL_BIASTIMETEXTLABEL      72      /* control type: textMsg, callback function: (none) */
 #define  MAINPANEL_DECORATION_4           73      /* control type: deco, callback function: (none) */
 #define  MAINPANEL_TEXTMSG_2              74      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_DECORATION_2           75      /* control type: deco, callback function: (none) */
+#define  MAINPANEL_PICOSCOPERING          75      /* control type: ring, callback function: picoscopeRing_CB */
+#define  MAINPANEL_DECORATION_2           76      /* control type: deco, callback function: (none) */
 
 #define  TGPANEL                          2       /* callback function: tgPanel_CB */
 #define  TGPANEL_VGSTARTBOX               2       /* control type: numeric, callback function: editVgBox_CB */
@@ -146,6 +147,7 @@ int  CVICALLBACK generateRing_CB(int panel, int control, int event, void *callba
 int  CVICALLBACK loadButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK mainpanel_CB(int panel, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK nextButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
+int  CVICALLBACK picoscopeRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK rateBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK runButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK savetableButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);

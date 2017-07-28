@@ -1,0 +1,36 @@
+[psOpenUnit]
+Class="Function"
+Prototype="unsigned int psOpenUnit(struct psconfig *config);"
+
+[psCloseUnit]
+Class="Function"
+Prototype="unsigned int psCloseUnit(struct psconfig *config);"
+
+[psGetTimebase2]
+Class="Function"
+Prototype="unsigned int psGetTimebase2(struct psconfig *config, unsigned int timebase, unsigned int measuredPoints, float *timeInterval_ns);"
+
+[psRunBlock]
+Class="Function"
+Prototype="unsigned int psRunBlock(struct psconfig *config, unsigned int measuredPoints, unsigned int timebase, void *dataAvailableCallback);"
+
+[psStop]
+Class="Function"
+Prototype="unsigned int psStop(struct psconfig *config);"
+
+[psMemorySegments]
+Class="Function"
+Prototype="unsigned int psMemorySegments(struct psconfig *config);"
+
+[psSetChannel]
+Class="Function"
+Prototype="unsigned int psSetChannel(struct psconfig *config, int channelIndex);"
+
+[psSetDataBuffer]
+Class="Function"
+Prototype="unsigned int psSetDataBuffer(struct psconfig *config, int channelIndex, int measuredPoints, short *rawDataBuffer);"
+
+[psGetValues]
+Class="Function"
+Prototype="unsigned int psGetValues(struct psconfig *config, unsigned int *nPoints, short *overflow);"
+

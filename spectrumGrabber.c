@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "picoscopes.h"
 
 int measuredPoints = 0;
 
@@ -36,7 +37,6 @@ int channelCouplings[] = {MAINPANEL_COUPLINGA, MAINPANEL_COUPLINGB, MAINPANEL_CO
 int channelCoeffs[] = {MAINPANEL_COEFFA, MAINPANEL_COEFFB, MAINPANEL_COEFFC, MAINPANEL_COEFFD};
 int channelMeasFreq[] = {MAINPANEL_FREQA, MAINPANEL_FREQB, MAINPANEL_FREQC, MAINPANEL_FREQD};
 int channelMeasTime[] = {MAINPANEL_TIMEA, MAINPANEL_TIMEB, MAINPANEL_TIMEC, MAINPANEL_TIMED};
-int channels[] = {PS6000_CHANNEL_A, PS6000_CHANNEL_B, PS6000_CHANNEL_C, PS6000_CHANNEL_D};
 int colors[] = {VAL_MAGENTA, VAL_CYAN, VAL_BLUE, VAL_DK_GREEN};
 char channelLabel[][2] = {"A", "B", "C", "D"};
 
@@ -46,6 +46,8 @@ int vdOut;
 static int panelHandle = 0;
 int tgHandle = 0;
 int16_t scopeHandle;
+
+struct psconfig psConfig;
 
 void picoscopeInit();
 int getInputNew(char FileInput[], int *pointer, char **line);
@@ -57,6 +59,7 @@ void gotoBiasPoint(int index);
 void generateMatrix(double *VgVals, double *VdVals, int NumVgSteps, int NumVdSteps); 
 void updateBiasCount();  
 void updateTimeDisplay();
+int isChannelEnabled(int channelIndex);
 
 int main (int argc, char *argv[])
 {
@@ -66,10 +69,7 @@ int main (int argc, char *argv[])
 	/* initialize and load resources */
 	nullChk (InitCVIRTE (0, argv, 0));
 	errChk (panelHandle = LoadPanel (0, "spectrumGrabber.uir", MAINPANEL));
-	
-	// Initialize picoscope
-	picoscopeInit();
-	
+
 	// Read the number of requested points from the UI
 	GetCtrlVal(panelHandle, MAINPANEL_BINSRING, &measuredPoints);
 	measuredPoints = measuredPoints * 2;
@@ -78,7 +78,7 @@ int main (int argc, char *argv[])
 	double sampleRate;
 	GetCtrlVal(panelHandle, MAINPANEL_RATEBOX, &sampleRate);
 	timebase = RoundRealToNearestInteger(156250000/sampleRate + 4);
-	ps6000GetTimebase2(scopeHandle, timebase,measuredPoints, &timeInterval_ns, 0, NULL, 0);
+	psGetTimebase2(&psConfig, timebase, measuredPoints, &timeInterval_ns);
 	sampleRate = 1/(timeInterval_ns*1e-9);
 	SetCtrlVal(panelHandle, MAINPANEL_RATEBOX, sampleRate);
 	
@@ -89,9 +89,38 @@ int main (int argc, char *argv[])
 	
 	updateTimeDisplay();
 	
+	// Fill in existing picoscopes in menu
+	int8_t *picoSerial;
+	enum scopeType picoType;
+	char *scopeTypeChar;
+	char menuName[20];
+	for(int i=0; i<3; i++){
+		picoSerial = picoscopes[i].serial;
+		picoType = picoscopes[i].type;
+		
+		switch(picoType){
+			case PS3000:
+				scopeTypeChar = "PS3000";
+				break;
+			case PS3000A:
+				scopeTypeChar = "PS3000A";
+				break;
+			case PS6000:
+				scopeTypeChar = "PS6000";
+				break;
+		}
+	
+		sprintf(menuName, "%s: %s", scopeTypeChar, picoSerial);
+		InsertListItem(panelHandle, MAINPANEL_PICOSCOPERING, i, menuName, i);
+	}	
+	
+	// Initialize picoscope
+	picoscopeInit();
+	
 	/* display the panel and run the user interface */
 	errChk (DisplayPanel (panelHandle));
 	errChk (RunUserInterface ());
+	
 
 Error:
 	/* clean up */
@@ -103,11 +132,18 @@ Error:
 
 void picoscopeInit()
 {
-	int8_t *serial = (int8_t*) "AP231/007\0";
+	//int8_t *serial = (int8_t*) "AP231/007\0";
 
 	PICO_STATUS status;
 	
-	status = ps6000OpenUnit(&scopeHandle, serial);
+	// Fill in psConfig based on menu selection
+	int pico;
+	GetCtrlVal(panelHandle, MAINPANEL_PICOSCOPERING, &pico);
+	psConfig.type = picoscopes[pico].type;
+	psConfig.serial = picoscopes[pico].serial; 
+	
+	// Open the picoscope
+	status = psOpenUnit(&psConfig);
 
 	switch (status) {
 		case PICO_OK:
@@ -119,16 +155,16 @@ void picoscopeInit()
 	setupScopeChannels();
 	
 	// Set up data buffer
-	ps6000MemorySegments(scopeHandle, 1, NULL);
+	psMemorySegments(&psConfig);
 	
-	ps6000Stop(scopeHandle);
+	psStop(&psConfig);
 	
 }
 
-void setupScopeChannel(int scopeChannel, int enabledLed, int rangeRing, int couplingRing)
+void setupScopeChannel(int channelIndex, int enabledLed, int rangeRing, int couplingRing)
 {
 	// Get enabled status
-	int enabled = 0;
+	short enabled = 0;
 	GetCtrlVal(panelHandle, enabledLed, &enabled);
 	
 	// Get Coupling
@@ -177,15 +213,31 @@ void setupScopeChannel(int scopeChannel, int enabledLed, int rangeRing, int coup
 			break;
 	}
 	
+	double coeff;
+	GetCtrlVal(panelHandle, channelCoeffs[channelIndex], &coeff); 
+	
+	if(isChannelEnabled(channelIndex)){
+		enabled = 1;	
+	}else{
+		enabled = 0;	
+	}	
+	
+	// Update psConfig
+	psConfig.channels[channelIndex].range = scaleSetting;
+	psConfig.channels[channelIndex].rangeVal = fullScale;
+	psConfig.channels[channelIndex].coupling = coupling;
+	psConfig.channels[channelIndex].coefficient = coeff;
+	psConfig.channels[channelIndex].enabled = enabled;
+	
 	// Set the channel
-	ps6000SetChannel(scopeHandle, scopeChannel, (short) enabled, coupling, scaleSetting, 0, PS6000_BW_20MHZ);
+	psSetChannel(&psConfig, channelIndex);
 }
 
 void setupScopeChannels()
 {
 	// Set up scope channels according to UI defaults
 	for(int i =0;i<4;i++) {
-		setupScopeChannel(channels[i], channelLeds[i], channelRanges[i], channelCouplings[i]);
+		setupScopeChannel(i, channelLeds[i], channelRanges[i], channelCouplings[i]);
 	}
 }
 
@@ -259,9 +311,9 @@ void processData(int nMeasured, int averages, FILE **timeFPs)
 		// Get data from scope
 		uint32_t nPoints = measuredPoints;
 		
-		ps6000SetDataBuffer(scopeHandle, channels[i], rawDataBuffer, measuredPoints, PS6000_RATIO_MODE_NONE);
-		ps6000GetValues(scopeHandle, 0, &nPoints, 1, PS6000_RATIO_MODE_NONE, 0, &overflow);
-		ps6000SetDataBuffer(scopeHandle, channels[i], NULL, measuredPoints, PS6000_RATIO_MODE_NONE); 
+		psSetDataBuffer(&psConfig, i, measuredPoints, rawDataBuffer);
+		psGetValues(&psConfig, &nPoints, &overflow);
+		psSetDataBuffer(&psConfig, i, measuredPoints, NULL); 
 		
 		 for(int i=0; i<4; i++) {
 			if(overflow & (1<<i))
@@ -273,7 +325,7 @@ void processData(int nMeasured, int averages, FILE **timeFPs)
 		//for(int j = 0;j<nPoints;j++) {
 		//	fprintf(logfp, "%d\n", rawDataBuffer[j]);
 		//}
-		//fclose(logfp);
+		fclose(logfp);
 		
 		// Convert values to double
 		double fullScale;
@@ -295,7 +347,7 @@ void processData(int nMeasured, int averages, FILE **timeFPs)
 		}
 
 		// Plot the time domain
-		if ((isEnabled(panelHandle, channelMeasFreq[i]) || isEnabled(panelHandle, channelMeasTime[i])) && nMeasured==0) { 
+		if (isChannelEnabled(i) && nMeasured==0) { 
 			PlotXY(timeTabHandle, TIMETAB_TIMEGRAPH, timeValues, dataValues, measuredPoints, VAL_FLOAT, VAL_DOUBLE, VAL_THIN_LINE, VAL_NO_POINT, VAL_SOLID, 1, colors[i]);
 		}	
 		
@@ -359,10 +411,10 @@ void handleMeasurement(char *path, char *name, char *ext)
 	
 	// Initialize time axis values
 	float timeInterval_ns = 0;
-	ps6000GetTimebase2(scopeHandle, timebase, measuredPoints, &timeInterval_ns, 0, NULL, 0);
-	int time = timeInterval_ns;
+	psGetTimebase2(&psConfig, timebase, measuredPoints, &timeInterval_ns);
+	int time = 0;
 	for (int i = 0;i < measuredPoints/2;i++) {
-		timeValues[i] = (time-timeInterval_ns)/1e9;
+		timeValues[i] = time/1e9;
 		freqValues[i] = i/(measuredPoints*timeInterval_ns/1e9);
 		time += timeInterval_ns;
 	}
@@ -385,7 +437,7 @@ void handleMeasurement(char *path, char *name, char *ext)
 	// Store frequency and time axes in the files
 	for(int i = 0;i<4;i++) {
 		// Skip if this channel is neither measurement is requested
-		if (!(isEnabled(panelHandle, channelMeasFreq[i]) || isEnabled(panelHandle, channelMeasTime[i])))
+		if (!(isChannelEnabled(i)))
 			continue;
 
 		// Save frequency row
@@ -458,7 +510,7 @@ void handleMeasurement(char *path, char *name, char *ext)
 			measurementInProgress = 1;
 			dataReady = 0;
 			
-			status = ps6000RunBlock(scopeHandle, 0, measuredPoints, timebase, 1, 0, 0, dataAvailableCallback, NULL);
+			status = psRunBlock(&psConfig, measuredPoints, timebase, dataAvailableCallback);
 
 			switch (status) {
 				case PICO_OK:
@@ -516,7 +568,7 @@ void handleMeasurement(char *path, char *name, char *ext)
 		if(userRequestedNext){
 			userRequestedNext = 0;
 			// Tell the scope to stop
-			ps6000Stop(scopeHandle);
+			psStop(&psConfig);
 			measurementInProgress = 0;
 		}	
 		
@@ -544,7 +596,7 @@ void handleMeasurement(char *path, char *name, char *ext)
 	}
 	
 	// Tell the scope to stop
-	ps6000Stop(scopeHandle);
+	psStop(&psConfig);
 	measurementInProgress = 0;
 	
 	// Close data files
@@ -645,6 +697,14 @@ int isEnabled(int panel, int control)
 	GetCtrlVal(panel, control, &enabled);
 	return enabled;
 }
+
+int isChannelEnabled(int channelIndex)
+{
+	int channelEnabled = 0;
+	if(isChannelEnabled(channelIndex))
+		channelEnabled = 1;
+	return channelEnabled;
+}	
 
 void loadConditions(){
 	char biasFilename[MAX_PATHNAME_LEN];
@@ -850,7 +910,7 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 	switch(event){
 		case EVENT_COMMIT:
 			// Stop current capture
-			ps6000Stop(scopeHandle);
+			psStop(&psConfig);
 			
 			int channel = 0;
 			int channelIndex = 0;
@@ -885,7 +945,7 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 					break;
 			}
 			
-			if (isEnabled(panelHandle, channelMeasFreq[channelIndex]) || isEnabled(panelHandle, channelMeasTime[channelIndex])) {
+			if (isChannelEnabled(channelIndex)) {
 				// Enable the current channel
 				SetCtrlVal(panelHandle, channelLeds[channelIndex], 1);
 				SetCtrlAttribute(panelHandle, channelRanges[channelIndex], ATTR_DIMMED, 0);
@@ -902,11 +962,11 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 				SetCtrlAttribute(panelHandle, overloadLeds[channelIndex], ATTR_DIMMED, 1);
 			}
 			
-			setupScopeChannel(channel, channelLeds[channelIndex], channelRanges[channelIndex], channelCouplings[channelIndex]);
+			setupScopeChannel(channelIndex, channelLeds[channelIndex], channelRanges[channelIndex], channelCouplings[channelIndex]);
 			
 			// Resume capture if in progress
 			if(measurementInProgress)
-				ps6000RunBlock(scopeHandle, 0, measuredPoints, timebase, 1, 0, 0, dataAvailableCallback, NULL); 
+				psRunBlock(&psConfig, measuredPoints, timebase, dataAvailableCallback); 
 			
 			break;
 	}	
@@ -987,6 +1047,17 @@ int CVICALLBACK nextButton_CB(int panel, int control, int event, void *callbackD
 	return 0;
 }
 
+int CVICALLBACK picoscopeRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch(event){
+		case EVENT_COMMIT:
+			psCloseUnit(&psConfig);
+			picoscopeInit();
+			break;
+	}	
+	return 0;
+}
+
 int CVICALLBACK rateBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
 {
 	double sampleRate;
@@ -996,7 +1067,7 @@ int CVICALLBACK rateBox_CB(int panel, int control, int event, void *callbackData
 			// Find nearest timebase and change value to corresponding sample rate
 			GetCtrlVal(panelHandle, MAINPANEL_RATEBOX, &sampleRate);
 			timebase = RoundRealToNearestInteger(156250000/sampleRate + 4);
-			ps6000GetTimebase2(scopeHandle, timebase,measuredPoints, &timeInterval_ns, 0, NULL, 0);
+			psGetTimebase2(&psConfig, timebase, measuredPoints, &timeInterval_ns);
 			sampleRate = 1/(timeInterval_ns*1e-9);
 			SetCtrlVal(panelHandle, MAINPANEL_RATEBOX, sampleRate);
 			updateTimeDisplay();
@@ -1171,7 +1242,7 @@ void updateTimeDisplay()
 	
 	// Calculate bin size
 	float timeInterval_ns = 0;
-	ps6000GetTimebase2(scopeHandle, timebase, measuredPoints, &timeInterval_ns, 0, NULL, 0);
+	psGetTimebase2(&psConfig, timebase, measuredPoints, &timeInterval_ns);
 	float binWidth = 1/(measuredPoints*timeInterval_ns/1e9);
 	
 	formatFloat(binWidth, "Hz", outstr);
@@ -1401,7 +1472,7 @@ int CVICALLBACK mainpanel_CB (int panel, int event, void *callbackData,
 {
 	if (event == EVENT_CLOSE) {
 		userRequestedStop = 1;
-		ps6000CloseUnit(scopeHandle);
+		psCloseUnit(&psConfig);
 		QuitUserInterface (0);
 	}
 	return 0;
