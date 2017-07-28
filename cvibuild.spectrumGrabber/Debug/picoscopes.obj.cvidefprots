@@ -1,3 +1,15 @@
+[convertChannel]
+Class="Function"
+Prototype="int convertChannel(enum scopeType type, enum psChannel channel);"
+
+[convertCoupling]
+Class="Function"
+Prototype="int convertCoupling(enum scopeType type, enum psCoupling coupling);"
+
+[convertRange]
+Class="Function"
+Prototype="int convertRange(enum scopeType type, enum psRange range);"
+
 [psOpenUnit]
 Class="Function"
 Prototype="unsigned int psOpenUnit(struct psconfig *config);"
@@ -6,13 +18,17 @@ Prototype="unsigned int psOpenUnit(struct psconfig *config);"
 Class="Function"
 Prototype="unsigned int psCloseUnit(struct psconfig *config);"
 
+[psUpdateTimebase]
+Class="Function"
+Prototype="void psUpdateTimebase(struct psconfig *config, float sampleRate);"
+
 [psGetTimebase2]
 Class="Function"
-Prototype="unsigned int psGetTimebase2(struct psconfig *config, unsigned int timebase, unsigned int measuredPoints, float *timeInterval_ns);"
+Prototype="unsigned int psGetTimebase2(struct psconfig *config, unsigned int measuredPoints, float *timeInterval_ns);"
 
 [psRunBlock]
 Class="Function"
-Prototype="unsigned int psRunBlock(struct psconfig *config, unsigned int measuredPoints, unsigned int timebase, void *dataAvailableCallback);"
+Prototype="unsigned int psRunBlock(struct psconfig *config, unsigned int measuredPoints, void *dataAvailableCallback);"
 
 [psStop]
 Class="Function"
@@ -28,7 +44,7 @@ Prototype="unsigned int psSetChannel(struct psconfig *config, int channelIndex);
 
 [psSetDataBuffer]
 Class="Function"
-Prototype="unsigned int psSetDataBuffer(struct psconfig *config, int channelIndex, int measuredPoints, short *rawDataBuffer);"
+Prototype="unsigned int psSetDataBuffer(struct psconfig *config, int channelIndex, int measuredPoints, short *buffer);"
 
 [psGetValues]
 Class="Function"

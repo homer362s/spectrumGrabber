@@ -2,6 +2,8 @@ cvi.lib
 cvirte.dll
 cbw32.lib
 cbw32.dll
+ps3000a.lib
+ps3000a.dll
 ps6000.lib
 ps6000.dll
 kernel32.lib

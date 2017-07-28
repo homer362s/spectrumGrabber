@@ -7,7 +7,7 @@
 #include <userint.h>
 #include "spectrumGrabber.h"
 #include "toolbox.h"
-#include "ps6000Api.h"
+//#include "ps6000Api.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -15,7 +15,7 @@
 
 int measuredPoints = 0;
 
-uint32_t timebase = 7816;
+//uint32_t timebase = 7816;
 int16_t *rawDataBuffer;   // Stores data from the scope
 double *zeros;			  // Stores zeros for FFT
 double *dataValues;		  // Stores specctrum data for a single measurement
@@ -64,36 +64,17 @@ int isChannelEnabled(int channelIndex);
 int main (int argc, char *argv[])
 {
 	int error = 0;
-	float timeInterval_ns;
 	
 	/* initialize and load resources */
 	nullChk (InitCVIRTE (0, argv, 0));
 	errChk (panelHandle = LoadPanel (0, "spectrumGrabber.uir", MAINPANEL));
-
-	// Read the number of requested points from the UI
-	GetCtrlVal(panelHandle, MAINPANEL_BINSRING, &measuredPoints);
-	measuredPoints = measuredPoints * 2;
-	
-	// Set up sample rate according to the UI values
-	double sampleRate;
-	GetCtrlVal(panelHandle, MAINPANEL_RATEBOX, &sampleRate);
-	timebase = RoundRealToNearestInteger(156250000/sampleRate + 4);
-	psGetTimebase2(&psConfig, timebase, measuredPoints, &timeInterval_ns);
-	sampleRate = 1/(timeInterval_ns*1e-9);
-	SetCtrlVal(panelHandle, MAINPANEL_RATEBOX, sampleRate);
-	
-	// Initialize DAC stuff
-	GetCtrlVal(panelHandle, MAINPANEL_BOARDNUM, &dacBoard);
-	GetCtrlVal(panelHandle, MAINPANEL_VGNUM, &vgOut);
-	GetCtrlVal(panelHandle, MAINPANEL_VDNUM, &vdOut);
-	
-	updateTimeDisplay();
 	
 	// Fill in existing picoscopes in menu
 	int8_t *picoSerial;
 	enum scopeType picoType;
 	char *scopeTypeChar;
 	char menuName[20];
+	InsertListItem(panelHandle, MAINPANEL_PICOSCOPERING, 0, "", -1);
 	for(int i=0; i<3; i++){
 		picoSerial = picoscopes[i].serial;
 		picoType = picoscopes[i].type;
@@ -111,7 +92,7 @@ int main (int argc, char *argv[])
 		}
 	
 		sprintf(menuName, "%s: %s", scopeTypeChar, picoSerial);
-		InsertListItem(panelHandle, MAINPANEL_PICOSCOPERING, i, menuName, i);
+		InsertListItem(panelHandle, MAINPANEL_PICOSCOPERING, i+1, menuName, i);
 	}	
 	
 	// Initialize picoscope
@@ -130,20 +111,47 @@ Error:
 }
 
 
+// Read in the UI values and set up psConfig array to reflect those values
+// Additionally calculate any intermediate values that are required
 void picoscopeInit()
 {
-	//int8_t *serial = (int8_t*) "AP231/007\0";
-
 	PICO_STATUS status;
 	
 	// Fill in psConfig based on menu selection
 	int pico;
 	GetCtrlVal(panelHandle, MAINPANEL_PICOSCOPERING, &pico);
+	
+	// If the chosen scope is none disable most of the UI and return
+	if(pico<0) {
+		return;
+	}
+	
+	// Enable the correct UI elements and set up psConfig struct
 	psConfig.type = picoscopes[pico].type;
 	psConfig.serial = picoscopes[pico].serial; 
 	
 	// Open the picoscope
 	status = psOpenUnit(&psConfig);
+	
+	// Read the number of requested points from the UI
+	GetCtrlVal(panelHandle, MAINPANEL_BINSRING, &measuredPoints);
+	measuredPoints = measuredPoints * 2;
+	
+	// Set up sample rate according to the UI values
+	double sampleRate;
+	float timeInterval_ns;
+	GetCtrlVal(panelHandle, MAINPANEL_RATEBOX, &sampleRate);
+	psUpdateTimebase(&psConfig, sampleRate);
+	psGetTimebase2(&psConfig, measuredPoints, &timeInterval_ns);
+	sampleRate = 1/(timeInterval_ns*1e-9);
+	SetCtrlVal(panelHandle, MAINPANEL_RATEBOX, sampleRate);
+	
+	// Initialize DAC stuff
+	GetCtrlVal(panelHandle, MAINPANEL_BOARDNUM, &dacBoard);
+	GetCtrlVal(panelHandle, MAINPANEL_VGNUM, &vgOut);
+	GetCtrlVal(panelHandle, MAINPANEL_VDNUM, &vdOut);
+	
+	updateTimeDisplay();
 
 	switch (status) {
 		case PICO_OK:
@@ -152,6 +160,12 @@ void picoscopeInit()
 			break;
 	}
 
+	//Initialize the channels a bit
+	psConfig.channels[0].channel = PS_CHANNEL_A;
+	psConfig.channels[1].channel = PS_CHANNEL_B;
+	psConfig.channels[2].channel = PS_CHANNEL_C;
+	psConfig.channels[3].channel = PS_CHANNEL_D;
+	
 	setupScopeChannels();
 	
 	// Set up data buffer
@@ -164,52 +178,53 @@ void picoscopeInit()
 void setupScopeChannel(int channelIndex, int enabledLed, int rangeRing, int couplingRing)
 {
 	// Get enabled status
-	short enabled = 0;
+	int enabled = 0;
 	GetCtrlVal(panelHandle, enabledLed, &enabled);
 	
 	// Get Coupling
-	int coupling = 0;
-	GetCtrlVal(panelHandle, couplingRing, &coupling);
-	switch (coupling) {
+	enum psCoupling coupling = PS_AC;
+	int couplingInt = 0;
+	GetCtrlVal(panelHandle, couplingRing, &couplingInt);
+	switch (couplingInt) {
 		case 1:
-			coupling = PS6000_AC;
+			coupling = PS_AC;
 			break;
 		case 2:
-			coupling = PS6000_DC_1M;
+			coupling = PS_DC;
 			break;
 	}
 	
 	// Get range
 	double fullScale;
-	int scaleSetting = 0;
+	enum psRange rangeSetting = PS_10V;
 	GetCtrlVal(panelHandle, rangeRing, &fullScale);
 	switch ((int)(fullScale*1000)) {
 		case 50:
-			scaleSetting = PS6000_50MV;
+			rangeSetting = PS_50MV;
 			break;
 		case 100:
-			scaleSetting = PS6000_100MV;
+			rangeSetting = PS_100MV;
 			break;
 		case 200:
-			scaleSetting = PS6000_200MV;
+			rangeSetting = PS_200MV;
 			break;
 		case 500:
-			scaleSetting = PS6000_500MV;
+			rangeSetting = PS_500MV;
 			break;
 		case 1000:
-			scaleSetting = PS6000_1V;
+			rangeSetting = PS_1V;
 			break;
 		case 2000:
-			scaleSetting = PS6000_2V;
+			rangeSetting = PS_2V;
 			break;
 		case 5000:
-			scaleSetting = PS6000_5V;
+			rangeSetting = PS_5V;
 			break;
 		case 10000:
-			scaleSetting = PS6000_10V;
+			rangeSetting = PS_10V;
 			break;
 		case 20000:
-			scaleSetting = PS6000_20V;
+			rangeSetting = PS_20V;
 			break;
 	}
 	
@@ -223,11 +238,11 @@ void setupScopeChannel(int channelIndex, int enabledLed, int rangeRing, int coup
 	}	
 	
 	// Update psConfig
-	psConfig.channels[channelIndex].range = scaleSetting;
+	psConfig.channels[channelIndex].range = rangeSetting;
 	psConfig.channels[channelIndex].rangeVal = fullScale;
 	psConfig.channels[channelIndex].coupling = coupling;
 	psConfig.channels[channelIndex].coefficient = coeff;
-	psConfig.channels[channelIndex].enabled = enabled;
+	psConfig.channels[channelIndex].enabled = (int16_t) enabled;
 	
 	// Set the channel
 	psSetChannel(&psConfig, channelIndex);
@@ -325,7 +340,7 @@ void processData(int nMeasured, int averages, FILE **timeFPs)
 		//for(int j = 0;j<nPoints;j++) {
 		//	fprintf(logfp, "%d\n", rawDataBuffer[j]);
 		//}
-		fclose(logfp);
+		//fclose(logfp);
 		
 		// Convert values to double
 		double fullScale;
@@ -411,16 +426,13 @@ void handleMeasurement(char *path, char *name, char *ext)
 	
 	// Initialize time axis values
 	float timeInterval_ns = 0;
-	psGetTimebase2(&psConfig, timebase, measuredPoints, &timeInterval_ns);
-	int time = 0;
+	psGetTimebase2(&psConfig, measuredPoints, &timeInterval_ns);
 	for (int i = 0;i < measuredPoints/2;i++) {
-		timeValues[i] = time/1e9;
+		timeValues[i] = (timeInterval_ns*i)/1e9;
 		freqValues[i] = i/(measuredPoints*timeInterval_ns/1e9);
-		time += timeInterval_ns;
 	}
 	for (int i = measuredPoints/2;i < measuredPoints;i++) {
-		timeValues[i] = time/1e9;
-		time += timeInterval_ns;  
+		timeValues[i] = (timeInterval_ns*i)/1e9;
 	}
 	
 	int dacEnabled = 0;
@@ -510,7 +522,7 @@ void handleMeasurement(char *path, char *name, char *ext)
 			measurementInProgress = 1;
 			dataReady = 0;
 			
-			status = psRunBlock(&psConfig, measuredPoints, timebase, dataAvailableCallback);
+			status = psRunBlock(&psConfig, measuredPoints, dataAvailableCallback);
 
 			switch (status) {
 				case PICO_OK:
@@ -698,12 +710,9 @@ int isEnabled(int panel, int control)
 	return enabled;
 }
 
-int isChannelEnabled(int channelIndex)
+int isChannelEnabled(int i)
 {
-	int channelEnabled = 0;
-	if(isChannelEnabled(channelIndex))
-		channelEnabled = 1;
-	return channelEnabled;
+	return isEnabled(panelHandle, channelMeasFreq[i]) | isEnabled(panelHandle, channelMeasTime[i]);
 }	
 
 void loadConditions(){
@@ -912,35 +921,35 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 			// Stop current capture
 			psStop(&psConfig);
 			
-			int channel = 0;
+			//enum psChannel channel = 0;
 			int channelIndex = 0;
 			switch (control) {
 				case MAINPANEL_RANGEA:
 				case MAINPANEL_COUPLINGA:
 				case MAINPANEL_FREQA:
 				case MAINPANEL_TIMEA:
-					channel = PS6000_CHANNEL_A;
+					//channel = PS_CHANNEL_A;
 					channelIndex = 0;
 					break;
 				case MAINPANEL_RANGEB:
 				case MAINPANEL_COUPLINGB:
 				case MAINPANEL_FREQB:
 				case MAINPANEL_TIMEB:
-					channel = PS6000_CHANNEL_B;
+					//channel = PS_CHANNEL_B;
 					channelIndex = 1;
 					break;
 				case MAINPANEL_RANGEC:
 				case MAINPANEL_COUPLINGC:
 				case MAINPANEL_FREQC:
 				case MAINPANEL_TIMEC:
-					channel = PS6000_CHANNEL_C;
+					//channel = PS_CHANNEL_C;
 					channelIndex = 2;
 					break;
 				case MAINPANEL_RANGED:
 				case MAINPANEL_COUPLINGD:
 				case MAINPANEL_FREQD:
 				case MAINPANEL_TIMED:
-					channel = PS6000_CHANNEL_D;
+					//channel = PS_CHANNEL_D;
 					channelIndex = 3;
 					break;
 			}
@@ -966,7 +975,7 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 			
 			// Resume capture if in progress
 			if(measurementInProgress)
-				psRunBlock(&psConfig, measuredPoints, timebase, dataAvailableCallback); 
+				psRunBlock(&psConfig, measuredPoints, dataAvailableCallback); 
 			
 			break;
 	}	
@@ -1066,8 +1075,8 @@ int CVICALLBACK rateBox_CB(int panel, int control, int event, void *callbackData
 		case EVENT_COMMIT:
 			// Find nearest timebase and change value to corresponding sample rate
 			GetCtrlVal(panelHandle, MAINPANEL_RATEBOX, &sampleRate);
-			timebase = RoundRealToNearestInteger(156250000/sampleRate + 4);
-			psGetTimebase2(&psConfig, timebase, measuredPoints, &timeInterval_ns);
+			psUpdateTimebase(&psConfig, sampleRate);
+			psGetTimebase2(&psConfig, measuredPoints, &timeInterval_ns);
 			sampleRate = 1/(timeInterval_ns*1e-9);
 			SetCtrlVal(panelHandle, MAINPANEL_RATEBOX, sampleRate);
 			updateTimeDisplay();
@@ -1242,7 +1251,7 @@ void updateTimeDisplay()
 	
 	// Calculate bin size
 	float timeInterval_ns = 0;
-	psGetTimebase2(&psConfig, timebase, measuredPoints, &timeInterval_ns);
+	psGetTimebase2(&psConfig, measuredPoints, &timeInterval_ns);
 	float binWidth = 1/(measuredPoints*timeInterval_ns/1e9);
 	
 	formatFloat(binWidth, "Hz", outstr);

@@ -52,7 +52,7 @@ Prototype="int isEnabled(int panel, int control);"
 
 [isChannelEnabled]
 Class="Function"
-Prototype="int isChannelEnabled(int channelIndex);"
+Prototype="int isChannelEnabled(int i);"
 
 [loadConditions]
 Class="Function"
