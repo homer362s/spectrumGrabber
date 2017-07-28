@@ -30,7 +30,7 @@ Save Changes Before Compiling = "Always"
 Hide Windows = False
 Break At First Statement = False
 Sort Type = "File Name"
-Number of Opened Files = 6
+Number of Opened Files = 5
 Window Confinement Region Enabled = True
 MainColumnWidth = 209
 FileDateColumnWidth = 70
@@ -48,12 +48,12 @@ Batch Build Debug = False
 [File 0001]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.c"
 File Type = "CSource"
-Disk Date = 3584116160
+Disk Date = 3584117075
 In Projects = "1,"
 Window Top = 32
 Window Left = 10
-Window Z-Order = 1
-Source Window State = "1,1120,1126,1126,0,14,14,0,0,195,0,0,0,0,0,56,1093,0,1112,160,271,555,1,0,"
+Window Z-Order = 2
+Source Window State = "1,131,131,131,68,72,72,0,0,60,0,0,0,0,0,19,97,0,127,31,271,555,1,0,"
 
 [File 0002]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"
@@ -64,39 +64,29 @@ Window Top = 62
 Window Left = 26
 Window Height = 349
 Window Width = 715
-Window Z-Order = 2
+Window Z-Order = 1
 
 [File 0003]
 Path = "/c/Users/user/Desktop/spectrumGrabber/picoscopes.c"
 File Type = "CSource"
-Disk Date = 3584115557
+Disk Date = 3584116924
 In Projects = "1,"
 Window Top = 152
 Window Left = 74
 Window Z-Order = 3
-Source Window State = "1,191,191,191,55,69,69,0,0,80,0,96,0,1,0,25,168,0,191,63,349,715,1,13,"
+Source Window State = "1,168,170,170,0,20,20,0,0,80,0,96,0,1,0,25,148,0,167,26,349,715,1,13,"
 
 [File 0004]
 Path = "/c/Users/user/Desktop/spectrumGrabber/picoscopes.h"
 File Type = "Include"
-Disk Date = 3584115550
+Disk Date = 3584116799
 In Projects = "1,"
 Window Top = 182
 Window Left = 90
 Window Z-Order = 4
-Source Window State = "1,43,43,43,61,75,75,0,0,80,0,0,0,0,0,25,28,0,44,12,349,715,1,13,"
+Source Window State = "1,43,43,43,61,75,75,0,0,80,0,0,0,0,0,25,0,0,7,47,349,715,1,13,"
 
 [File 0005]
-Path = "/c/Program Files (x86)/National Instruments/CVI2015/include/clang/3.3/stddef.h"
-File Type = "Include"
-Disk Date = 3548901600
-In Projects = ""
-Window Top = 362
-Window Left = 186
-Window Z-Order = 5
-Source Window State = "1,76,76,76,10,14,14,0,3,80,0,0,0,0,0,25,64,0,76,10,349,715,1,0,"
-
-[File 0006]
 Path = "/c/Users/Public/Documents/Measurement Computing/DAQ/C/cbw.h"
 File Type = "Include"
 Disk Date = 3567178027
@@ -105,14 +95,14 @@ Window Top = 392
 Window Left = 202
 Source Window State = "1,622,622,622,8,18,18,0,3,0,0,0,0,0,0,0,594,0,622,8,349,715,1,0,"
 
-[File 0007]
+[File 0006]
 Path = "/c/Program Files (x86)/Pico Technology/SDK/inc/ps3000aApi.h"
 File Type = "Include"
 Disk Date = 3516620844
 In Projects = "1,"
 Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
 
-[File 0008]
+[File 0007]
 Path = "/c/Program Files (x86)/Pico Technology/SDK/inc/ps6000Api.h"
 File Type = "Include"
 Disk Date = 3516620848
@@ -121,32 +111,32 @@ Window Top = 182
 Window Left = 90
 Source Window State = "1,379,379,379,37,51,51,0,0,0,0,0,0,0,0,0,435,0,452,0,349,715,1,0,"
 
-[File 0009]
+[File 0008]
 Path = "/c/Users/Public/Documents/Measurement Computing/DAQ/C/cbw32.lib"
 File Type = "Library"
 Disk Date = 3559043316
 In Projects = "1,"
 
-[File 0010]
+[File 0009]
 Path = "/c/Program Files (x86)/Pico Technology/SDK/lib/ps3000a.lib"
 File Type = "Library"
 Disk Date = 3516620844
 In Projects = "1,"
 
-[File 0011]
+[File 0010]
 Path = "/c/Program Files (x86)/Pico Technology/SDK/lib/ps6000.lib"
 File Type = "Library"
 Disk Date = 3516620848
 In Projects = "1,"
 
-[File 0012]
+[File 0011]
 Path = "/c/Program Files (x86)/Pico Technology/SDK/inc/PicoStatus.h"
 File Type = "Include"
 Disk Date = 3516620844
 In Projects = ""
 Window Top = 32
 Window Left = 10
-Window Z-Order = 6
+Window Z-Order = 5
 Source Window State = "1,171,171,171,0,65,65,0,3,80,0,0,0,0,0,25,128,0,171,0,349,715,1,0,"
 
 [Tab Order]
@@ -154,8 +144,7 @@ Tab 0001 = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"
 Tab 0002 = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.c"
 Tab 0003 = "/c/Users/user/Desktop/spectrumGrabber/picoscopes.c"
 Tab 0004 = "/c/Users/user/Desktop/spectrumGrabber/picoscopes.h"
-Tab 0005 = "/c/Program Files (x86)/National Instruments/CVI2015/include/clang/3.3/stddef.h"
-Tab 0006 = "/c/Program Files (x86)/Pico Technology/SDK/inc/PicoStatus.h"
+Tab 0005 = "/c/Program Files (x86)/Pico Technology/SDK/inc/PicoStatus.h"
 
 [Default Build Config 0001 Debug]
 Generate Browse Info = True

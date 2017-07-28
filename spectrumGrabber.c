@@ -78,6 +78,9 @@ int main (int argc, char *argv[])
 		picoType = picoscopes[i].type;
 		
 		switch(picoType){
+			case PSNONE:
+				scopeTypeChar = "NONE";
+				break;
 			case PS3000:
 				scopeTypeChar = "PS3000";
 				break;
@@ -119,12 +122,16 @@ void picoscopeInit()
 	int pico;
 	GetCtrlVal(panelHandle, MAINPANEL_PICOSCOPERING, &pico);
 	
-	// If the chosen scope is none disable most of the UI and return
+	// If the chosen scope is none disable the run button and return
 	if(pico<0) {
+		SetCtrlAttribute(panelHandle, MAINPANEL_RUNBUTTON, ATTR_DIMMED, TRUE);
+		psConfig.type = PSNONE;
 		return;
 	}
 	
 	// Enable the correct UI elements and set up psConfig struct
+	SetCtrlAttribute(panelHandle, MAINPANEL_RUNBUTTON, ATTR_DIMMED, FALSE);
+	
 	psConfig.type = picoscopes[pico].type;
 	psConfig.serial = picoscopes[pico].serial; 
 	
@@ -1082,6 +1089,10 @@ int CVICALLBACK rateBox_CB(int panel, int control, int event, void *callbackData
 	float timeInterval_ns;
 	switch(event){
 		case EVENT_COMMIT:
+			// If no picoscope is selected then don't do anything
+			if (psConfig.type == PSNONE)
+				return 0;
+			
 			// Find nearest timebase and change value to corresponding sample rate
 			GetCtrlVal(panelHandle, MAINPANEL_RATEBOX, &sampleRate);
 			psUpdateTimebase(&psConfig, sampleRate);

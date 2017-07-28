@@ -5,7 +5,7 @@
 #include "ps6000API.h"
 #include "ps3000aAPI.h"
 
-enum scopeType {PS3000, PS3000A, PS6000};
+enum scopeType {PS3000, PS3000A, PS6000, PSNONE};
 
 enum psChannel {PS_CHANNEL_A, PS_CHANNEL_B, PS_CHANNEL_C, PS_CHANNEL_D};
 enum psCoupling {PS_AC, PS_DC};
