@@ -48,38 +48,38 @@ Batch Build Debug = False
 [File 0001]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.c"
 File Type = "CSource"
-Disk Date = 3584117075
+Disk Date = 3584118913
 In Projects = "1,"
 Window Top = 32
 Window Left = 10
-Window Z-Order = 2
-Source Window State = "1,131,131,131,68,72,72,0,0,60,0,0,0,0,0,19,97,0,127,31,271,555,1,0,"
+Window Z-Order = 1
+Source Window State = "1,1086,1086,1086,0,20,20,0,0,195,0,0,0,0,0,56,1058,0,1085,28,271,555,1,0,"
 
 [File 0002]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"
 File Type = "User Interface Resource"
-Disk Date = 3584115936
+Disk Date = 3584117878
 In Projects = "1,"
 Window Top = 62
 Window Left = 26
 Window Height = 349
 Window Width = 715
-Window Z-Order = 1
+Window Z-Order = 2
 
 [File 0003]
 Path = "/c/Users/user/Desktop/spectrumGrabber/picoscopes.c"
 File Type = "CSource"
-Disk Date = 3584116924
+Disk Date = 3584117878
 In Projects = "1,"
 Window Top = 152
 Window Left = 74
 Window Z-Order = 3
-Source Window State = "1,168,170,170,0,20,20,0,0,80,0,96,0,1,0,25,148,0,167,26,349,715,1,13,"
+Source Window State = "1,168,170,170,0,20,20,0,0,80,0,96,0,1,0,25,0,0,167,26,349,715,1,13,"
 
 [File 0004]
 Path = "/c/Users/user/Desktop/spectrumGrabber/picoscopes.h"
 File Type = "Include"
-Disk Date = 3584116799
+Disk Date = 3584117878
 In Projects = "1,"
 Window Top = 182
 Window Left = 90
@@ -87,49 +87,6 @@ Window Z-Order = 4
 Source Window State = "1,43,43,43,61,75,75,0,0,80,0,0,0,0,0,25,0,0,7,47,349,715,1,13,"
 
 [File 0005]
-Path = "/c/Users/Public/Documents/Measurement Computing/DAQ/C/cbw.h"
-File Type = "Include"
-Disk Date = 3567178027
-In Projects = "1,"
-Window Top = 392
-Window Left = 202
-Source Window State = "1,622,622,622,8,18,18,0,3,0,0,0,0,0,0,0,594,0,622,8,349,715,1,0,"
-
-[File 0006]
-Path = "/c/Program Files (x86)/Pico Technology/SDK/inc/ps3000aApi.h"
-File Type = "Include"
-Disk Date = 3516620844
-In Projects = "1,"
-Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-
-[File 0007]
-Path = "/c/Program Files (x86)/Pico Technology/SDK/inc/ps6000Api.h"
-File Type = "Include"
-Disk Date = 3516620848
-In Projects = "1,"
-Window Top = 182
-Window Left = 90
-Source Window State = "1,379,379,379,37,51,51,0,0,0,0,0,0,0,0,0,435,0,452,0,349,715,1,0,"
-
-[File 0008]
-Path = "/c/Users/Public/Documents/Measurement Computing/DAQ/C/cbw32.lib"
-File Type = "Library"
-Disk Date = 3559043316
-In Projects = "1,"
-
-[File 0009]
-Path = "/c/Program Files (x86)/Pico Technology/SDK/lib/ps3000a.lib"
-File Type = "Library"
-Disk Date = 3516620844
-In Projects = "1,"
-
-[File 0010]
-Path = "/c/Program Files (x86)/Pico Technology/SDK/lib/ps6000.lib"
-File Type = "Library"
-Disk Date = 3516620848
-In Projects = "1,"
-
-[File 0011]
 Path = "/c/Program Files (x86)/Pico Technology/SDK/inc/PicoStatus.h"
 File Type = "Include"
 Disk Date = 3516620844
@@ -138,6 +95,49 @@ Window Top = 32
 Window Left = 10
 Window Z-Order = 5
 Source Window State = "1,171,171,171,0,65,65,0,3,80,0,0,0,0,0,25,128,0,171,0,349,715,1,0,"
+
+[File 0006]
+Path = "/c/Users/Public/Documents/Measurement Computing/DAQ/C/cbw.h"
+File Type = "Include"
+Disk Date = 3567178027
+In Projects = "1,"
+Window Top = 392
+Window Left = 202
+Source Window State = "1,622,622,622,8,18,18,0,3,0,0,0,0,0,0,0,594,0,622,8,349,715,1,0,"
+
+[File 0007]
+Path = "/c/Program Files (x86)/Pico Technology/SDK/inc/ps3000aApi.h"
+File Type = "Include"
+Disk Date = 3516620844
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0008]
+Path = "/c/Program Files (x86)/Pico Technology/SDK/inc/ps6000Api.h"
+File Type = "Include"
+Disk Date = 3516620848
+In Projects = "1,"
+Window Top = 182
+Window Left = 90
+Source Window State = "1,379,379,379,37,51,51,0,0,0,0,0,0,0,0,0,435,0,452,0,349,715,1,0,"
+
+[File 0009]
+Path = "/c/Users/Public/Documents/Measurement Computing/DAQ/C/cbw32.lib"
+File Type = "Library"
+Disk Date = 3559043316
+In Projects = "1,"
+
+[File 0010]
+Path = "/c/Program Files (x86)/Pico Technology/SDK/lib/ps3000a.lib"
+File Type = "Library"
+Disk Date = 3516620844
+In Projects = "1,"
+
+[File 0011]
+Path = "/c/Program Files (x86)/Pico Technology/SDK/lib/ps6000.lib"
+File Type = "Library"
+Disk Date = 3516620848
+In Projects = "1,"
 
 [Tab Order]
 Tab 0001 = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"

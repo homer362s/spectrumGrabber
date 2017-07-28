@@ -7,7 +7,6 @@
 #include <userint.h>
 #include "spectrumGrabber.h"
 #include "toolbox.h"
-//#include "ps6000Api.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -47,7 +46,7 @@ int16_t scopeHandle;
 
 struct psconfig psConfig;
 
-void picoscopeInit();
+int picoscopeInit();
 int getInputNew(char FileInput[], int *pointer, char **line);
 char *fileread(char name[], char access[]);
 void updateTimeAxis();
@@ -114,7 +113,7 @@ Error:
 
 // Read in the UI values and set up psConfig array to reflect those values
 // Additionally calculate any intermediate values that are required
-void picoscopeInit()
+int picoscopeInit()
 {
 	PICO_STATUS status;
 	
@@ -126,7 +125,7 @@ void picoscopeInit()
 	if(pico<0) {
 		SetCtrlAttribute(panelHandle, MAINPANEL_RUNBUTTON, ATTR_DIMMED, TRUE);
 		psConfig.type = PSNONE;
-		return;
+		return 0;
 	}
 	
 	// Enable the correct UI elements and set up psConfig struct
@@ -137,6 +136,9 @@ void picoscopeInit()
 	
 	// Open the picoscope
 	status = psOpenUnit(&psConfig);
+	if (status != 0) {
+		return status;
+	}
 	
 	// Read the number of requested points from the UI
 	GetCtrlVal(panelHandle, MAINPANEL_BINSRING, &(psConfig.nPoints));
@@ -177,6 +179,8 @@ void picoscopeInit()
 	psMemorySegments(&psConfig);
 	
 	psStop(&psConfig);
+	
+	return 0;
 	
 }
 
@@ -1077,7 +1081,11 @@ int CVICALLBACK picoscopeRing_CB(int panel, int control, int event, void *callba
 	switch(event){
 		case EVENT_COMMIT:
 			psCloseUnit(&psConfig);
-			picoscopeInit();
+			int status = picoscopeInit();
+			if (status != 0) {
+				SetCtrlIndex(panelHandle, MAINPANEL_PICOSCOPERING, 0);
+				picoscopeInit();
+			}
 			break;
 	}	
 	return 0;

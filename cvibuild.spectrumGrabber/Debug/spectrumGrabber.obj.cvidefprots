@@ -4,7 +4,7 @@ Prototype="int main(int argc, char **argv);"
 
 [picoscopeInit]
 Class="Function"
-Prototype="void picoscopeInit();"
+Prototype="int picoscopeInit();"
 
 [setupScopeChannel]
 Class="Function"
