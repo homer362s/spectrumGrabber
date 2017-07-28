@@ -48,43 +48,43 @@ Batch Build Debug = False
 [File 0001]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.c"
 File Type = "CSource"
-Disk Date = 3584114803
+Disk Date = 3584116160
 In Projects = "1,"
 Window Top = 32
 Window Left = 10
-Window Z-Order = 3
-Source Window State = "1,977,977,977,54,62,62,0,0,60,0,0,0,0,0,19,949,0,977,21,271,555,1,0,"
+Window Z-Order = 1
+Source Window State = "1,1120,1126,1126,0,14,14,0,0,195,0,0,0,0,0,56,1093,0,1112,160,271,555,1,0,"
 
 [File 0002]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"
 File Type = "User Interface Resource"
-Disk Date = 3584112897
+Disk Date = 3584115936
 In Projects = "1,"
 Window Top = 62
 Window Left = 26
 Window Height = 349
 Window Width = 715
-Window Z-Order = 4
+Window Z-Order = 2
 
 [File 0003]
 Path = "/c/Users/user/Desktop/spectrumGrabber/picoscopes.c"
 File Type = "CSource"
-Disk Date = 3584114820
+Disk Date = 3584115557
 In Projects = "1,"
 Window Top = 152
 Window Left = 74
-Window Z-Order = 1
-Source Window State = "1,183,183,183,82,90,90,0,0,195,0,96,0,1,0,56,171,0,183,71,349,715,1,13,"
+Window Z-Order = 3
+Source Window State = "1,191,191,191,55,69,69,0,0,80,0,96,0,1,0,25,168,0,191,63,349,715,1,13,"
 
 [File 0004]
 Path = "/c/Users/user/Desktop/spectrumGrabber/picoscopes.h"
 File Type = "Include"
-Disk Date = 3584114813
+Disk Date = 3584115550
 In Projects = "1,"
 Window Top = 182
 Window Left = 90
-Window Z-Order = 2
-Source Window State = "1,44,44,44,82,90,90,0,0,80,0,0,0,0,0,25,28,0,44,71,349,715,1,13,"
+Window Z-Order = 4
+Source Window State = "1,43,43,43,61,75,75,0,0,80,0,0,0,0,0,25,28,0,44,12,349,715,1,13,"
 
 [File 0005]
 Path = "/c/Program Files (x86)/National Instruments/CVI2015/include/clang/3.3/stddef.h"
@@ -93,7 +93,7 @@ Disk Date = 3548901600
 In Projects = ""
 Window Top = 362
 Window Left = 186
-Window Z-Order = 6
+Window Z-Order = 5
 Source Window State = "1,76,76,76,10,14,14,0,3,80,0,0,0,0,0,25,64,0,76,10,349,715,1,0,"
 
 [File 0006]
@@ -146,7 +146,7 @@ Disk Date = 3516620844
 In Projects = ""
 Window Top = 32
 Window Left = 10
-Window Z-Order = 5
+Window Z-Order = 6
 Source Window State = "1,171,171,171,0,65,65,0,3,80,0,0,0,0,0,25,128,0,171,0,349,715,1,0,"
 
 [Tab Order]

@@ -13,8 +13,6 @@
 #include <math.h>
 #include "picoscopes.h"
 
-int measuredPoints = 0;
-
 //uint32_t timebase = 7816;
 int16_t *rawDataBuffer;   // Stores data from the scope
 double *zeros;			  // Stores zeros for FFT
@@ -134,15 +132,15 @@ void picoscopeInit()
 	status = psOpenUnit(&psConfig);
 	
 	// Read the number of requested points from the UI
-	GetCtrlVal(panelHandle, MAINPANEL_BINSRING, &measuredPoints);
-	measuredPoints = measuredPoints * 2;
+	GetCtrlVal(panelHandle, MAINPANEL_BINSRING, &(psConfig.nPoints));
+	psConfig.nPoints = psConfig.nPoints * 2;
 	
 	// Set up sample rate according to the UI values
 	double sampleRate;
 	float timeInterval_ns;
 	GetCtrlVal(panelHandle, MAINPANEL_RATEBOX, &sampleRate);
 	psUpdateTimebase(&psConfig, sampleRate);
-	psGetTimebase2(&psConfig, measuredPoints, &timeInterval_ns);
+	psGetTimebase2(&psConfig, &timeInterval_ns);
 	sampleRate = 1/(timeInterval_ns*1e-9);
 	SetCtrlVal(panelHandle, MAINPANEL_RATEBOX, sampleRate);
 	
@@ -324,11 +322,11 @@ void processData(int nMeasured, int averages, FILE **timeFPs)
 			continue;
 		
 		// Get data from scope
-		uint32_t nPoints = measuredPoints;
+		uint32_t nPoints = psConfig.nPoints;
 		
-		psSetDataBuffer(&psConfig, i, measuredPoints, rawDataBuffer);
+		psSetDataBuffer(&psConfig, i, psConfig.nPoints, rawDataBuffer);
 		psGetValues(&psConfig, &nPoints, &overflow);
-		psSetDataBuffer(&psConfig, i, measuredPoints, NULL); 
+		psSetDataBuffer(&psConfig, i, psConfig.nPoints, NULL); 
 		
 		 for(int i=0; i<4; i++) {
 			if(overflow & (1<<i))
@@ -347,37 +345,37 @@ void processData(int nMeasured, int averages, FILE **timeFPs)
 		GetCtrlVal(panelHandle, channelRanges[i], &fullScale);
 		double coefficient;
 		GetCtrlVal(panelHandle, channelCoeffs[i], &coefficient);
-		for (int j = 0;j < measuredPoints;j++) {
+		for (int j = 0;j < psConfig.nPoints;j++) {
 			dataValues[j] = (double) rawDataBuffer[j] / 32767 * fullScale / coefficient;
 		}
 	
 		// Save timeValues if time domain saving is requested and this is the first sweep at this bias point
-		if (isEnabled(panelHandle, channelMeasTime[i]) && nMeasured==0) {
+		if (isEnabled(panelHandle, channelMeasTime[i]) && nMeasured==0 && isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
 			// Save time domain signal
 			fprintf(timeFPs[i], "\n%e", dataValues[0]);
 
-			for(int j=1; j<measuredPoints; j++) {
+			for(int j=1; j<psConfig.nPoints; j++) {
 				fprintf(timeFPs[i], ",%e", dataValues[j]);	
 			}
 		}
 
 		// Plot the time domain
 		if (isChannelEnabled(i) && nMeasured==0) { 
-			PlotXY(timeTabHandle, TIMETAB_TIMEGRAPH, timeValues, dataValues, measuredPoints, VAL_FLOAT, VAL_DOUBLE, VAL_THIN_LINE, VAL_NO_POINT, VAL_SOLID, 1, colors[i]);
+			PlotXY(timeTabHandle, TIMETAB_TIMEGRAPH, timeValues, dataValues, psConfig.nPoints, VAL_FLOAT, VAL_DOUBLE, VAL_THIN_LINE, VAL_NO_POINT, VAL_SOLID, 1, colors[i]);
 		}	
 		
 		// Compute FFT if the FFT is requested
 		if (isEnabled(panelHandle, channelMeasFreq[i])) {
 			// Take FFT
-			for(int j = 0;j < measuredPoints; j++) {
+			for(int j = 0;j < psConfig.nPoints; j++) {
 				zeros[j] = 0;
 			}
-			FFT(dataValues, zeros, measuredPoints);
+			FFT(dataValues, zeros, psConfig.nPoints);
 
 			// From now on we only care about the first half of the points
-			for(int j = 0;j < measuredPoints/2; j++) {
+			for(int j = 0;j < psConfig.nPoints/2; j++) {
 				// Get magnitude
-				dataValues[j] = (sqrt(dataValues[j]*dataValues[j] + zeros[j]*zeros[j])) / measuredPoints;
+				dataValues[j] = (sqrt(dataValues[j]*dataValues[j] + zeros[j]*zeros[j])) / psConfig.nPoints;
 
 				// Average spectra
 				avgSpectrum[i][j] = (avgSpectrum[i][j] * ((double) nMeasured / (double) averages) + dataValues[j] * (1 / (double) averages)) * ((double) averages) / ((double) nMeasured + 1);
@@ -387,7 +385,7 @@ void processData(int nMeasured, int averages, FILE **timeFPs)
 			}
 		
 			// Display the data
-			PlotXY(freqTabHandle, FREQTAB_FREQGRAPH, freqValues, avgSpectrumDisplay, measuredPoints/2, VAL_FLOAT, VAL_DOUBLE, VAL_THIN_LINE, VAL_NO_POINT, VAL_SOLID, 1, colors[i]);
+			PlotXY(freqTabHandle, FREQTAB_FREQGRAPH, freqValues, avgSpectrumDisplay, psConfig.nPoints/2, VAL_FLOAT, VAL_DOUBLE, VAL_THIN_LINE, VAL_NO_POINT, VAL_SOLID, 1, colors[i]);
 		}
 	}
 	//SetCtrlAttribute(panelHandle, MAINPANEL_FREQGRAPH, ATTR_REFRESH_GRAPH, TRUE);
@@ -409,29 +407,26 @@ void handleMeasurement(char *path, char *name, char *ext)
 	userRequestedStop = 0;
 	
 	// Allocate required memory
-	GetCtrlVal(panelHandle, MAINPANEL_BINSRING, &measuredPoints);
-	measuredPoints = measuredPoints * 2;
-
-	rawDataBuffer = malloc(measuredPoints * sizeof(int16_t));
-	zeros = malloc(measuredPoints * sizeof(double));
-	dataValues = malloc(measuredPoints * sizeof(double));
-	avgSpectrumDisplay = malloc(measuredPoints * sizeof(double)/2);
-	timeValues = malloc(measuredPoints * sizeof(float));
-	freqValues = malloc(measuredPoints * sizeof(float)/2);
+	rawDataBuffer = malloc(psConfig.nPoints * sizeof(int16_t));
+	zeros = malloc(psConfig.nPoints * sizeof(double));
+	dataValues = malloc(psConfig.nPoints * sizeof(double));
+	avgSpectrumDisplay = malloc(psConfig.nPoints * sizeof(double)/2);
+	timeValues = malloc(psConfig.nPoints * sizeof(float));
+	freqValues = malloc(psConfig.nPoints * sizeof(float)/2);
 	
 	for(int i =0;i<4;i++) {
 		if(isEnabled(panelHandle, channelMeasFreq[i]))
-			avgSpectrum[i] = malloc(measuredPoints * sizeof(double)/2);
+			avgSpectrum[i] = malloc(psConfig.nPoints * sizeof(double)/2);
 	}
 	
 	// Initialize time axis values
 	float timeInterval_ns = 0;
-	psGetTimebase2(&psConfig, measuredPoints, &timeInterval_ns);
-	for (int i = 0;i < measuredPoints/2;i++) {
+	psGetTimebase2(&psConfig, &timeInterval_ns);
+	for (int i = 0;i < psConfig.nPoints/2;i++) {
 		timeValues[i] = (timeInterval_ns*i)/1e9;
-		freqValues[i] = i/(measuredPoints*timeInterval_ns/1e9);
+		freqValues[i] = i/(psConfig.nPoints*timeInterval_ns/1e9);
 	}
-	for (int i = measuredPoints/2;i < measuredPoints;i++) {
+	for (int i = psConfig.nPoints/2;i < psConfig.nPoints;i++) {
 		timeValues[i] = (timeInterval_ns*i)/1e9;
 	}
 	
@@ -453,7 +448,7 @@ void handleMeasurement(char *path, char *name, char *ext)
 			continue;
 
 		// Save frequency row
-		if (isEnabled(panelHandle, channelMeasFreq[i])) {
+		if (isEnabled(panelHandle, channelMeasFreq[i]) && isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
 			// Build filename and open file
 			outputFileFreq = malloc(filenameLen * sizeof(char));
 			strcpy(outputFileFreq, path);
@@ -467,13 +462,13 @@ void handleMeasurement(char *path, char *name, char *ext)
 	
 			// Write data
 			fprintf(freqFPs[i], "%e", freqValues[0]);
-			for(int j=1; j<measuredPoints/2; j++) {
+			for(int j=1; j<psConfig.nPoints/2; j++) {
 				fprintf(freqFPs[i], ",%e", freqValues[j]);	
 			}
 		}
 	
 		// Save time row
-		if (isEnabled(panelHandle, channelMeasTime[i])) {
+		if (isEnabled(panelHandle, channelMeasTime[i]) && isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
 			// Build filename and open file
 			outputFileTime = malloc(filenameLen * sizeof(char));
 			strcpy(outputFileTime, path);
@@ -487,7 +482,7 @@ void handleMeasurement(char *path, char *name, char *ext)
 	
 			// Write data
 			fprintf(timeFPs[i], "%e", timeValues[0]);
-			for(int j=1; j<measuredPoints; j++) {
+			for(int j=1; j<psConfig.nPoints; j++) {
 				fprintf(timeFPs[i], ",%e", timeValues[j]);	
 			}
 		}
@@ -522,7 +517,7 @@ void handleMeasurement(char *path, char *name, char *ext)
 			measurementInProgress = 1;
 			dataReady = 0;
 			
-			status = psRunBlock(&psConfig, measuredPoints, dataAvailableCallback);
+			status = psRunBlock(&psConfig, dataAvailableCallback);
 
 			switch (status) {
 				case PICO_OK:
@@ -567,11 +562,11 @@ void handleMeasurement(char *path, char *name, char *ext)
 		
 		// Save average spectra
 		for (int j =0;j < 4;j++) {
-			if(isEnabled(panelHandle, channelMeasFreq[j])) {
+			if(isEnabled(panelHandle, channelMeasFreq[j]) && isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
 				// Save average spectrum
 				fprintf(freqFPs[j], "\n%e", avgSpectrum[j][0]);
 	
-				for(int k=1; k<measuredPoints/2; k++) {
+				for(int k=1; k<psConfig.nPoints/2; k++) {
 					fprintf(freqFPs[j], ",%e", avgSpectrum[j][k]);	
 				}
 			}
@@ -975,7 +970,7 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 			
 			// Resume capture if in progress
 			if(measurementInProgress)
-				psRunBlock(&psConfig, measuredPoints, dataAvailableCallback); 
+				psRunBlock(&psConfig, dataAvailableCallback); 
 			
 			break;
 	}	
@@ -1013,8 +1008,8 @@ int CVICALLBACK binsRing_CB(int panel, int control, int event, void *callbackDat
 {
 	switch(event){
 		case EVENT_COMMIT:
-			GetCtrlVal(panelHandle, MAINPANEL_BINSRING, &measuredPoints);
-			measuredPoints = measuredPoints * 2;
+			GetCtrlVal(panelHandle, MAINPANEL_BINSRING, &(psConfig.nPoints));
+			psConfig.nPoints = psConfig.nPoints * 2;
 			updateTimeDisplay();
 			break;
 	}	
@@ -1040,6 +1035,20 @@ int CVICALLBACK delrowButton_CB(int panel, int control, int event, void *callbac
 			delRows();
 			updateBiasCount(); 
 			updateTimeDisplay();
+			break;
+	}	
+	return 0;
+}
+
+int CVICALLBACK disableSave_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch(event){
+		case EVENT_COMMIT:
+			if (isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
+				SetPanelAttribute(panelHandle, ATTR_BACKCOLOR, 0x00F0F0F0);
+			} else {
+				SetPanelAttribute(panelHandle, ATTR_BACKCOLOR, 0x00FF9999);
+			}
 			break;
 	}	
 	return 0;
@@ -1076,7 +1085,7 @@ int CVICALLBACK rateBox_CB(int panel, int control, int event, void *callbackData
 			// Find nearest timebase and change value to corresponding sample rate
 			GetCtrlVal(panelHandle, MAINPANEL_RATEBOX, &sampleRate);
 			psUpdateTimebase(&psConfig, sampleRate);
-			psGetTimebase2(&psConfig, measuredPoints, &timeInterval_ns);
+			psGetTimebase2(&psConfig, &timeInterval_ns);
 			sampleRate = 1/(timeInterval_ns*1e-9);
 			SetCtrlVal(panelHandle, MAINPANEL_RATEBOX, sampleRate);
 			updateTimeDisplay();
@@ -1108,12 +1117,14 @@ int CVICALLBACK runButton_CB(int panel, int control, int event, void *callbackDa
 			// Modify name
 			sprintf(tstmpName, "%04d-%02d-%02d_%02d.%02d.%02d_%s", year, month, day, hour, min, sec, name);
 			
-			if (strcmp(path, "") == 0) {
-				sprintf(saveFilename, "%s.cfg", tstmpName);
-				saveTable(saveFilename);
-			} else {
-				sprintf(saveFilename, "%s\\%s.cfg", path, tstmpName);
-				saveTable(saveFilename);
+			if (isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
+				if (strcmp(path, "") == 0) {
+					sprintf(saveFilename, "%s.cfg", tstmpName);
+					saveTable(saveFilename);
+				} else {
+					sprintf(saveFilename, "%s\\%s.cfg", path, tstmpName);
+					saveTable(saveFilename);
+				}
 			}
 			
 			handleMeasurement(path, tstmpName, ".csv");
@@ -1251,22 +1262,22 @@ void updateTimeDisplay()
 	
 	// Calculate bin size
 	float timeInterval_ns = 0;
-	psGetTimebase2(&psConfig, measuredPoints, &timeInterval_ns);
-	float binWidth = 1/(measuredPoints*timeInterval_ns/1e9);
+	psGetTimebase2(&psConfig, &timeInterval_ns);
+	float binWidth = 1/(psConfig.nPoints*timeInterval_ns/1e9);
 	
 	formatFloat(binWidth, "Hz", outstr);
 	SetCtrlVal(panelHandle, MAINPANEL_BINSIZETEXT, outstr);
 	
 	// Calculate capture time for one spectrum
-	formatFloat(measuredPoints / sampleRate, "s", outstr);
+	formatFloat(psConfig.nPoints / sampleRate, "s", outstr);
 	SetCtrlVal(panelHandle, MAINPANEL_CAPTIMETEXT, outstr);
 	
 	// Calculate time per bias point
-	formatFloat(measuredPoints / sampleRate * averages, "s", outstr);
+	formatFloat(psConfig.nPoints / sampleRate * averages, "s", outstr);
 	SetCtrlVal(panelHandle, MAINPANEL_BIASTIMETEXT, outstr);
 	
 	// Calculate total time
-	formatFloat(measuredPoints / sampleRate * averages * biasPoints + delay * biasPoints, "s", outstr);
+	formatFloat(psConfig.nPoints / sampleRate * averages * biasPoints + delay * biasPoints, "s", outstr);
 	SetCtrlVal(panelHandle, MAINPANEL_TOTALTIMETEXT, outstr);
 }
 

@@ -4,9 +4,6 @@
 #include "picoscopes.h"
 #include <stddef.h>
 
-//int ps6000NChannels = 4;
-//int ps6000Channels[] = {PS6000_CHANNEL_A, PS6000_CHANNEL_B, PS6000_CHANNEL_C, PS6000_CHANNEL_D};
-
 // Convert the general channel into an API specific channel
 int convertChannel(enum scopeType type, enum psChannel channel) 
 {
@@ -140,10 +137,10 @@ PICO_STATUS psCloseUnit(struct psconfig *config)
 		case PS3000:
 			break;
 		case PS3000A:
-			status = ps3000aCloseUnit((config->handle));
+			status = ps3000aCloseUnit(config->handle);
 			break;	
 		case PS6000:
-			status = ps6000CloseUnit((config->handle));
+			status = ps6000CloseUnit(config->handle);
 			break;
 	}
 	return status;
@@ -164,7 +161,7 @@ void psUpdateTimebase(struct psconfig *config, float sampleRate)
 	}
 }
 
-PICO_STATUS psGetTimebase2(struct psconfig *config, uint32_t measuredPoints, float *timeInterval_ns)
+PICO_STATUS psGetTimebase2(struct psconfig *config, float *timeInterval_ns)
 {
 	PICO_STATUS status = -1;
 	
@@ -172,16 +169,16 @@ PICO_STATUS psGetTimebase2(struct psconfig *config, uint32_t measuredPoints, flo
 		case PS3000:
 			break;
 		case PS3000A:
-			status = ps3000aGetTimebase2((config->handle), config->timebase, measuredPoints, timeInterval_ns, 0, NULL, 0);
+			status = ps3000aGetTimebase2(config->handle, config->timebase, config->nPoints, timeInterval_ns, 0, NULL, 0);
 			break;	
 		case PS6000:
-			status = ps6000GetTimebase2((config->handle), config->timebase, measuredPoints, timeInterval_ns, 0, NULL, 0);
+			status = ps6000GetTimebase2(config->handle, config->timebase, config->nPoints, timeInterval_ns, 0, NULL, 0);
 			break;
 	}
 	return status;
 }
 
-PICO_STATUS psRunBlock(struct psconfig *config, uint32_t measuredPoints, void *dataAvailableCallback)
+PICO_STATUS psRunBlock(struct psconfig *config, void *dataAvailableCallback)
 {
 	PICO_STATUS status = -1;
 	
@@ -189,10 +186,10 @@ PICO_STATUS psRunBlock(struct psconfig *config, uint32_t measuredPoints, void *d
 		case PS3000:
 			break;
 		case PS3000A:
-			status = ps3000aRunBlock((config->handle), 0, measuredPoints, config->timebase, 1, 0, 0, dataAvailableCallback, NULL); // status = 282   
+			status = ps3000aRunBlock(config->handle, 0, config->nPoints, config->timebase, 1, 0, 0, dataAvailableCallback, NULL); // status = 282   
 			break;	
 		case PS6000:
-			status = ps6000RunBlock((config->handle), 0, measuredPoints, config->timebase, 1, 0, 0, dataAvailableCallback, NULL);
+			status = ps6000RunBlock(config->handle, 0, config->nPoints, config->timebase, 1, 0, 0, dataAvailableCallback, NULL);
 			break;
 	}
 	return status;
@@ -206,10 +203,10 @@ PICO_STATUS psStop(struct psconfig *config)
 		case PS3000:
 			break;
 		case PS3000A:
-			status = ps3000aStop((config->handle));
+			status = ps3000aStop(config->handle);
 			break;	
 		case PS6000:
-			status = ps6000Stop((config->handle));
+			status = ps6000Stop(config->handle);
 			break;
 	}
 	return status;
@@ -224,10 +221,10 @@ PICO_STATUS psMemorySegments(struct psconfig *config)
 		case PS3000:
 			break;
 		case PS3000A:
-			status = ps3000aMemorySegments((config->handle), 1, NULL);
+			status = ps3000aMemorySegments(config->handle, 1, NULL);
 			break;	
 		case PS6000:
-			status = ps6000MemorySegments((config->handle), 1, NULL);
+			status = ps6000MemorySegments(config->handle, 1, NULL);
 			break;
 	}
 	return status;
@@ -245,10 +242,10 @@ PICO_STATUS psSetChannel(struct psconfig *config, int channelIndex)
 		case PS3000:
 			break;
 		case PS3000A:
-			status = ps3000aSetChannel((config->handle), channel, (config->channels[channelIndex].enabled), coupling, range, 0); 
+			status = ps3000aSetChannel(config->handle, channel, config->channels[channelIndex].enabled, coupling, range, 0); 
 			break;	
 		case PS6000:
-			status = ps6000SetChannel((config->handle), channel, (config->channels[channelIndex].enabled), coupling, range, 0, PS6000_BW_20MHZ);
+			status = ps6000SetChannel(config->handle, channel, config->channels[channelIndex].enabled, coupling, range, 0, PS6000_BW_20MHZ);
 			break;
 	}
 	return status;
@@ -264,10 +261,10 @@ PICO_STATUS psSetDataBuffer(struct psconfig *config, int channelIndex, int measu
 		case PS3000:
 			break;
 		case PS3000A:
-			status = ps3000aSetDataBuffer((config->handle), channel, buffer, measuredPoints, 0, PS3000A_RATIO_MODE_NONE);
+			status = ps3000aSetDataBuffer(config->handle, channel, buffer, measuredPoints, 0, PS3000A_RATIO_MODE_NONE);
 			break;	
 		case PS6000:
-			status = ps6000SetDataBuffer((config->handle), channel, buffer, measuredPoints, PS6000_RATIO_MODE_NONE);
+			status = ps6000SetDataBuffer(config->handle, channel, buffer, measuredPoints, PS6000_RATIO_MODE_NONE);
 			break;
 	}
 	return status;
@@ -281,10 +278,10 @@ PICO_STATUS psGetValues(struct psconfig *config, uint32_t *nPoints, int16_t *ove
 		case PS3000:
 			break;
 		case PS3000A:
-			status = ps3000aGetValues((config->handle), 0, nPoints, 1, PS3000A_RATIO_MODE_NONE, 0, overflow);
+			status = ps3000aGetValues(config->handle, 0, nPoints, 1, PS3000A_RATIO_MODE_NONE, 0, overflow);
 			break;	
 		case PS6000:
-			status = ps6000GetValues((config->handle), 0, nPoints, 1, PS6000_RATIO_MODE_NONE, 0, overflow); 
+			status = ps6000GetValues(config->handle, 0, nPoints, 1, PS6000_RATIO_MODE_NONE, 0, overflow); 
 			break;
 	}
 	return status;

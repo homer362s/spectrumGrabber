@@ -29,7 +29,7 @@ struct psconfig {
 	int16_t handle;
 	enum scopeType type;
 	int8_t *serial;
-	int nPoints;
+	uint32_t nPoints;
 	int timebase;
 	struct pschannel channels[4];
 };
@@ -41,8 +41,8 @@ static struct scopeDef picoscopes[] = {{.serial = (int8_t*) "AP231/007", .type =
 PICO_STATUS psOpenUnit(struct psconfig *config);
 PICO_STATUS psCloseUnit(struct psconfig *config);
 void psUpdateTimebase(struct psconfig *config, float sampleRate);
-PICO_STATUS psGetTimebase2(struct psconfig *config, uint32_t measuredPoints, float *timeInterval_ns);
-PICO_STATUS psRunBlock(struct psconfig *config, uint32_t measuredPoints, void *dataAvailableCallback);
+PICO_STATUS psGetTimebase2(struct psconfig *config, float *timeInterval_ns);
+PICO_STATUS psRunBlock(struct psconfig *config, void *dataAvailableCallback);
 PICO_STATUS psStop(struct psconfig *config);
 PICO_STATUS psMemorySegments(struct psconfig *config);
 PICO_STATUS psSetChannel(struct psconfig *config, int channelIndex);

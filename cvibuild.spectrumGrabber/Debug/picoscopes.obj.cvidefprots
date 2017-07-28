@@ -24,11 +24,11 @@ Prototype="void psUpdateTimebase(struct psconfig *config, float sampleRate);"
 
 [psGetTimebase2]
 Class="Function"
-Prototype="unsigned int psGetTimebase2(struct psconfig *config, unsigned int measuredPoints, float *timeInterval_ns);"
+Prototype="unsigned int psGetTimebase2(struct psconfig *config, float *timeInterval_ns);"
 
 [psRunBlock]
 Class="Function"
-Prototype="unsigned int psRunBlock(struct psconfig *config, unsigned int measuredPoints, void *dataAvailableCallback);"
+Prototype="unsigned int psRunBlock(struct psconfig *config, void *dataAvailableCallback);"
 
 [psStop]
 Class="Function"

@@ -106,6 +106,10 @@ Prototype="int boardNum_CB(int panel, int control, int event, void *callbackData
 Class="Function"
 Prototype="int delrowButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
+[disableSave_CB]
+Class="Function"
+Prototype="int disableSave_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
 [nextButton_CB]
 Class="Function"
 Prototype="int nextButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"

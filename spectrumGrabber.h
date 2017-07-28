@@ -88,7 +88,8 @@
 #define  MAINPANEL_DECORATION_4           73      /* control type: deco, callback function: (none) */
 #define  MAINPANEL_TEXTMSG_2              74      /* control type: textMsg, callback function: (none) */
 #define  MAINPANEL_PICOSCOPERING          75      /* control type: ring, callback function: picoscopeRing_CB */
-#define  MAINPANEL_DECORATION_2           76      /* control type: deco, callback function: (none) */
+#define  MAINPANEL_DISABLESAVEBUTTON      76      /* control type: textButton, callback function: disableSave_CB */
+#define  MAINPANEL_DECORATION_2           77      /* control type: deco, callback function: (none) */
 
 #define  TGPANEL                          2       /* callback function: tgPanel_CB */
 #define  TGPANEL_VGSTARTBOX               2       /* control type: numeric, callback function: editVgBox_CB */
@@ -140,6 +141,7 @@ int  CVICALLBACK dacButton_CB(int panel, int control, int event, void *callbackD
 int  CVICALLBACK delayBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK delrowButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK dirButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
+int  CVICALLBACK disableSave_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK editVdBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK editVgBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK generateButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
