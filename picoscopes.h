@@ -38,6 +38,7 @@ static struct scopeDef picoscopes[] = {{.serial = (int8_t*) "AP231/007", .type =
 									   {.serial = (int8_t*) "ES286/061", .type = PS3000A},
 									   {.serial = (int8_t*) "IJY32/014", .type = PS3000}};
 // Function prototypes
+void scaleReading(struct psconfig *config, int channel, int16_t *rawData, double *scaledData);
 PICO_STATUS psOpenUnit(struct psconfig *config);
 PICO_STATUS psCloseUnit(struct psconfig *config);
 void psUpdateTimebase(struct psconfig *config, float sampleRate);

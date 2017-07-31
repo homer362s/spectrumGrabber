@@ -112,6 +112,25 @@ int convertRange(enum scopeType type, enum psRange range)
 	return -1;
 }
 
+void scaleReading(struct psconfig *config, int channel, int16_t *rawData, double *scaledData)
+{
+	int16_t maxValue = 1;
+	switch (config->type) {
+		case PS3000:
+			break;
+		case PS3000A:
+			ps3000aMaximumValue(config->handle, &maxValue);
+			break;
+		case PS6000:
+			maxValue = PS6000_MAX_VALUE;
+			break;
+	}
+	
+	for (int i = 0;i < config->nPoints;i++) {
+		scaledData[i] = (double) rawData[i] / maxValue * config->channels[channel].rangeVal / config->channels[channel].coefficient;
+	}
+}
+
 PICO_STATUS psOpenUnit(struct psconfig *config)
 {
 	PICO_STATUS status = -1;

@@ -10,6 +10,10 @@ Prototype="int convertCoupling(enum scopeType type, enum psCoupling coupling);"
 Class="Function"
 Prototype="int convertRange(enum scopeType type, enum psRange range);"
 
+[scaleReading]
+Class="Function"
+Prototype="void scaleReading(struct psconfig *config, int channel, short *rawData, double *scaledData);"
+
 [psOpenUnit]
 Class="Function"
 Prototype="unsigned int psOpenUnit(struct psconfig *config);"

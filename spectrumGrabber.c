@@ -184,7 +184,7 @@ int picoscopeInit()
 	
 }
 
-void setupScopeChannel(int channelIndex, int enabledLed, int rangeRing, int couplingRing)
+void setupScopeChannel(int channelIndex, int enabledLed, int rangeRing, int couplingRing, int coeffBox)
 {
 	// Get enabled status
 	int enabled = 0;
@@ -238,7 +238,7 @@ void setupScopeChannel(int channelIndex, int enabledLed, int rangeRing, int coup
 	}
 	
 	double coeff;
-	GetCtrlVal(panelHandle, channelCoeffs[channelIndex], &coeff); 
+	GetCtrlVal(panelHandle, coeffBox, &coeff); 
 	
 	if(isChannelEnabled(channelIndex)){
 		enabled = 1;	
@@ -261,7 +261,7 @@ void setupScopeChannels()
 {
 	// Set up scope channels according to UI defaults
 	for(int i =0;i<4;i++) {
-		setupScopeChannel(i, channelLeds[i], channelRanges[i], channelCouplings[i]);
+		setupScopeChannel(i, channelLeds[i], channelRanges[i], channelCouplings[i], channelCoeffs[i]);
 	}
 }
 
@@ -345,20 +345,21 @@ void processData(int nMeasured, int averages, FILE **timeFPs)
 		}
 		
 		// Log the raw data
-		//FILE *logfp = fopen("dataLog.log", "w");
-		//for(int j = 0;j<nPoints;j++) {
-		//	fprintf(logfp, "%d\n", rawDataBuffer[j]);
-		//}
-		//fclose(logfp);
+		FILE *logfp = fopen("dataLog.log", "w");
+		for(int j = 0;j<nPoints;j++) {
+			fprintf(logfp, "%d\n", rawDataBuffer[j]);
+		}
+		fclose(logfp);
 		
 		// Convert values to double
-		double fullScale;
-		GetCtrlVal(panelHandle, channelRanges[i], &fullScale);
-		double coefficient;
-		GetCtrlVal(panelHandle, channelCoeffs[i], &coefficient);
-		for (int j = 0;j < psConfig.nPoints;j++) {
-			dataValues[j] = (double) rawDataBuffer[j] / 32767 * fullScale / coefficient;
-		}
+		//double fullScale;
+		//GetCtrlVal(panelHandle, channelRanges[i], &fullScale);
+		//double coefficient;
+		//GetCtrlVal(panelHandle, channelCoeffs[i], &coefficient);
+		//for (int j = 0;j < psConfig.nPoints;j++) {
+		//	dataValues[j] = (double) rawDataBuffer[j] / 32767 * fullScale / coefficient;
+		//}
+		scaleReading(&psConfig, i, rawDataBuffer, dataValues);
 	
 		// Save timeValues if time domain saving is requested and this is the first sweep at this bias point
 		if (isEnabled(panelHandle, channelMeasTime[i]) && nMeasured==0 && isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
@@ -932,6 +933,7 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 			switch (control) {
 				case MAINPANEL_RANGEA:
 				case MAINPANEL_COUPLINGA:
+				case MAINPANEL_COEFFA:
 				case MAINPANEL_FREQA:
 				case MAINPANEL_TIMEA:
 					//channel = PS_CHANNEL_A;
@@ -939,6 +941,7 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 					break;
 				case MAINPANEL_RANGEB:
 				case MAINPANEL_COUPLINGB:
+				case MAINPANEL_COEFFB:
 				case MAINPANEL_FREQB:
 				case MAINPANEL_TIMEB:
 					//channel = PS_CHANNEL_B;
@@ -946,6 +949,7 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 					break;
 				case MAINPANEL_RANGEC:
 				case MAINPANEL_COUPLINGC:
+				case MAINPANEL_COEFFC:
 				case MAINPANEL_FREQC:
 				case MAINPANEL_TIMEC:
 					//channel = PS_CHANNEL_C;
@@ -953,6 +957,7 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 					break;
 				case MAINPANEL_RANGED:
 				case MAINPANEL_COUPLINGD:
+				case MAINPANEL_COEFFD:
 				case MAINPANEL_FREQD:
 				case MAINPANEL_TIMED:
 					//channel = PS_CHANNEL_D;
@@ -977,7 +982,7 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 				SetCtrlAttribute(panelHandle, overloadLeds[channelIndex], ATTR_DIMMED, 1);
 			}
 			
-			setupScopeChannel(channelIndex, channelLeds[channelIndex], channelRanges[channelIndex], channelCouplings[channelIndex]);
+			setupScopeChannel(channelIndex, channelLeds[channelIndex], channelRanges[channelIndex], channelCouplings[channelIndex], channelCoeffs[channelIndex]);
 			
 			// Resume capture if in progress
 			if(measurementInProgress)
