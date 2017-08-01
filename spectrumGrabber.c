@@ -365,6 +365,7 @@ void processData(int nMeasured, int averages, FILE **timeFPs)
 		// Save timeValues if time domain saving is requested and this is the first sweep at this bias point
 		if (isEnabled(panelHandle, channelMeasTime[i]) && nMeasured==0 && isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
 			// Save time domain signal
+			printf("Time saved\n");
 			fprintf(timeFPs[i], "\n%13.6e", dataValues[0]);
 
 			for(int j=1; j<psConfig.nPoints; j++) {
@@ -494,7 +495,9 @@ void handleMeasurement(char *path, char *name, char *ext)
 	}
 			
 	// Loop over bias conditions measuring at each
+	int iBias = 0;
 	for(int i = 0; i < nBias; i++) {
+		iBias = i;
 		short averages = 1;
 		int nMeasured = 0;
 		char tmpstr[128];
@@ -514,11 +517,6 @@ void handleMeasurement(char *path, char *name, char *ext)
 		
 		// Loop within a single bias condition and average
 		for(nMeasured = 0; nMeasured < averages; nMeasured++) {
-			if (userRequestedStop)
-				break;
-			if(userRequestedNext)
-				break;
-		
 			measurementInProgress = 1;
 			dataReady = 0;
 			
@@ -569,6 +567,7 @@ void handleMeasurement(char *path, char *name, char *ext)
 		for (int j =0;j < 4;j++) {
 			if(isEnabled(panelHandle, channelMeasFreq[j]) && isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
 				// Save average spectrum
+				printf("Spectrum Saved\n");
 				fprintf(freqFPs[j], "\n%13.6e", avgSpectrum[j][0]);
 	
 				for(int k=1; k<psConfig.nPoints/2; k++) {
@@ -577,15 +576,14 @@ void handleMeasurement(char *path, char *name, char *ext)
 			}
 		}
 		
+		if (userRequestedStop)
+			break;
 		if(userRequestedNext){
 			userRequestedNext = 0;
 			// Tell the scope to stop
 			psStop(&psConfig);
 			measurementInProgress = 0;
 		}	
-		
-		if (userRequestedStop)
-			break;
 		
 		// Check if the number of bias points changed 
 		if (dacEnabled)
@@ -617,12 +615,12 @@ void handleMeasurement(char *path, char *name, char *ext)
 		if (freqFPs[i]) {
 			fclose(freqFPs[i]);
 			sprintf(outputFileName, "%s%s_Freq_%s%s", path, name, channelLabel[i], ext);
-			transposeText(outputFileName, 14, psConfig.nPoints/2, nBias + 1);
+			transposeText(outputFileName, 14, psConfig.nPoints/2, iBias + 1 + 1);
 		}
 		if (timeFPs[i]) {
 			fclose(timeFPs[i]);
 			sprintf(outputFileName, "%s%s_Time_%s%s", path, name, channelLabel[i], ext);
-			transposeText(outputFileName, 14, psConfig.nPoints, nBias + 1);
+			transposeText(outputFileName, 14, psConfig.nPoints, iBias + 1 + 1);
 		}
 	}
 	free(outputFileName); outputFileName = NULL;
