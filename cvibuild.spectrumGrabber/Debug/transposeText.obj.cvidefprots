@@ -1,0 +1,4 @@
+[transposeText]
+Class="Function"
+Prototype="void transposeText(char *filename, int fieldLen, int numCols, int numRows);"
+

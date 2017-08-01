@@ -9,7 +9,7 @@ IVI Standard Root Dir = "/C/Program Files (x86)/IVI Foundation/IVI"
 VXIplug&play Framework Dir = "/C/Program Files (x86)/IVI Foundation/VISA/winnt"
 IVI Standard Root 64-bit Dir = "/C/Program Files/IVI Foundation/IVI"
 VXIplug&play Framework 64-bit Dir = "/C/Program Files/IVI Foundation/VISA/win64"
-Number of Files = 10
+Number of Files = 12
 Target Type = "Executable"
 Flags = 16
 Copied From Locked InstrDrv Directory = False
@@ -67,24 +67,25 @@ Folder = "Source Files"
 Folder Id = 1
 
 [File 0004]
-File Type = "Include"
+File Type = "CSource"
 Res Id = 4
 Path Is Rel = True
 Path Rel To = "Project"
-Path Rel Path = "../../../Public/Documents/Measurement Computing/DAQ/C/cbw.h"
-Path = "/c/Users/Public/Documents/Measurement Computing/DAQ/C/cbw.h"
+Path Rel Path = "transposeText.c"
+Path = "/c/Users/user/Desktop/spectrumGrabber/transposeText.c"
 Exclude = False
+Compile Into Object File = False
 Project Flags = 0
-Folder = "Include Files"
-Folder Id = 2
+Folder = "Source Files"
+Folder Id = 1
 
 [File 0005]
 File Type = "Include"
 Res Id = 5
 Path Is Rel = True
 Path Rel To = "Project"
-Path Rel Path = "picoscopes.h"
-Path = "/c/Users/user/Desktop/spectrumGrabber/picoscopes.h"
+Path Rel Path = "../../../Public/Documents/Measurement Computing/DAQ/C/cbw.h"
+Path = "/c/Users/Public/Documents/Measurement Computing/DAQ/C/cbw.h"
 Exclude = False
 Project Flags = 0
 Folder = "Include Files"
@@ -95,8 +96,8 @@ File Type = "Include"
 Res Id = 6
 Path Is Rel = True
 Path Rel To = "Project"
-Path Rel Path = "../../../../Program Files (x86)/Pico Technology/SDK/inc/ps3000aApi.h"
-Path = "/c/Program Files (x86)/Pico Technology/SDK/inc/ps3000aApi.h"
+Path Rel Path = "picoscopes.h"
+Path = "/c/Users/user/Desktop/spectrumGrabber/picoscopes.h"
 Exclude = False
 Project Flags = 0
 Folder = "Include Files"
@@ -107,6 +108,18 @@ File Type = "Include"
 Res Id = 7
 Path Is Rel = True
 Path Rel To = "Project"
+Path Rel Path = "../../../../Program Files (x86)/Pico Technology/SDK/inc/ps3000aApi.h"
+Path = "/c/Program Files (x86)/Pico Technology/SDK/inc/ps3000aApi.h"
+Exclude = False
+Project Flags = 0
+Folder = "Include Files"
+Folder Id = 2
+
+[File 0008]
+File Type = "Include"
+Res Id = 8
+Path Is Rel = True
+Path Rel To = "Project"
 Path Rel Path = "../../../../Program Files (x86)/Pico Technology/SDK/inc/ps6000Api.h"
 Path = "/c/Program Files (x86)/Pico Technology/SDK/inc/ps6000Api.h"
 Exclude = False
@@ -114,9 +127,21 @@ Project Flags = 0
 Folder = "Include Files"
 Folder Id = 2
 
-[File 0008]
+[File 0009]
+File Type = "Include"
+Res Id = 9
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "transposeText.h"
+Path = "/c/Users/user/Desktop/spectrumGrabber/transposeText.h"
+Exclude = False
+Project Flags = 0
+Folder = "Include Files"
+Folder Id = 2
+
+[File 0010]
 File Type = "Library"
-Res Id = 8
+Res Id = 10
 Path Is Rel = True
 Path Rel To = "Project"
 Path Rel Path = "../../../Public/Documents/Measurement Computing/DAQ/C/cbw32.lib"
@@ -126,9 +151,9 @@ Project Flags = 0
 Folder = "Library Files"
 Folder Id = 3
 
-[File 0009]
+[File 0011]
 File Type = "Library"
-Res Id = 9
+Res Id = 11
 Path Is Rel = True
 Path Rel To = "Project"
 Path Rel Path = "../../../../Program Files (x86)/Pico Technology/SDK/lib/ps3000a.lib"
@@ -138,9 +163,9 @@ Project Flags = 0
 Folder = "Library Files"
 Folder Id = 3
 
-[File 0010]
+[File 0012]
 File Type = "Library"
-Res Id = 10
+Res Id = 12
 Path Is Rel = True
 Path Rel To = "Project"
 Path Rel Path = "../../../../Program Files (x86)/Pico Technology/SDK/lib/ps6000.lib"

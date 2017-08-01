@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "picoscopes.h"
+#include "transposeText.h"
 
 //uint32_t timebase = 7816;
 int16_t *rawDataBuffer;   // Stores data from the scope
@@ -345,11 +346,11 @@ void processData(int nMeasured, int averages, FILE **timeFPs)
 		}
 		
 		// Log the raw data
-		FILE *logfp = fopen("dataLog.log", "w");
-		for(int j = 0;j<nPoints;j++) {
-			fprintf(logfp, "%d\n", rawDataBuffer[j]);
-		}
-		fclose(logfp);
+		//FILE *logfp = fopen("dataLog.log", "w");
+		//for(int j = 0;j<nPoints;j++) {
+		//	fprintf(logfp, "%d\n", rawDataBuffer[j]);
+		//}
+		//fclose(logfp);
 		
 		// Convert values to double
 		//double fullScale;
@@ -364,10 +365,10 @@ void processData(int nMeasured, int averages, FILE **timeFPs)
 		// Save timeValues if time domain saving is requested and this is the first sweep at this bias point
 		if (isEnabled(panelHandle, channelMeasTime[i]) && nMeasured==0 && isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
 			// Save time domain signal
-			fprintf(timeFPs[i], "\n%e", dataValues[0]);
+			fprintf(timeFPs[i], "\n%13.6e", dataValues[0]);
 
 			for(int j=1; j<psConfig.nPoints; j++) {
-				fprintf(timeFPs[i], ",%e", dataValues[j]);	
+				fprintf(timeFPs[i], ",%13.6e", dataValues[j]);	
 			}
 		}
 
@@ -463,19 +464,15 @@ void handleMeasurement(char *path, char *name, char *ext)
 		if (isEnabled(panelHandle, channelMeasFreq[i]) && isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
 			// Build filename and open file
 			outputFileFreq = malloc(filenameLen * sizeof(char));
-			strcpy(outputFileFreq, path);
-			strcat(outputFileFreq, name);
-			strcat(outputFileFreq, "_Freq_");
-			strcat(outputFileFreq, channelLabel[i]);
-			strcat(outputFileFreq, ext);
+			sprintf(outputFileFreq, "%s%s_Freq_%s%s", path, name, channelLabel[i], ext);
 			freqFPs[i] = fopen(outputFileFreq, "w+");
 			free(outputFileFreq);
 			outputFileFreq = NULL;
 	
 			// Write data
-			fprintf(freqFPs[i], "%e", freqValues[0]);
+			fprintf(freqFPs[i], "%13.6e", freqValues[0]);
 			for(int j=1; j<psConfig.nPoints/2; j++) {
-				fprintf(freqFPs[i], ",%e", freqValues[j]);	
+				fprintf(freqFPs[i], ",%13.6e", freqValues[j]);	
 			}
 		}
 	
@@ -483,19 +480,15 @@ void handleMeasurement(char *path, char *name, char *ext)
 		if (isEnabled(panelHandle, channelMeasTime[i]) && isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
 			// Build filename and open file
 			outputFileTime = malloc(filenameLen * sizeof(char));
-			strcpy(outputFileTime, path);
-			strcat(outputFileTime, name);
-			strcat(outputFileTime, "_Time_");
-			strcat(outputFileTime, channelLabel[i]);
-			strcat(outputFileTime, ext);
+			sprintf(outputFileTime, "%s%s_Time_%s%s", path, name, channelLabel[i], ext);
 			timeFPs[i] = fopen(outputFileTime, "w+");
 			free(outputFileTime);
 			outputFileTime = NULL;
 	
 			// Write data
-			fprintf(timeFPs[i], "%e", timeValues[0]);
+			fprintf(timeFPs[i], "%13.6e", timeValues[0]);
 			for(int j=1; j<psConfig.nPoints; j++) {
-				fprintf(timeFPs[i], ",%e", timeValues[j]);	
+				fprintf(timeFPs[i], ",%13.6e", timeValues[j]);	
 			}
 		}
 	}
@@ -576,10 +569,10 @@ void handleMeasurement(char *path, char *name, char *ext)
 		for (int j =0;j < 4;j++) {
 			if(isEnabled(panelHandle, channelMeasFreq[j]) && isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
 				// Save average spectrum
-				fprintf(freqFPs[j], "\n%e", avgSpectrum[j][0]);
+				fprintf(freqFPs[j], "\n%13.6e", avgSpectrum[j][0]);
 	
 				for(int k=1; k<psConfig.nPoints/2; k++) {
-					fprintf(freqFPs[j], ",%e", avgSpectrum[j][k]);	
+					fprintf(freqFPs[j], ",%13.6e", avgSpectrum[j][k]);	
 				}
 			}
 		}
@@ -618,13 +611,21 @@ void handleMeasurement(char *path, char *name, char *ext)
 	psStop(&psConfig);
 	measurementInProgress = 0;
 	
-	// Close data files
+	// Close data files and transpose
+	char* outputFileName = malloc(filenameLen * sizeof(char));
 	for(int i = 0;i<4;i++) {
-		if (freqFPs[i])
+		if (freqFPs[i]) {
 			fclose(freqFPs[i]);
-		if (timeFPs[i])
+			sprintf(outputFileName, "%s%s_Freq_%s%s", path, name, channelLabel[i], ext);
+			transposeText(outputFileName, 14, psConfig.nPoints/2, nBias + 1);
+		}
+		if (timeFPs[i]) {
 			fclose(timeFPs[i]);
+			sprintf(outputFileName, "%s%s_Time_%s%s", path, name, channelLabel[i], ext);
+			transposeText(outputFileName, 14, psConfig.nPoints, nBias + 1);
+		}
 	}
+	free(outputFileName); outputFileName = NULL;
 	
 	// Re-enable the run button
 	SetCtrlAttribute(panelHandle, MAINPANEL_STOPBUTTON, ATTR_DIMMED, TRUE);

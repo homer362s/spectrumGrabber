@@ -1,5 +1,6 @@
 Depends "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Debug\\spectrumGrabber.exe" : "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Debug\\picoscopes.obj" ;
 Depends "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Debug\\spectrumGrabber.exe" : "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Debug\\spectrumGrabber.obj" ;
+Depends "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Debug\\spectrumGrabber.exe" : "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Debug\\transposeText.obj" ;
 Depends "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Debug\\spectrumGrabber.exe" : "C:\\Program Files (x86)\\Windows Kits\\8.1\\Lib\\winv6.3\\um\\x86\\advapi32.lib" ;
 NoCare "C:\\Program Files (x86)\\Windows Kits\\8.1\\Lib\\winv6.3\\um\\x86\\advapi32.lib" ;
 Depends "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Debug\\spectrumGrabber.exe" : "c:\\ProgramData\\National Instruments\\CVI2015\\bin\\msvc\\analysis.lib" ;
