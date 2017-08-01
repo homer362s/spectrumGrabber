@@ -89,7 +89,11 @@
 #define  MAINPANEL_TEXTMSG_2              74      /* control type: textMsg, callback function: (none) */
 #define  MAINPANEL_PICOSCOPERING          75      /* control type: ring, callback function: picoscopeRing_CB */
 #define  MAINPANEL_DISABLESAVEBUTTON      76      /* control type: textButton, callback function: disableSave_CB */
-#define  MAINPANEL_DECORATION_2           77      /* control type: deco, callback function: (none) */
+#define  MAINPANEL_MAXTIME                77      /* control type: numeric, callback function: saveLimits_CB */
+#define  MAINPANEL_MINTIME                78      /* control type: numeric, callback function: saveLimits_CB */
+#define  MAINPANEL_MAXFREQ                79      /* control type: numeric, callback function: saveLimits_CB */
+#define  MAINPANEL_MINFREQ                80      /* control type: numeric, callback function: saveLimits_CB */
+#define  MAINPANEL_DECORATION_2           81      /* control type: deco, callback function: (none) */
 
 #define  TGPANEL                          2       /* callback function: tgPanel_CB */
 #define  TGPANEL_VGSTARTBOX               2       /* control type: numeric, callback function: editVgBox_CB */
@@ -152,6 +156,7 @@ int  CVICALLBACK nextButton_CB(int panel, int control, int event, void *callback
 int  CVICALLBACK picoscopeRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK rateBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK runButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
+int  CVICALLBACK saveLimits_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK savetableButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK stopButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK tgPanel_CB(int panel, int event, void *callbackData, int eventData1, int eventData2);

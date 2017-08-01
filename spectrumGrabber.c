@@ -13,6 +13,8 @@
 #include "picoscopes.h"
 #include "transposeText.h"
 
+struct limits {double min; double max; int iMin; int iMax};
+
 //uint32_t timebase = 7816;
 int16_t *rawDataBuffer;   // Stores data from the scope
 double *zeros;			  // Stores zeros for FFT
@@ -58,6 +60,9 @@ void generateMatrix(double *VgVals, double *VdVals, int NumVgSteps, int NumVdSte
 void updateBiasCount();  
 void updateTimeDisplay();
 int isChannelEnabled(int channelIndex);
+void updateSavingWindow(double maxFreq, double maxTime);
+void updateTimeSavingWindow(double maxTime);
+void updateFreqSavingWindow(double maxFreq);
 
 int main (int argc, char *argv[])
 {
@@ -175,14 +180,34 @@ int picoscopeInit()
 	psConfig.channels[3].channel = PS_CHANNEL_D;
 	
 	setupScopeChannels();
+	psStop(&psConfig);
 	
 	// Set up data buffer
 	psMemorySegments(&psConfig);
 	
-	psStop(&psConfig);
+	updateSavingWindow(sampleRate / 2, timeInterval_ns * 1e-9 * psConfig.nPoints);
 	
 	return 0;
 	
+}
+
+// Set up the measurement saving window to cover the whole data set      
+void updateSavingWindow(double maxFreq, double maxTime)
+{
+	updateTimeSavingWindow(maxTime);
+	updateFreqSavingWindow(maxFreq);
+}
+
+void updateTimeSavingWindow(double maxTime)
+{
+	SetCtrlVal(panelHandle, MAINPANEL_MINTIME, (double) 0);
+	SetCtrlVal(panelHandle, MAINPANEL_MAXTIME, maxTime);	
+}
+
+void updateFreqSavingWindow(double maxFreq)
+{
+	SetCtrlVal(panelHandle, MAINPANEL_MINFREQ, (double) 0);
+	SetCtrlVal(panelHandle, MAINPANEL_MAXFREQ, maxFreq);
 }
 
 void setupScopeChannel(int channelIndex, int enabledLed, int rangeRing, int couplingRing, int coeffBox)
@@ -312,7 +337,7 @@ int CVICALLBACK delayBox_CB(int panel, int control, int event, void *callbackDat
 	return 0;
 }
 
-void processData(int nMeasured, int averages, FILE **timeFPs)
+void processData(int nMeasured, int averages, int iBias, char ***timeFileNames, struct limits timeLimits)
 {
 	dataReady = 0;
 	short overflow = 0;
@@ -328,19 +353,20 @@ void processData(int nMeasured, int averages, FILE **timeFPs)
 		DeleteGraphPlot(timeTabHandle, TIMETAB_TIMEGRAPH, -1, VAL_DELAYED_DRAW);
 	
 	// Loop over each scope input
-	for(int i = 0;i < 4;i++) {
+	for(int iChannel = 0;iChannel < 4;iChannel++) {
 		// Skip if the input is disabled
-		if(!isEnabled(panelHandle, channelMeasFreq[i]) && !isEnabled(panelHandle, channelMeasTime[i]))
+		if(!isEnabled(panelHandle, channelMeasFreq[iChannel]) && !isEnabled(panelHandle, channelMeasTime[iChannel]))
 			continue;
 		
 		// Get data from scope
 		uint32_t nPoints = psConfig.nPoints;
 		
-		psSetDataBuffer(&psConfig, i, psConfig.nPoints, rawDataBuffer);
+		psSetDataBuffer(&psConfig, iChannel, psConfig.nPoints, rawDataBuffer);
 		psGetValues(&psConfig, &nPoints, &overflow);
-		psSetDataBuffer(&psConfig, i, psConfig.nPoints, NULL); 
+		psSetDataBuffer(&psConfig, iChannel, psConfig.nPoints, NULL); 
 		
-		 for(int i=0; i<4; i++) {
+		// Check for overload and turn on LED if overload occurred
+		for(int i=0; i<4; i++) {
 			if(overflow & (1<<i))
 				SetCtrlVal(panelHandle, overloadLeds[i], 1);
 		}
@@ -352,34 +378,25 @@ void processData(int nMeasured, int averages, FILE **timeFPs)
 		//}
 		//fclose(logfp);
 		
-		// Convert values to double
-		//double fullScale;
-		//GetCtrlVal(panelHandle, channelRanges[i], &fullScale);
-		//double coefficient;
-		//GetCtrlVal(panelHandle, channelCoeffs[i], &coefficient);
-		//for (int j = 0;j < psConfig.nPoints;j++) {
-		//	dataValues[j] = (double) rawDataBuffer[j] / 32767 * fullScale / coefficient;
-		//}
-		scaleReading(&psConfig, i, rawDataBuffer, dataValues);
+		scaleReading(&psConfig, iChannel, rawDataBuffer, dataValues);
 	
 		// Save timeValues if time domain saving is requested and this is the first sweep at this bias point
-		if (isEnabled(panelHandle, channelMeasTime[i]) && nMeasured==0 && isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
+		if (isEnabled(panelHandle, channelMeasTime[iChannel]) && nMeasured==0 && isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
 			// Save time domain signal
-			printf("Time saved\n");
-			fprintf(timeFPs[i], "\n%13.6e", dataValues[0]);
-
-			for(int j=1; j<psConfig.nPoints; j++) {
-				fprintf(timeFPs[i], ",%13.6e", dataValues[j]);	
+			FILE *fp = fopen(timeFileNames[iChannel][iBias + 1], "w");
+			for(int j=timeLimits.iMin; j<timeLimits.iMax+1; j++) {
+				fprintf(fp, "%13.6e\n", dataValues[j]);	
 			}
+			fclose(fp);
 		}
 
 		// Plot the time domain
-		if (isChannelEnabled(i) && nMeasured==0) { 
-			PlotXY(timeTabHandle, TIMETAB_TIMEGRAPH, timeValues, dataValues, psConfig.nPoints, VAL_FLOAT, VAL_DOUBLE, VAL_THIN_LINE, VAL_NO_POINT, VAL_SOLID, 1, colors[i]);
+		if (isChannelEnabled(iChannel) && nMeasured==0) { 
+			PlotXY(timeTabHandle, TIMETAB_TIMEGRAPH, timeValues, dataValues, psConfig.nPoints, VAL_FLOAT, VAL_DOUBLE, VAL_THIN_LINE, VAL_NO_POINT, VAL_SOLID, 1, colors[iChannel]);
 		}	
 		
 		// Compute FFT if the FFT is requested
-		if (isEnabled(panelHandle, channelMeasFreq[i])) {
+		if (isEnabled(panelHandle, channelMeasFreq[iChannel])) {
 			// Take FFT
 			for(int j = 0;j < psConfig.nPoints; j++) {
 				zeros[j] = 0;
@@ -392,14 +409,14 @@ void processData(int nMeasured, int averages, FILE **timeFPs)
 				dataValues[j] = (sqrt(dataValues[j]*dataValues[j] + zeros[j]*zeros[j])) / psConfig.nPoints;
 
 				// Average spectra
-				avgSpectrum[i][j] = (avgSpectrum[i][j] * ((double) nMeasured / (double) averages) + dataValues[j] * (1 / (double) averages)) * ((double) averages) / ((double) nMeasured + 1);
+				avgSpectrum[iChannel][j] = (avgSpectrum[iChannel][j] * ((double) nMeasured / (double) averages) + dataValues[j] * (1 / (double) averages)) * ((double) averages) / ((double) nMeasured + 1);
 		
 				// Display units
-				avgSpectrumDisplay[j] = 20*log10(avgSpectrum[i][j]);
+				avgSpectrumDisplay[j] = 20*log10(avgSpectrum[iChannel][j]);
 			}
 		
 			// Display the data
-			PlotXY(freqTabHandle, FREQTAB_FREQGRAPH, freqValues, avgSpectrumDisplay, psConfig.nPoints/2, VAL_FLOAT, VAL_DOUBLE, VAL_THIN_LINE, VAL_NO_POINT, VAL_SOLID, 1, colors[i]);
+			PlotXY(freqTabHandle, FREQTAB_FREQGRAPH, freqValues, avgSpectrumDisplay, psConfig.nPoints/2, VAL_FLOAT, VAL_DOUBLE, VAL_THIN_LINE, VAL_NO_POINT, VAL_SOLID, 1, colors[iChannel]);
 		}
 	}
 	//SetCtrlAttribute(panelHandle, MAINPANEL_FREQGRAPH, ATTR_REFRESH_GRAPH, TRUE);
@@ -408,8 +425,8 @@ void processData(int nMeasured, int averages, FILE **timeFPs)
 
 void handleMeasurement(char *path, char *name, char *ext)
 {
-	FILE *freqFPs[4] = {0, 0, 0, 0};
-	FILE *timeFPs[4] = {0, 0, 0, 0};
+	FILE *freqFP = NULL;
+	FILE *timeFP = NULL;
 	PICO_STATUS status;
 	
 	// Disable the run button
@@ -433,16 +450,44 @@ void handleMeasurement(char *path, char *name, char *ext)
 			avgSpectrum[i] = malloc(psConfig.nPoints * sizeof(double)/2);
 	}
 	
+	// Determine saving limits
+	struct limits freqLimits = {.iMin = 0};
+	struct limits timeLimits = {.iMin = 0};
+	GetCtrlVal(panelHandle, MAINPANEL_MINFREQ, &freqLimits.min);
+	GetCtrlVal(panelHandle, MAINPANEL_MAXFREQ, &freqLimits.max);
+	GetCtrlVal(panelHandle, MAINPANEL_MINTIME, &timeLimits.min);
+	GetCtrlVal(panelHandle, MAINPANEL_MAXTIME, &timeLimits.max);
+	
 	// Initialize time axis values
 	float timeInterval_ns = 0;
 	psGetTimebase2(&psConfig, &timeInterval_ns);
 	for (int i = 0;i < psConfig.nPoints/2;i++) {
 		timeValues[i] = (timeInterval_ns*i)/1e9;
 		freqValues[i] = i/(psConfig.nPoints*timeInterval_ns/1e9);
+		if (timeValues[i] < timeLimits.min)
+			timeLimits.iMin = i+1;
+		if (freqValues[i] < freqLimits.min)
+			freqLimits.iMin = i+1;
+		if (timeValues[i] <= timeLimits.max)
+			timeLimits.iMax = i;
+		if (freqValues[i] <= freqLimits.max)
+			freqLimits.iMax = i;
 	}
 	for (int i = psConfig.nPoints/2;i < psConfig.nPoints;i++) {
 		timeValues[i] = (timeInterval_ns*i)/1e9;
+		if (timeValues[i] < timeLimits.min)
+			timeLimits.iMin = i+1;
+		if (timeValues[i] <= timeLimits.max)
+			timeLimits.iMax = i;
 	}
+	if (timeLimits.iMin < 0)
+		timeLimits.iMin = 0;
+	if (timeLimits.iMax > psConfig.nPoints - 1)
+		timeLimits.iMax = psConfig.nPoints - 1;
+	if (freqLimits.iMin < 0)
+		freqLimits.iMin = 0;
+	if (freqLimits.iMax > psConfig.nPoints/2 - 1)
+		freqLimits.iMax = psConfig.nPoints/2 - 1;
 	
 	int dacEnabled = 0;
 	int nBias = 1;
@@ -451,46 +496,60 @@ void handleMeasurement(char *path, char *name, char *ext)
 	if (dacEnabled)
 		GetNumTableRows(panelHandle, MAINPANEL_TABLE, &nBias);
 	
-	char *outputFileFreq = NULL;
-	char *outputFileTime = NULL;
 	int filenameLen = strlen(path) + strlen(name) + 5 + 2 + strlen(ext) + 1;
 	
+	char **freqFileNames[4], *freqFileName[4];
+	char **timeFileNames[4], *timeFileName[4];
+	for(int i = 0;i < 4;i++) {
+		freqFileNames[i] = malloc((nBias + 1) * sizeof(char*));
+		timeFileNames[i] = malloc((nBias + 1) * sizeof(char*));
+	}
+	
+	// Make all data filenames
+	char *filename;
+	for (int i = 0;i < 4;i++) {
+		freqFileName[i] = malloc((filenameLen) * sizeof(char));
+		sprintf(freqFileName[i], "%s%s_Freq_%s%s", path, name, channelLabel[i], ext);
+		timeFileName[i] = malloc((filenameLen) * sizeof(char));
+		sprintf(timeFileName[i], "%s%s_Time_%s%s", path, name, channelLabel[i], ext);
+		for (int j = 0;j<nBias+1;j++) {
+			freqFileNames[i][j] = malloc((filenameLen + 1 + 8) * sizeof(char));
+			sprintf(freqFileNames[i][j], "%s%s_Freq_%s_%d%s", path, name, channelLabel[i], j, ext);
+			timeFileNames[i][j] = malloc((filenameLen + 1 + 8) * sizeof(char));
+			sprintf(timeFileNames[i][j], "%s%s_Time_%s_%d%s", path, name, channelLabel[i], j, ext);
+		}
+	}
+	filename = NULL;
+	
+	for (int i = 0;i < nBias;i++) {
+	}
+	
 	// Store frequency and time axes in the files
-	for(int i = 0;i<4;i++) {
+	for(int iChannel = 0;iChannel<4;iChannel++) {
 		// Skip if this channel is neither measurement is requested
-		if (!(isChannelEnabled(i)))
+		if (!(isChannelEnabled(iChannel)))
 			continue;
 
-		// Save frequency row
-		if (isEnabled(panelHandle, channelMeasFreq[i]) && isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
-			// Build filename and open file
-			outputFileFreq = malloc(filenameLen * sizeof(char));
-			sprintf(outputFileFreq, "%s%s_Freq_%s%s", path, name, channelLabel[i], ext);
-			freqFPs[i] = fopen(outputFileFreq, "w+");
-			free(outputFileFreq);
-			outputFileFreq = NULL;
+		// Save frequency column
+		if (isEnabled(panelHandle, channelMeasFreq[iChannel]) && isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
+			freqFP = fopen(freqFileNames[iChannel][0], "w");
 	
 			// Write data
-			fprintf(freqFPs[i], "%13.6e", freqValues[0]);
-			for(int j=1; j<psConfig.nPoints/2; j++) {
-				fprintf(freqFPs[i], ",%13.6e", freqValues[j]);	
+			for(int j=freqLimits.iMin; j<freqLimits.iMax+1; j++) {
+				fprintf(freqFP, "%13.6e\n", freqValues[j]);	
 			}
+			fclose(freqFP);
 		}
 	
 		// Save time row
-		if (isEnabled(panelHandle, channelMeasTime[i]) && isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
-			// Build filename and open file
-			outputFileTime = malloc(filenameLen * sizeof(char));
-			sprintf(outputFileTime, "%s%s_Time_%s%s", path, name, channelLabel[i], ext);
-			timeFPs[i] = fopen(outputFileTime, "w+");
-			free(outputFileTime);
-			outputFileTime = NULL;
+		if (isEnabled(panelHandle, channelMeasTime[iChannel]) && isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
+			timeFP = fopen(timeFileNames[iChannel][0], "w");
 	
 			// Write data
-			fprintf(timeFPs[i], "%13.6e", timeValues[0]);
-			for(int j=1; j<psConfig.nPoints; j++) {
-				fprintf(timeFPs[i], ",%13.6e", timeValues[j]);	
+			for(int j=timeLimits.iMin; j<timeLimits.iMax+1; j++) {
+				fprintf(timeFP, "%13.6e\n", timeValues[j]);	
 			}
+			fclose(timeFP);
 		}
 	}
 			
@@ -550,7 +609,7 @@ void handleMeasurement(char *path, char *name, char *ext)
 		
 			// Load and process data into appropriate arrays
 			if (dataReady)
-				processData(nMeasured, averages, timeFPs);
+				processData(nMeasured, averages, i, timeFileNames, timeLimits);
 		
 			// Update progress counter
 			GetCtrlVal(panelHandle, MAINPANEL_AVGBOX, &averages);
@@ -564,15 +623,14 @@ void handleMeasurement(char *path, char *name, char *ext)
 		}
 		
 		// Save average spectra
-		for (int j =0;j < 4;j++) {
+		for (int j = 0;j < 4;j++) {
 			if(isEnabled(panelHandle, channelMeasFreq[j]) && isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
 				// Save average spectrum
-				printf("Spectrum Saved\n");
-				fprintf(freqFPs[j], "\n%13.6e", avgSpectrum[j][0]);
-	
-				for(int k=1; k<psConfig.nPoints/2; k++) {
-					fprintf(freqFPs[j], ",%13.6e", avgSpectrum[j][k]);	
+				FILE *fp = fopen(freqFileNames[j][i+1], "w");
+				for(int k=freqLimits.iMin; k<freqLimits.iMax+1; k++) {
+					fprintf(fp, "%13.6e\n", avgSpectrum[j][k]);	
 				}
+				fclose(fp);
 			}
 		}
 		
@@ -609,21 +667,26 @@ void handleMeasurement(char *path, char *name, char *ext)
 	psStop(&psConfig);
 	measurementInProgress = 0;
 	
-	// Close data files and transpose
-	char* outputFileName = malloc(filenameLen * sizeof(char));
-	for(int i = 0;i<4;i++) {
-		if (freqFPs[i]) {
-			fclose(freqFPs[i]);
-			sprintf(outputFileName, "%s%s_Freq_%s%s", path, name, channelLabel[i], ext);
-			transposeText(outputFileName, 14, psConfig.nPoints/2, iBias + 1 + 1);
-		}
-		if (timeFPs[i]) {
-			fclose(timeFPs[i]);
-			sprintf(outputFileName, "%s%s_Time_%s%s", path, name, channelLabel[i], ext);
-			transposeText(outputFileName, 14, psConfig.nPoints, iBias + 1 + 1);
-		}
+	// Combine data files
+	for(int i = 0;i < 4; i++) {
+		if(isEnabled(panelHandle, channelMeasFreq[i]))
+			combineFiles(freqFileName[i], freqFileNames[i], ",", iBias + 1 + 1, 13, 1<<12);
+		
+		if(isEnabled(panelHandle, channelMeasTime[i]))
+			combineFiles(timeFileName[i], timeFileNames[i], ",", iBias + 1 + 1, 13, 1<<12);
 	}
-	free(outputFileName); outputFileName = NULL;
+	
+	// Free filename memory
+	for(int i = 0;i < 4;i++) {
+		free(freqFileName[i]);
+		free(timeFileName[i]);
+		for(int j = 0;j<nBias+1;j++) {
+			free(freqFileNames[i][j]);
+			free(timeFileNames[i][j]);
+		}
+		free(freqFileNames[i]);
+		free(timeFileNames[i]);
+	}
 	
 	// Re-enable the run button
 	SetCtrlAttribute(panelHandle, MAINPANEL_STOPBUTTON, ATTR_DIMMED, TRUE);
@@ -1026,6 +1089,9 @@ int CVICALLBACK binsRing_CB(int panel, int control, int event, void *callbackDat
 			GetCtrlVal(panelHandle, MAINPANEL_BINSRING, &(psConfig.nPoints));
 			psConfig.nPoints = psConfig.nPoints * 2;
 			updateTimeDisplay();
+			double timeInterval_ns;
+			GetCtrlVal(panelHandle, MAINPANEL_RATEBOX, &timeInterval_ns);
+			updateTimeSavingWindow(psConfig.nPoints * timeInterval_ns * 1e-9);
 			break;
 	}	
 	return 0;
@@ -1112,6 +1178,8 @@ int CVICALLBACK rateBox_CB(int panel, int control, int event, void *callbackData
 			sampleRate = 1/(timeInterval_ns*1e-9);
 			SetCtrlVal(panelHandle, MAINPANEL_RATEBOX, sampleRate);
 			updateTimeDisplay();
+			updateTimeSavingWindow(psConfig.nPoints * timeInterval_ns * 1e-9);
+			updateFreqSavingWindow(sampleRate / 2);
 			break;
 	}	
 	return 0;
@@ -1170,6 +1238,73 @@ int CVICALLBACK dirButton_CB(int panel, int control, int event, void *callbackDa
 			}
 			break;
 	}
+	return 0;
+}
+
+int CVICALLBACK saveLimits_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch (event) {
+		case EVENT_COMMIT:
+			float timeStep = 0;
+			psGetTimebase2(&psConfig, &timeStep);
+			timeStep = timeStep * 1e-9;
+			float binSize = 1/(psConfig.nPoints*timeStep);
+			float maxFreq = 1/(timeStep * 2);
+			float maxTime = timeStep * psConfig.nPoints;
+			
+			double newVal = 0;
+			double otherVal = 0;
+			GetCtrlVal(panelHandle, control, &newVal);
+			
+			// Snap value to nearest actual sample point
+			long steps = 1;
+			switch (control) {
+				case MAINPANEL_MAXFREQ:
+						if (newVal > maxFreq)
+							newVal = maxFreq;
+				case MAINPANEL_MINFREQ:
+					steps = RoundRealToNearestInteger(newVal / binSize);
+					newVal = steps * binSize;
+					break;
+				case MAINPANEL_MAXTIME:
+					if (newVal > maxTime)
+						newVal = maxTime;
+				case MAINPANEL_MINTIME:
+					steps = RoundRealToNearestInteger(newVal / timeStep);
+					newVal = steps * timeStep;
+					break;
+			}
+			
+			// Enforce min < max  
+			switch (control) {
+				case MAINPANEL_MINFREQ:
+					GetCtrlVal(panel, MAINPANEL_MAXFREQ, &otherVal);
+					if (newVal > otherVal)
+						newVal = otherVal;
+					break;
+				case MAINPANEL_MAXFREQ:
+					GetCtrlVal(panel, MAINPANEL_MINFREQ, &otherVal);
+					if (newVal < otherVal)
+						newVal = otherVal;
+					break;
+				case MAINPANEL_MINTIME:
+					GetCtrlVal(panel, MAINPANEL_MAXTIME, &otherVal);
+					if (newVal > otherVal)
+						newVal = otherVal;
+					break;
+				case MAINPANEL_MAXTIME:
+					GetCtrlVal(panel, MAINPANEL_MINTIME, &otherVal);
+					if (newVal < otherVal)
+						newVal = otherVal;
+					break;
+			}
+			
+			// Update the value
+			SetCtrlVal(panel, control, newVal);
+			
+			break;
+	}
+	
 	return 0;
 }
 

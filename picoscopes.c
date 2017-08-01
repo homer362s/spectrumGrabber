@@ -139,9 +139,11 @@ PICO_STATUS psOpenUnit(struct psconfig *config)
 		case PS3000:
 			break;
 		case PS3000A:
+			ps3000aCloseUnit(config->handle);
 			status = ps3000aOpenUnit(&(config->handle), config->serial);
 			break;	
 		case PS6000:
+			ps6000CloseUnit(config->handle);
 			status = ps6000OpenUnit(&(config->handle), config->serial);
 			break;
 	}

@@ -7,7 +7,6 @@
 void transposeText(char *filename, int fieldLen, int numCols, int numRows)
 {  
 	long textLength = fieldLen * numCols * numRows;
-	int nrows = 0, ncols = 0;
 	
 	FILE *fp;
 	FILE *tmpfp;
@@ -51,4 +50,56 @@ void transposeText(char *filename, int fieldLen, int numCols, int numRows)
 	// Move the temp file to the old file location
 	remove(filename);
 	rename(tempFileName, filename);
+}
+
+void combineFiles(char *newFilename, char **filenames, char* sep, int nFiles, int fieldLen, unsigned long bufferLen)
+{
+	unsigned long bufferSize = bufferLen * (fieldLen + 1);
+	char **bufferText = malloc(nFiles * sizeof(char**));
+	FILE *fp[nFiles];
+	FILE *outfp;
+	// Allocate memory and open files
+	outfp = fopen(newFilename, "w");
+	for(int i = 0;i < nFiles;i++) {
+		bufferText[i] = malloc((bufferSize + 1) * sizeof(char));
+		fp[i] = fopen(filenames[i], "r");
+	}
+	
+	size_t nRead;
+	size_t minRead = bufferSize;
+	while(minRead == bufferSize) {
+		// Read in the next buffers
+		for(int i = 0;i < nFiles;i++) {
+			nRead = fread(bufferText[i], sizeof(char), bufferSize, fp[i]);
+			bufferText[i][nRead] = 0;
+			minRead = nRead < minRead ? nRead : minRead;
+		}
+		
+		// Write to the file
+		// Loop over buffer elements
+		for(int i = 0;i < floor((double) minRead / (double) bufferSize * (double) bufferLen);i++) {
+			// Loop over each input file
+			bufferText[0][(i+1)*fieldLen + i] = 0;
+			fprintf(outfp, "%s", bufferText[0]+i*(fieldLen+1));
+			bufferText[0][(i+1)*fieldLen + i] = 'a';
+			for(int j = 1;j < nFiles;j++) {
+				bufferText[j][(i+1)*fieldLen + i] = 0;
+				fprintf(outfp, ",%s", bufferText[j]+i*(fieldLen+1));
+				bufferText[j][(i+1)*fieldLen + i] = 'a';
+			}
+			fprintf(outfp, "\n");
+		}
+	}
+	
+	// Free the buffers and close the files
+	fclose(outfp);
+	for(int i = 0;i < nFiles;i++) {
+		free(bufferText[i]);
+		fclose(fp[i]);
+	}
+	
+	// Delete the old files
+	for(int i = 0;i < nFiles;i++) {
+		remove(filenames[i]);
+	}
 }

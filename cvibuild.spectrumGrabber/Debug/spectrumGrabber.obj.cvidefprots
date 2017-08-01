@@ -6,6 +6,18 @@ Prototype="int main(int argc, char **argv);"
 Class="Function"
 Prototype="int picoscopeInit();"
 
+[updateSavingWindow]
+Class="Function"
+Prototype="void updateSavingWindow(double maxFreq, double maxTime);"
+
+[updateTimeSavingWindow]
+Class="Function"
+Prototype="void updateTimeSavingWindow(double maxTime);"
+
+[updateFreqSavingWindow]
+Class="Function"
+Prototype="void updateFreqSavingWindow(double maxFreq);"
+
 [setupScopeChannel]
 Class="Function"
 Prototype="void setupScopeChannel(int channelIndex, int enabledLed, int rangeRing, int couplingRing, int coeffBox);"
@@ -32,7 +44,7 @@ Prototype="int delayBox_CB(int panel, int control, int event, void *callbackData
 
 [processData]
 Class="Function"
-Prototype="void processData(int nMeasured, int averages, FILE **timeFPs);"
+Prototype="void processData(int nMeasured, int averages, int iBias, char ***timeFileNames, struct limits timeLimits);"
 
 [handleMeasurement]
 Class="Function"
@@ -129,6 +141,10 @@ Prototype="int runButton_CB(int panel, int control, int event, void *callbackDat
 [dirButton_CB]
 Class="Function"
 Prototype="int dirButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[saveLimits_CB]
+Class="Function"
+Prototype="int saveLimits_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
 [savetableButton_CB]
 Class="Function"
