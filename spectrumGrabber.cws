@@ -48,17 +48,17 @@ Batch Build Debug = False
 [File 0001]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.c"
 File Type = "CSource"
-Disk Date = 3584467641
+Disk Date = 3584538497
 In Projects = "1,"
 Window Top = 32
 Window Left = 10
 Window Z-Order = 1
-Source Window State = "1,1091,1091,1091,19,29,29,0,0,195,0,0,0,0,0,52,1066,0,1083,160,271,555,1,0,"
+Source Window State = "1,1321,1321,1321,0,48,48,0,0,195,0,0,0,0,0,52,1266,0,1278,131,271,555,1,0,"
 
 [File 0002]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"
 File Type = "User Interface Resource"
-Disk Date = 3584464159
+Disk Date = 3584527398
 In Projects = "1,"
 Window Top = 62
 Window Left = 26
@@ -69,12 +69,12 @@ Window Z-Order = 2
 [File 0003]
 Path = "/c/Users/user/Desktop/spectrumGrabber/picoscopes.c"
 File Type = "CSource"
-Disk Date = 3584464720
+Disk Date = 3584467743
 In Projects = "1,"
 Window Top = 152
 Window Left = 74
 Window Z-Order = 3
-Source Window State = "1,133,133,133,12,22,22,0,0,80,0,96,0,1,0,25,121,0,145,44,349,715,1,13,"
+Source Window State = "1,184,184,184,12,26,26,0,3,80,0,96,0,1,0,25,172,0,184,12,349,715,1,13,"
 
 [File 0004]
 Path = "/c/Users/user/Desktop/spectrumGrabber/picoscopes.h"
@@ -99,7 +99,7 @@ Source Window State = "1,171,171,171,0,65,65,0,3,80,0,0,0,0,0,25,128,0,171,0,349
 [File 0006]
 Path = "/c/Users/user/Desktop/spectrumGrabber/transposeText.c"
 File Type = "CSource"
-Disk Date = 3584461911
+Disk Date = 3584467743
 In Projects = "1,"
 Window Top = 32
 Window Left = 10
@@ -109,7 +109,7 @@ Source Window State = "1,81,81,81,0,14,14,0,0,80,0,4,0,2,0,25,60,0,64,61,349,715
 [File 0007]
 Path = "/c/Users/user/Desktop/spectrumGrabber/transposeText.h"
 File Type = "Include"
-Disk Date = 3584458341
+Disk Date = 3584467743
 In Projects = "1,"
 Window Top = 62
 Window Left = 26

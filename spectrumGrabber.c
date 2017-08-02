@@ -60,9 +60,8 @@ void generateMatrix(double *VgVals, double *VdVals, int NumVgSteps, int NumVdSte
 void updateBiasCount();  
 void updateTimeDisplay();
 int isChannelEnabled(int channelIndex);
-void updateSavingWindow(double maxFreq, double maxTime);
-void updateTimeSavingWindow(double maxTime);
-void updateFreqSavingWindow(double maxFreq);
+void updateFreqSavingWindow(double minFreq, double maxFreq, double freqStep); 
+void updateTimeSavingWindow(double minTime, double maxTime, double timeStep);
 
 int main (int argc, char *argv[])
 {
@@ -185,29 +184,31 @@ int picoscopeInit()
 	// Set up data buffer
 	psMemorySegments(&psConfig);
 	
-	updateSavingWindow(sampleRate / 2, timeInterval_ns * 1e-9 * psConfig.nPoints);
+	updateFreqSavingWindow(0, sampleRate/2, 1/(psConfig.nPoints*timeInterval_ns*1e-9));
+	updateTimeSavingWindow(0, timeInterval_ns * 1e-9 * psConfig.nPoints, timeInterval_ns*1e-9);
 	
 	return 0;
 	
 }
 
-// Set up the measurement saving window to cover the whole data set      
-void updateSavingWindow(double maxFreq, double maxTime)
+void updateTimeSavingWindow(double minTime, double maxTime, double timeStep)
 {
-	updateTimeSavingWindow(maxTime);
-	updateFreqSavingWindow(maxFreq);
+	SetCtrlVal(panelHandle, MAINPANEL_MINTIME, minTime);
+	SetCtrlVal(panelHandle, MAINPANEL_MAXTIME, maxTime);
+	int steps = RoundRealToNearestInteger((maxTime-minTime)/timeStep) + 1;
+	char str[128];
+	sprintf(str, "%d", steps);
+	SetCtrlVal(panelHandle, MAINPANEL_NUMTBOX, str);
 }
 
-void updateTimeSavingWindow(double maxTime)
+void updateFreqSavingWindow(double minFreq, double maxFreq, double freqStep)
 {
-	SetCtrlVal(panelHandle, MAINPANEL_MINTIME, (double) 0);
-	SetCtrlVal(panelHandle, MAINPANEL_MAXTIME, maxTime);	
-}
-
-void updateFreqSavingWindow(double maxFreq)
-{
-	SetCtrlVal(panelHandle, MAINPANEL_MINFREQ, (double) 0);
+	SetCtrlVal(panelHandle, MAINPANEL_MINFREQ, minFreq);
 	SetCtrlVal(panelHandle, MAINPANEL_MAXFREQ, maxFreq);
+	int steps = RoundRealToNearestInteger((maxFreq-minFreq)/freqStep) + 1;
+	char str[128];
+	sprintf(str, "%d", steps);
+	SetCtrlVal(panelHandle, MAINPANEL_NUMFBOX, str);
 }
 
 void setupScopeChannel(int channelIndex, int enabledLed, int rangeRing, int couplingRing, int coeffBox)
@@ -498,8 +499,8 @@ void handleMeasurement(char *path, char *name, char *ext)
 	
 	int filenameLen = strlen(path) + strlen(name) + 5 + 2 + strlen(ext) + 1;
 	
-	char **freqFileNames[4], *freqFileName[4];
-	char **timeFileNames[4], *timeFileName[4];
+	char **freqFileNames[4] = {0,0,0,0}, *freqFileName[4] = {0,0,0,0};
+	char **timeFileNames[4] = {0,0,0,0}, *timeFileName[4] = {0,0,0,0};
 	for(int i = 0;i < 4;i++) {
 		freqFileNames[i] = malloc((nBias + 1) * sizeof(char*));
 		timeFileNames[i] = malloc((nBias + 1) * sizeof(char*));
@@ -1089,9 +1090,12 @@ int CVICALLBACK binsRing_CB(int panel, int control, int event, void *callbackDat
 			GetCtrlVal(panelHandle, MAINPANEL_BINSRING, &(psConfig.nPoints));
 			psConfig.nPoints = psConfig.nPoints * 2;
 			updateTimeDisplay();
-			double timeInterval_ns;
-			GetCtrlVal(panelHandle, MAINPANEL_RATEBOX, &timeInterval_ns);
-			updateTimeSavingWindow(psConfig.nPoints * timeInterval_ns * 1e-9);
+			double sampleRate;
+			GetCtrlVal(panelHandle, MAINPANEL_RATEBOX, &sampleRate);
+			double maxFreq;
+			GetCtrlVal(panelHandle, MAINPANEL_MAXFREQ, &maxFreq);
+			updateFreqSavingWindow(0, maxFreq, sampleRate/(psConfig.nPoints));
+			updateTimeSavingWindow(0, psConfig.nPoints / sampleRate, 1/sampleRate);
 			break;
 	}	
 	return 0;
@@ -1178,8 +1182,8 @@ int CVICALLBACK rateBox_CB(int panel, int control, int event, void *callbackData
 			sampleRate = 1/(timeInterval_ns*1e-9);
 			SetCtrlVal(panelHandle, MAINPANEL_RATEBOX, sampleRate);
 			updateTimeDisplay();
-			updateTimeSavingWindow(psConfig.nPoints * timeInterval_ns * 1e-9);
-			updateFreqSavingWindow(sampleRate / 2);
+			updateFreqSavingWindow(0, sampleRate/2, 1/(psConfig.nPoints*timeInterval_ns*1e-9));
+			updateTimeSavingWindow(0, psConfig.nPoints * timeInterval_ns * 1e-9, timeInterval_ns*1e-9);
 			break;
 	}	
 	return 0;
@@ -1300,7 +1304,21 @@ int CVICALLBACK saveLimits_CB(int panel, int control, int event, void *callbackD
 			}
 			
 			// Update the value
-			SetCtrlVal(panel, control, newVal);
+			switch (control) {
+				case MAINPANEL_MINFREQ:
+					updateFreqSavingWindow(newVal, otherVal, binSize);
+					break;
+				case MAINPANEL_MAXFREQ:
+					updateFreqSavingWindow(otherVal, newVal, binSize);
+					break;
+				case MAINPANEL_MINTIME:
+					updateTimeSavingWindow(newVal, otherVal, timeStep);
+					break;
+				case MAINPANEL_MAXTIME:
+					updateTimeSavingWindow(otherVal, newVal, timeStep);
+					break;
+					
+			}
 			
 			break;
 	}

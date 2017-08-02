@@ -94,6 +94,10 @@
 #define  MAINPANEL_MAXFREQ                79      /* control type: numeric, callback function: saveLimits_CB */
 #define  MAINPANEL_MINFREQ                80      /* control type: numeric, callback function: saveLimits_CB */
 #define  MAINPANEL_DECORATION_2           81      /* control type: deco, callback function: (none) */
+#define  MAINPANEL_NUMFBOX                82      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_NUMTBOX                83      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_TEXTMSG_8              84      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_TEXTMSG_9              85      /* control type: textMsg, callback function: (none) */
 
 #define  TGPANEL                          2       /* callback function: tgPanel_CB */
 #define  TGPANEL_VGSTARTBOX               2       /* control type: numeric, callback function: editVgBox_CB */

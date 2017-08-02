@@ -6,17 +6,13 @@ Prototype="int main(int argc, char **argv);"
 Class="Function"
 Prototype="int picoscopeInit();"
 
-[updateSavingWindow]
-Class="Function"
-Prototype="void updateSavingWindow(double maxFreq, double maxTime);"
-
 [updateTimeSavingWindow]
 Class="Function"
-Prototype="void updateTimeSavingWindow(double maxTime);"
+Prototype="void updateTimeSavingWindow(double minTime, double maxTime, double timeStep);"
 
 [updateFreqSavingWindow]
 Class="Function"
-Prototype="void updateFreqSavingWindow(double maxFreq);"
+Prototype="void updateFreqSavingWindow(double minFreq, double maxFreq, double freqStep);"
 
 [setupScopeChannel]
 Class="Function"
