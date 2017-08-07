@@ -85,8 +85,8 @@ int main (int argc, char *argv[])
 			case PSNONE:
 				scopeTypeChar = "NONE";
 				break;
-			case PS3000:
-				scopeTypeChar = "PS3000";
+			case PS4000:
+				scopeTypeChar = "PS4000";
 				break;
 			case PS3000A:
 				scopeTypeChar = "PS3000A";
@@ -592,6 +592,12 @@ void handleMeasurement(char *path, char *name, char *ext)
 			while(measurementInProgress) {
 				// Handle events
 				ProcessSystemEvents();
+				// If the user skips this data point delete the filename for the time file
+				if ((userRequestedStop || userRequestedNext) && nMeasured == 0) {
+					for (int k = 0;k<4;k++) {
+						timeFileNames[k][i+1][0] = 0;
+					}
+				}
 				if (userRequestedStop) {
 					// Update progress counter
 					sprintf(tmpstr, "%d/%d Averages", nMeasured, nMeasured);
@@ -624,14 +630,20 @@ void handleMeasurement(char *path, char *name, char *ext)
 		}
 		
 		// Save average spectra
-		for (int j = 0;j < 4;j++) {
-			if(isEnabled(panelHandle, channelMeasFreq[j]) && isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
-				// Save average spectrum
-				FILE *fp = fopen(freqFileNames[j][i+1], "w");
-				for(int k=freqLimits.iMin; k<freqLimits.iMax+1; k++) {
-					fprintf(fp, "%13.6e\n", avgSpectrum[j][k]);	
+		if ((userRequestedStop || userRequestedNext) && nMeasured == 0) {
+			for (int k = 0;k<4;k++) {
+				freqFileNames[k][i+1][0] = 0;
+			}
+		} else {
+			for (int j = 0;j < 4;j++) {
+				if(isEnabled(panelHandle, channelMeasFreq[j]) && isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
+					// Save average spectrum
+					FILE *fp = fopen(freqFileNames[j][i+1], "w");
+					for(int k=freqLimits.iMin; k<freqLimits.iMax+1; k++) {
+						fprintf(fp, "%13.6e\n", avgSpectrum[j][k]);	
+					}
+					fclose(fp);
 				}
-				fclose(fp);
 			}
 		}
 		
@@ -669,12 +681,14 @@ void handleMeasurement(char *path, char *name, char *ext)
 	measurementInProgress = 0;
 	
 	// Combine data files
-	for(int i = 0;i < 4; i++) {
-		if(isEnabled(panelHandle, channelMeasFreq[i]))
-			combineFiles(freqFileName[i], freqFileNames[i], ",", iBias + 1 + 1, 13, 1<<12);
-		
-		if(isEnabled(panelHandle, channelMeasTime[i]))
-			combineFiles(timeFileName[i], timeFileNames[i], ",", iBias + 1 + 1, 13, 1<<12);
+	if (isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
+		for(int i = 0;i < 4; i++) {
+			if(isEnabled(panelHandle, channelMeasFreq[i]))
+				combineFiles(freqFileName[i], freqFileNames[i], ",", iBias + 1 + 1, 13, 1<<12);
+	
+			if(isEnabled(panelHandle, channelMeasTime[i]))
+				combineFiles(timeFileName[i], timeFileNames[i], ",", iBias + 1 + 1, 13, 1<<12);
+		}
 	}
 	
 	// Free filename memory
@@ -1194,7 +1208,7 @@ int CVICALLBACK runButton_CB(int panel, int control, int event, void *callbackDa
 	switch (event) {
 		case EVENT_COMMIT:
 			char saveFilename[MAX_PATHNAME_LEN];
-			char path[512], name[30], tstmpName[50];
+			char path[MAX_PATHNAME_LEN-146], name[129], tstmpName[149];
 			int month, day, year, hour, min, sec;
 			
 			for(int i=0; i<4; i++) {
@@ -1317,7 +1331,6 @@ int CVICALLBACK saveLimits_CB(int panel, int control, int event, void *callbackD
 				case MAINPANEL_MAXTIME:
 					updateTimeSavingWindow(otherVal, newVal, timeStep);
 					break;
-					
 			}
 			
 			break;

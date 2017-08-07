@@ -5,15 +5,17 @@
 #include "ps6000API.h"
 #include "ps3000aAPI.h"
 
-enum scopeType {PS3000, PS3000A, PS6000, PSNONE};
+enum scopeType {PS3000A, PS4000, PS6000, PSNONE};
 
 enum psChannel {PS_CHANNEL_A, PS_CHANNEL_B, PS_CHANNEL_C, PS_CHANNEL_D};
 enum psCoupling {PS_AC, PS_DC};
-enum psRange {PS_50MV, PS_100MV, PS_200MV, PS_500MV, PS_1V, PS_2V, PS_5V, PS_10V, PS_20V};
+enum psRange {PS_10MV, PS_20MV, PS_50MV, PS_100MV, PS_200MV, PS_500MV, PS_1V, PS_2V, PS_5V, PS_10V, PS_20V, PS_50V, PS_100V};
 
 struct scopeDef {
 	int8_t *serial;
 	enum scopeType type;
+	int nChannels;
+	enum psRange ranges;
 };
 
 struct pschannel {
@@ -27,6 +29,8 @@ struct pschannel {
 
 struct psconfig {
 	int16_t handle;
+	int nChannels;
+	enum psRange ranges;
 	enum scopeType type;
 	int8_t *serial;
 	uint32_t nPoints;
@@ -34,9 +38,9 @@ struct psconfig {
 	struct pschannel channels[4];
 };
 
-static struct scopeDef picoscopes[] = {{.serial = (int8_t*) "AP231/007", .type = PS6000},
-									   {.serial = (int8_t*) "ES286/061", .type = PS3000A},
-									   {.serial = (int8_t*) "IJY32/014", .type = PS3000}};
+static struct scopeDef picoscopes[] = {{.serial = (int8_t*) "AP231/007", .type = PS6000, .nChannels=4, .ranges={PS_50MV, PS_100MV, PS_200MV, PS_500MV, PS_1V, PS_2V, PS_5V, PS_10V, PS_20V}},
+									   {.serial = (int8_t*) "ES286/061", .type = PS3000A, .nChannels=4, .ranges={PS_50MV, PS_100MV, PS_200MV, PS_500MV, PS_1V, PS_2V, PS_5V, PS_10V, PS_20V}},
+									   {.serial = (int8_t*) "AU354/016", .type = PS4000, .nChannels=2, .ranges={PS_10MV, PS_20MV, PS_50MV, PS_100MV, PS_200MV, PS_500MV, PS_1V, PS_2V, PS_5V, PS_10V, PS_20V, PS_50V, PS_100V}}};
 // Function prototypes
 void scaleReading(struct psconfig *config, int channel, int16_t *rawData, double *scaledData);
 PICO_STATUS psOpenUnit(struct psconfig *config);

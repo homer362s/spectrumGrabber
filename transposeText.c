@@ -61,8 +61,11 @@ void combineFiles(char *newFilename, char **filenames, char* sep, int nFiles, in
 	// Allocate memory and open files
 	outfp = fopen(newFilename, "w");
 	for(int i = 0;i < nFiles;i++) {
-		bufferText[i] = malloc((bufferSize + 1) * sizeof(char));
-		fp[i] = fopen(filenames[i], "r");
+		// If there is a file to read from make the buffer and open the file
+		if(filenames[i][0]) {
+			bufferText[i] = malloc((bufferSize + 1) * sizeof(char));
+			fp[i] = fopen(filenames[i], "r");
+		}
 	}
 	
 	size_t nRead;
@@ -70,36 +73,42 @@ void combineFiles(char *newFilename, char **filenames, char* sep, int nFiles, in
 	while(minRead == bufferSize) {
 		// Read in the next buffers
 		for(int i = 0;i < nFiles;i++) {
-			nRead = fread(bufferText[i], sizeof(char), bufferSize, fp[i]);
-			bufferText[i][nRead] = 0;
-			minRead = nRead < minRead ? nRead : minRead;
+			if (filenames[i][0]) {
+				nRead = fread(bufferText[i], sizeof(char), bufferSize, fp[i]);
+				bufferText[i][nRead] = 0;
+				minRead = nRead < minRead ? nRead : minRead;
+			}
 		}
 		
 		// Write to the file
 		// Loop over buffer elements
 		for(int i = 0;i < floor((double) minRead / (double) bufferSize * (double) bufferLen);i++) {
 			// Loop over each input file
-			bufferText[0][(i+1)*fieldLen + i] = 0;
-			fprintf(outfp, "%s", bufferText[0]+i*(fieldLen+1));
-			bufferText[0][(i+1)*fieldLen + i] = 'a';
-			for(int j = 1;j < nFiles;j++) {
-				bufferText[j][(i+1)*fieldLen + i] = 0;
-				fprintf(outfp, ",%s", bufferText[j]+i*(fieldLen+1));
-				bufferText[j][(i+1)*fieldLen + i] = 'a';
+			int firstFieldWritten = FALSE;
+			for(int j = 0;j < nFiles;j++) {
+				if (filenames[j][0]) {
+					bufferText[j][(i+1)*fieldLen + i] = 0;
+					if (firstFieldWritten) {
+						fprintf(outfp, ",%s", bufferText[j]+i*(fieldLen+1));
+					} else {
+						fprintf(outfp, "%s", bufferText[j]+i*(fieldLen+1));
+						firstFieldWritten = TRUE;
+					}
+				} else {
+					fprintf(outfp, ",");
+				}
 			}
 			fprintf(outfp, "\n");
 		}
 	}
 	
-	// Free the buffers and close the files
+	// Free the buffers then close and delete the files
 	fclose(outfp);
 	for(int i = 0;i < nFiles;i++) {
-		free(bufferText[i]);
-		fclose(fp[i]);
-	}
-	
-	// Delete the old files
-	for(int i = 0;i < nFiles;i++) {
-		remove(filenames[i]);
+		if (filenames[i][0]) {
+			free(bufferText[i]);
+			fclose(fp[i]);
+			remove(filenames[i]);
+		}
 	}
 }

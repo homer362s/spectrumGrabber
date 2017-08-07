@@ -33,6 +33,8 @@ Depends "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\De
 NoCare "c:\\Program Files (x86)\\National Instruments\\CVI2015\\bin\\msvc\\omp.lib" ;
 Depends "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Debug\\spectrumGrabber.exe" : "c:\\Program Files (x86)\\Pico Technology\\SDK\\lib\\ps3000a.lib" ;
 NoCare "c:\\Program Files (x86)\\Pico Technology\\SDK\\lib\\ps3000a.lib" ;
+Depends "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Debug\\spectrumGrabber.exe" : "c:\\Program Files (x86)\\Pico Technology\\SDK\\lib\\ps4000.lib" ;
+NoCare "c:\\Program Files (x86)\\Pico Technology\\SDK\\lib\\ps4000.lib" ;
 Depends "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Debug\\spectrumGrabber.exe" : "c:\\Program Files (x86)\\Pico Technology\\SDK\\lib\\ps6000.lib" ;
 NoCare "c:\\Program Files (x86)\\Pico Technology\\SDK\\lib\\ps6000.lib" ;
 Depends "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Debug\\spectrumGrabber.exe" : "c:\\Program Files (x86)\\National Instruments\\CVI2015\\toolslib\\toolbox\\msvc\\toolbox.obj" ;

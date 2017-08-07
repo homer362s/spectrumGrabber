@@ -9,7 +9,7 @@ IVI Standard Root Dir = "/C/Program Files (x86)/IVI Foundation/IVI"
 VXIplug&play Framework Dir = "/C/Program Files (x86)/IVI Foundation/VISA/winnt"
 IVI Standard Root 64-bit Dir = "/C/Program Files/IVI Foundation/IVI"
 VXIplug&play Framework 64-bit Dir = "/C/Program Files/IVI Foundation/VISA/win64"
-Number of Files = 12
+Number of Files = 14
 Target Type = "Executable"
 Flags = 16
 Copied From Locked InstrDrv Directory = False
@@ -120,8 +120,8 @@ File Type = "Include"
 Res Id = 8
 Path Is Rel = True
 Path Rel To = "Project"
-Path Rel Path = "../../../../Program Files (x86)/Pico Technology/SDK/inc/ps6000Api.h"
-Path = "/c/Program Files (x86)/Pico Technology/SDK/inc/ps6000Api.h"
+Path Rel Path = "../../../../Program Files (x86)/Pico Technology/SDK/inc/ps4000Api.h"
+Path = "/c/Program Files (x86)/Pico Technology/SDK/inc/ps4000Api.h"
 Exclude = False
 Project Flags = 0
 Folder = "Include Files"
@@ -132,6 +132,18 @@ File Type = "Include"
 Res Id = 9
 Path Is Rel = True
 Path Rel To = "Project"
+Path Rel Path = "../../../../Program Files (x86)/Pico Technology/SDK/inc/ps6000Api.h"
+Path = "/c/Program Files (x86)/Pico Technology/SDK/inc/ps6000Api.h"
+Exclude = False
+Project Flags = 0
+Folder = "Include Files"
+Folder Id = 2
+
+[File 0010]
+File Type = "Include"
+Res Id = 10
+Path Is Rel = True
+Path Rel To = "Project"
 Path Rel Path = "transposeText.h"
 Path = "/c/Users/user/Desktop/spectrumGrabber/transposeText.h"
 Exclude = False
@@ -139,9 +151,9 @@ Project Flags = 0
 Folder = "Include Files"
 Folder Id = 2
 
-[File 0010]
+[File 0011]
 File Type = "Library"
-Res Id = 10
+Res Id = 11
 Path Is Rel = True
 Path Rel To = "Project"
 Path Rel Path = "../../../Public/Documents/Measurement Computing/DAQ/C/cbw32.lib"
@@ -151,9 +163,9 @@ Project Flags = 0
 Folder = "Library Files"
 Folder Id = 3
 
-[File 0011]
+[File 0012]
 File Type = "Library"
-Res Id = 11
+Res Id = 12
 Path Is Rel = True
 Path Rel To = "Project"
 Path Rel Path = "../../../../Program Files (x86)/Pico Technology/SDK/lib/ps3000a.lib"
@@ -163,9 +175,21 @@ Project Flags = 0
 Folder = "Library Files"
 Folder Id = 3
 
-[File 0012]
+[File 0013]
 File Type = "Library"
-Res Id = 12
+Res Id = 13
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "../../../../Program Files (x86)/Pico Technology/SDK/lib/ps4000.lib"
+Path = "/c/Program Files (x86)/Pico Technology/SDK/lib/ps4000.lib"
+Exclude = False
+Project Flags = 0
+Folder = "Library Files"
+Folder Id = 3
+
+[File 0014]
+File Type = "Library"
+Res Id = 14
 Path Is Rel = True
 Path Rel To = "Project"
 Path Rel Path = "../../../../Program Files (x86)/Pico Technology/SDK/lib/ps6000.lib"

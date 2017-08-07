@@ -33,6 +33,7 @@ LOCATE on "cbw.h" = "c:\\Users\\Public\\Documents\\Measurement Computing\\DAQ\\C
 LOCATE on "picoscopes.c" = "c:\\Users\\user\\Desktop\\spectrumGrabber" ;
 LOCATE on "picoscopes.h" = "c:\\Users\\user\\Desktop\\spectrumGrabber" ;
 LOCATE on "ps3000aApi.h" = "c:\\Program Files (x86)\\Pico Technology\\SDK\\inc" ;
+LOCATE on "ps4000Api.h" = "c:\\Program Files (x86)\\Pico Technology\\SDK\\inc" ;
 LOCATE on "ps6000Api.h" = "c:\\Program Files (x86)\\Pico Technology\\SDK\\inc" ;
 LOCATE on "spectrumGrabber.c" = "c:\\Users\\user\\Desktop\\spectrumGrabber" ;
 LOCATE on "transposeText.c" = "c:\\Users\\user\\Desktop\\spectrumGrabber" ;
