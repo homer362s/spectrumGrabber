@@ -1,3 +1,4 @@
+#include <ansi_c.h>
 #include <utility.h>
 #include "ps6000Api.h"
 #include "ps3000aApi.h"
@@ -8,6 +9,100 @@
 
 #define FALSE 0
 #define TRUE 1
+
+void getRangeLabel(enum psRange range, char *label)
+{
+	char *tmp;
+	switch (range) {
+		case PS_10MV:
+			tmp = "10 mV";
+			break;
+		case PS_20MV:
+			tmp = "20 mV";
+			break;
+		case PS_50MV:
+			tmp = "50 mV";
+			break;
+		case PS_100MV:
+			tmp = "100 mV";
+			break;
+		case PS_200MV:
+			tmp = "200 mV";
+			break;
+		case PS_500MV:
+			tmp = "500 mV";
+			break;
+		case PS_1V:
+			tmp = "1 V";
+			break;
+		case PS_2V:
+			tmp = "2 V";
+			break;
+		case PS_5V:
+			tmp = "5 V";
+			break;
+		case PS_10V:
+			tmp = "10 V";
+			break;
+		case PS_20V:
+			tmp = "20 V";
+			break;
+		case PS_50V:
+			tmp = "50 V";
+			break;
+		case PS_100V:
+			tmp = "100 V";
+			break;
+	}
+	
+	strcpy(label, tmp);
+}
+
+void getCouplingLabel(enum psCoupling coupling, char *label)
+{
+	char *tmp;
+	switch (coupling) {
+		case PS_DC:
+			tmp = "DC";
+			break;
+		case PS_AC:
+			tmp = "AC";
+			break;
+	}
+	strcpy(label, tmp);
+}
+
+double getRangeValue(enum psRange range)
+{
+	switch (range) {
+		case PS_10MV:
+			return 0.01;
+		case PS_20MV:
+			return 0.02;
+		case PS_50MV:
+			return 0.05;
+		case PS_100MV:
+			return 0.1;
+		case PS_200MV:
+			return 0.2;
+		case PS_500MV:
+			return 0.5;
+		case PS_1V:
+			return 1;
+		case PS_2V:
+			return 2;
+		case PS_5V:
+			return 5;
+		case PS_10V:
+			return 10;
+		case PS_20V:
+			return 20;
+		case PS_50V:
+			return 50;
+		case PS_100V:
+			return 100;
+	}
+}
 
 // Convert the general channel into an API specific channel
 int convertChannel(enum scopeType type, enum psChannel channel) 
@@ -61,7 +156,6 @@ int convertCoupling(enum scopeType type, enum psCoupling coupling)
 				case PS_DC:
 					return TRUE;
 			}
-			break;
 		case PS3000A:
 			switch (coupling) {
 				case PS_AC:
@@ -69,7 +163,6 @@ int convertCoupling(enum scopeType type, enum psCoupling coupling)
 				case PS_DC:
 					return PS3000A_DC;
 			}
-			break;
 		case PS6000:
 			switch (coupling) {
 				case PS_AC:
@@ -77,7 +170,6 @@ int convertCoupling(enum scopeType type, enum psCoupling coupling)
 				case PS_DC:
 					return PS6000_DC_1M;
 			}
-			break;
 	}
 	return -1;
 }
@@ -115,7 +207,6 @@ int convertRange(enum scopeType type, enum psRange range)
 				case PS_100V:
 					return PS4000_100V;
 			}
-			break;
 		case PS3000A:
 			switch (range) {
 				case PS_50MV:
@@ -137,7 +228,6 @@ int convertRange(enum scopeType type, enum psRange range)
 				case PS_20V:
 					return PS3000A_20V;
 			}
-			break;
 		case PS6000:
 			switch (range) {
 				case PS_50MV:
@@ -159,7 +249,6 @@ int convertRange(enum scopeType type, enum psRange range)
 				case PS_20V:
 					return PS6000_20V;
 			}
-			break;
 	}
 	return -1;
 }
@@ -180,7 +269,7 @@ void scaleReading(struct psconfig *config, int channel, int16_t *rawData, double
 	}
 	
 	for (int i = 0;i < config->nPoints;i++) {
-		scaledData[i] = (double) rawData[i] / maxValue * config->channels[channel].rangeVal / config->channels[channel].coefficient;
+		scaledData[i] = (double) rawData[i] / maxValue * getRangeValue(config->channels[channel].range) / config->channels[channel].coefficient;
 	}
 }
 
@@ -188,15 +277,18 @@ PICO_STATUS psOpenUnit(struct psconfig *config)
 {
 	PICO_STATUS status = -1;
 	
+	psCloseUnit(config);
 	switch(config->type) {
 		case PS4000:
+			//ps4000CloseUnit(config->handle);
+			status = ps4000OpenUnit(&(config->handle));
 			break;
 		case PS3000A:
-			ps3000aCloseUnit(config->handle);
+			//ps3000aCloseUnit(config->handle);
 			status = ps3000aOpenUnit(&(config->handle), config->serial);
 			break;	
 		case PS6000:
-			ps6000CloseUnit(config->handle);
+			//ps6000CloseUnit(config->handle);
 			status = ps6000OpenUnit(&(config->handle), config->serial);
 			break;
 	}
@@ -209,6 +301,7 @@ PICO_STATUS psCloseUnit(struct psconfig *config)
 	
 	switch(config->type) {
 		case PS4000:
+			status = ps4000CloseUnit(config->handle);
 			break;
 		case PS3000A:
 			status = ps3000aCloseUnit(config->handle);
@@ -220,11 +313,25 @@ PICO_STATUS psCloseUnit(struct psconfig *config)
 	return status;
 }
 
+// TODO: The PS3000A and PS6000 timebase functions are incomplete, finish these
 // Update config.timebase according the the sample rate and type of picoscope
 void psUpdateTimebase(struct psconfig *config, float sampleRate)
 {
 	switch (config->type) {
 		case PS4000:
+			if (sampleRate < 48e-9) {
+				config->timebase = RoundRealToNearestInteger(sqrt(250000000/sampleRate));
+				if (config->timebase < 0)
+					config->timebase = 0;
+				if (config->timebase > 3)
+					config->timebase = 3;
+			} else {
+				config->timebase = RoundRealToNearestInteger(31250000/sampleRate + 2);
+				if (config->timebase < 4)
+					config->timebase = 4;
+				if (config->timebase > (1<<30) - 1)
+					config->timebase = (1<<30) - 1;
+			}
 			break;
 		case PS3000A:
 			config->timebase = RoundRealToNearestInteger(125000000/sampleRate + 2);
@@ -241,6 +348,7 @@ PICO_STATUS psGetTimebase2(struct psconfig *config, float *timeInterval_ns)
 	
 	switch(config->type) {
 		case PS4000:
+			status = ps4000GetTimebase2(config->handle, config->timebase, config->nPoints, timeInterval_ns, 0, NULL, 0);
 			break;
 		case PS3000A:
 			status = ps3000aGetTimebase2(config->handle, config->timebase, config->nPoints, timeInterval_ns, 0, NULL, 0);
@@ -258,9 +366,10 @@ PICO_STATUS psRunBlock(struct psconfig *config, void *dataAvailableCallback)
 	
 	switch(config->type) {
 		case PS4000:
+			status = ps4000RunBlock(config->handle, 0, config->nPoints, config->timebase, 1, NULL, 0, dataAvailableCallback, NULL);
 			break;
 		case PS3000A:
-			status = ps3000aRunBlock(config->handle, 0, config->nPoints, config->timebase, 1, 0, 0, dataAvailableCallback, NULL); // status = 282   
+			status = ps3000aRunBlock(config->handle, 0, config->nPoints, config->timebase, 1, 0, 0, dataAvailableCallback, NULL);
 			break;	
 		case PS6000:
 			status = ps6000RunBlock(config->handle, 0, config->nPoints, config->timebase, 1, 0, 0, dataAvailableCallback, NULL);
@@ -275,6 +384,7 @@ PICO_STATUS psStop(struct psconfig *config)
 	
 	switch(config->type) {
 		case PS4000:
+			status = ps4000Stop(config->handle);
 			break;
 		case PS3000A:
 			status = ps3000aStop(config->handle);
@@ -287,12 +397,14 @@ PICO_STATUS psStop(struct psconfig *config)
 }
 
 
+// TODO: Make this return the number of samples so we can properly update the UI
 PICO_STATUS psMemorySegments(struct psconfig *config)
 {
 	PICO_STATUS status = -1;
 	
 	switch(config->type) {
 		case PS4000:
+			status = ps4000MemorySegments(config->handle, 1, NULL);
 			break;
 		case PS3000A:
 			status = ps3000aMemorySegments(config->handle, 1, NULL);
@@ -314,6 +426,7 @@ PICO_STATUS psSetChannel(struct psconfig *config, int channelIndex)
 	
 	switch(config->type) {
 		case PS4000:
+			status = ps4000SetChannel(config->handle, channel, config->channels[channelIndex].enabled, (int16_t) coupling, range);
 			break;
 		case PS3000A:
 			status = ps3000aSetChannel(config->handle, channel, config->channels[channelIndex].enabled, coupling, range, 0); 
@@ -333,6 +446,7 @@ PICO_STATUS psSetDataBuffer(struct psconfig *config, int channelIndex, int measu
 	
 	switch(config->type) {
 		case PS4000:
+			status = ps4000SetDataBuffer(config->handle, channel, buffer, measuredPoints);
 			break;
 		case PS3000A:
 			status = ps3000aSetDataBuffer(config->handle, channel, buffer, measuredPoints, 0, PS3000A_RATIO_MODE_NONE);
@@ -350,6 +464,7 @@ PICO_STATUS psGetValues(struct psconfig *config, uint32_t *nPoints, int16_t *ove
 	
 	switch(config->type) {
 		case PS4000:
+			status = ps4000GetValues(config->handle, 0, nPoints, 1, RATIO_MODE_NONE, 0, overflow);
 			break;
 		case PS3000A:
 			status = ps3000aGetValues(config->handle, 0, nPoints, 1, PS3000A_RATIO_MODE_NONE, 0, overflow);

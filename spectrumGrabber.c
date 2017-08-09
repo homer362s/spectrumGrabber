@@ -15,6 +15,8 @@
 
 struct limits {double min; double max; int iMin; int iMax};
 
+enum uiState {UI_NO_SCOPE, UI_NEW_SCOPE, UI_IDLE, UI_MEASURING};
+
 //uint32_t timebase = 7816;
 int16_t *rawDataBuffer;   // Stores data from the scope
 double *zeros;			  // Stores zeros for FFT
@@ -56,6 +58,7 @@ void updateTimeAxis();
 void setupScopeChannels();
 int isEnabled(int handle, int control);
 void gotoBiasPoint(int index);
+void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state);
 void generateMatrix(double *VgVals, double *VdVals, int NumVgSteps, int NumVdSteps); 
 void updateBiasCount();  
 void updateTimeDisplay();
@@ -71,7 +74,7 @@ int main (int argc, char *argv[])
 	nullChk (InitCVIRTE (0, argv, 0));
 	errChk (panelHandle = LoadPanel (0, "spectrumGrabber.uir", MAINPANEL));
 	
-	// Fill in existing picoscopes in menu
+	// Fill in picoscopes menu
 	int8_t *picoSerial;
 	enum scopeType picoType;
 	char *scopeTypeChar;
@@ -128,16 +131,22 @@ int picoscopeInit()
 	
 	// If the chosen scope is none disable the run button and return
 	if(pico<0) {
-		SetCtrlAttribute(panelHandle, MAINPANEL_RUNBUTTON, ATTR_DIMMED, TRUE);
 		psConfig.type = PSNONE;
+		gotoUiState(panelHandle, psConfig, UI_NO_SCOPE);
 		return 0;
 	}
 	
-	// Enable the correct UI elements and set up psConfig struct
-	SetCtrlAttribute(panelHandle, MAINPANEL_RUNBUTTON, ATTR_DIMMED, FALSE);
-	
+	// Set up psConfig struct
 	psConfig.type = picoscopes[pico].type;
-	psConfig.serial = picoscopes[pico].serial; 
+	psConfig.serial = picoscopes[pico].serial;
+	psConfig.nChannels = picoscopes[pico].nChannels;
+	psConfig.nCouplings = picoscopes[pico].nCouplings;
+	psConfig.couplings = picoscopes[pico].couplings;
+	psConfig.nRanges = picoscopes[pico].nRanges;
+	psConfig.ranges = picoscopes[pico].ranges;
+	
+	// Enable or disable ui elements according to the selected scope
+	gotoUiState(panelHandle, psConfig, UI_NEW_SCOPE);
 	
 	// Open the picoscope
 	status = psOpenUnit(&psConfig);
@@ -172,7 +181,7 @@ int picoscopeInit()
 			break;
 	}
 
-	//Initialize the channels a bit
+	//Initialize the channels
 	psConfig.channels[0].channel = PS_CHANNEL_A;
 	psConfig.channels[1].channel = PS_CHANNEL_B;
 	psConfig.channels[2].channel = PS_CHANNEL_C;
@@ -231,38 +240,10 @@ void setupScopeChannel(int channelIndex, int enabledLed, int rangeRing, int coup
 	}
 	
 	// Get range
-	double fullScale;
-	enum psRange rangeSetting = PS_10V;
-	GetCtrlVal(panelHandle, rangeRing, &fullScale);
-	switch ((int)(fullScale*1000)) {
-		case 50:
-			rangeSetting = PS_50MV;
-			break;
-		case 100:
-			rangeSetting = PS_100MV;
-			break;
-		case 200:
-			rangeSetting = PS_200MV;
-			break;
-		case 500:
-			rangeSetting = PS_500MV;
-			break;
-		case 1000:
-			rangeSetting = PS_1V;
-			break;
-		case 2000:
-			rangeSetting = PS_2V;
-			break;
-		case 5000:
-			rangeSetting = PS_5V;
-			break;
-		case 10000:
-			rangeSetting = PS_10V;
-			break;
-		case 20000:
-			rangeSetting = PS_20V;
-			break;
-	}
+	int rangeInt;
+	enum psRange rangeSetting;
+	GetCtrlVal(panelHandle, rangeRing, &rangeInt);
+	rangeSetting = (enum psRange) rangeInt;
 	
 	double coeff;
 	GetCtrlVal(panelHandle, coeffBox, &coeff); 
@@ -275,7 +256,6 @@ void setupScopeChannel(int channelIndex, int enabledLed, int rangeRing, int coup
 	
 	// Update psConfig
 	psConfig.channels[channelIndex].range = rangeSetting;
-	psConfig.channels[channelIndex].rangeVal = fullScale;
 	psConfig.channels[channelIndex].coupling = coupling;
 	psConfig.channels[channelIndex].coefficient = coeff;
 	psConfig.channels[channelIndex].enabled = (int16_t) enabled;
@@ -287,7 +267,7 @@ void setupScopeChannel(int channelIndex, int enabledLed, int rangeRing, int coup
 void setupScopeChannels()
 {
 	// Set up scope channels according to UI defaults
-	for(int i =0;i<4;i++) {
+	for(int i =0;i<psConfig.nChannels;i++) {
 		setupScopeChannel(i, channelLeds[i], channelRanges[i], channelCouplings[i], channelCoeffs[i]);
 	}
 }
@@ -431,11 +411,7 @@ void handleMeasurement(char *path, char *name, char *ext)
 	PICO_STATUS status;
 	
 	// Disable the run button
-	SetCtrlAttribute(panelHandle, MAINPANEL_STOPBUTTON, ATTR_DIMMED, FALSE);
-	SetCtrlAttribute(panelHandle, MAINPANEL_RUNBUTTON, ATTR_DIMMED, TRUE);
-	SetCtrlAttribute(panelHandle, MAINPANEL_NEXTBUTTON, ATTR_DIMMED, FALSE);
-	SetCtrlAttribute(panelHandle, MAINPANEL_BINSRING, ATTR_DIMMED, TRUE);
-	SetCtrlAttribute(panelHandle, MAINPANEL_RATEBOX, ATTR_DIMMED, TRUE);
+	gotoUiState(panelHandle, psConfig, UI_MEASURING);
 	userRequestedStop = 0;
 	
 	// Allocate required memory
@@ -704,11 +680,7 @@ void handleMeasurement(char *path, char *name, char *ext)
 	}
 	
 	// Re-enable the run button
-	SetCtrlAttribute(panelHandle, MAINPANEL_STOPBUTTON, ATTR_DIMMED, TRUE);
-	SetCtrlAttribute(panelHandle, MAINPANEL_RUNBUTTON, ATTR_DIMMED, FALSE);
-	SetCtrlAttribute(panelHandle, MAINPANEL_NEXTBUTTON, ATTR_DIMMED, TRUE);
-	SetCtrlAttribute(panelHandle, MAINPANEL_BINSRING, ATTR_DIMMED, FALSE);
-	SetCtrlAttribute(panelHandle, MAINPANEL_RATEBOX, ATTR_DIMMED, FALSE);
+	gotoUiState(panelHandle, psConfig, UI_IDLE);
 }
 
 // Split up a filename into the corresponding parts
@@ -1616,7 +1588,143 @@ void generateMatrix(double *VgVals, double *VdVals, int NumVgSteps, int NumVdSte
 	
 	free(VgCol);
 	free(VdCol);
-}	
+}
+
+void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
+{
+	char menuItemName[32];
+	switch (state)
+	{
+		case UI_NO_SCOPE:
+			for (int i = 0;i < 4;i++) {
+				// Turn off LEDs
+				SetCtrlVal(panelHandle, channelLeds[i], 0);
+				SetCtrlVal(panelHandle, overloadLeds[i], 0);
+				
+				// Uncheck measurement checkboxes
+				SetCtrlVal(panelHandle, channelMeasFreq[i], 0);
+				SetCtrlVal(panelHandle, channelMeasTime[i], 0);
+				
+				// Dim the channel elements 
+				SetCtrlAttribute(panelHandle, channelLeds[i], ATTR_DIMMED, TRUE);
+				SetCtrlAttribute(panelHandle, channelRanges[i], ATTR_DIMMED, TRUE);
+				SetCtrlAttribute(panelHandle, channelCouplings[i], ATTR_DIMMED, TRUE);
+				SetCtrlAttribute(panelHandle, channelCoeffs[i], ATTR_DIMMED, TRUE);
+				SetCtrlAttribute(panelHandle, channelMeasFreq[i], ATTR_DIMMED, TRUE);
+				SetCtrlAttribute(panelHandle, channelMeasTime[i], ATTR_DIMMED, TRUE);
+				SetCtrlAttribute(panelHandle, overloadLeds[i], ATTR_DIMMED, TRUE);
+				
+				// Clear channel menus
+				ClearListCtrl(panelHandle, channelRanges[i]);
+				ClearListCtrl(panelHandle, channelCouplings[i]);
+				
+				// Disable run buttons
+			}
+			break;
+		case UI_NEW_SCOPE:
+			for (int i = 0; i < 4;i++) {
+				int channelAvailable = i < psConfig.nChannels;
+				
+				// Turn off LEDs
+				SetCtrlVal(panelHandle, channelLeds[i], 0);
+				SetCtrlVal(panelHandle, overloadLeds[i], 0);
+				
+				// Uncheck measurement checkboxes
+				SetCtrlVal(panelHandle, channelMeasFreq[i], 0);
+				SetCtrlVal(panelHandle, channelMeasTime[i], 0);
+				
+				// Dim or undim checkboxes and channel LED
+				SetCtrlAttribute(panelHandle, channelLeds[i], ATTR_DIMMED, !channelAvailable);
+				SetCtrlAttribute(panelHandle, channelMeasFreq[i], ATTR_DIMMED, !channelAvailable);
+				SetCtrlAttribute(panelHandle, channelMeasTime[i], ATTR_DIMMED, !channelAvailable);
+				
+				// Dim remaining channel elements
+				SetCtrlAttribute(panelHandle, channelRanges[i], ATTR_DIMMED, TRUE);
+				SetCtrlAttribute(panelHandle, channelCouplings[i], ATTR_DIMMED, TRUE);
+				SetCtrlAttribute(panelHandle, channelCoeffs[i], ATTR_DIMMED, TRUE);
+				SetCtrlAttribute(panelHandle, overloadLeds[i], ATTR_DIMMED, TRUE);
+				
+				// Clear all channel menus  
+				ClearListCtrl(panelHandle, channelRanges[i]);
+				ClearListCtrl(panelHandle, channelCouplings[i]);
+			}
+			
+			// Set up required channel menus
+			for (int i = 0;i < psConfig.nChannels;i++) {
+				// Fill in ranges
+				for (int j = 0;j < psConfig.nRanges;j++) {
+					getRangeLabel(psConfig.ranges[j], menuItemName);
+					InsertListItem(panelHandle, channelRanges[i], j, menuItemName, psConfig.ranges[j]);
+				}
+				
+				// Fill in couplings
+				for (int j = 0;j < psConfig.nCouplings;j++) {
+					getCouplingLabel(psConfig.couplings[j], menuItemName);
+					InsertListItem(panelHandle, channelCouplings[i], j, menuItemName, psConfig.couplings[j]);
+				}
+			}
+
+			// Go to idle state
+			gotoUiState(panelHandle, psConfig, UI_IDLE);
+			break;
+		case UI_IDLE:
+			// Enable run buttons
+			SetCtrlAttribute(panelHandle, MAINPANEL_RUNBUTTON, ATTR_DIMMED, FALSE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_NEXTBUTTON, ATTR_DIMMED, TRUE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_STOPBUTTON, ATTR_DIMMED, TRUE);
+			
+			// Enable run settings
+			SetCtrlAttribute(panelHandle, MAINPANEL_BINSRING, ATTR_DIMMED, FALSE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_RATEBOX, ATTR_DIMMED, FALSE);
+			
+			// Enable channel settings
+			for (int i = 0;i < psConfig.nChannels;i++) {
+				SetCtrlAttribute(panelHandle, channelRanges[i], ATTR_DIMMED, !isChannelEnabled(i));
+				SetCtrlAttribute(panelHandle, channelCouplings[i], ATTR_DIMMED, !isChannelEnabled(i));
+				SetCtrlAttribute(panelHandle, channelCoeffs[i], ATTR_DIMMED, !isChannelEnabled(i));
+				SetCtrlAttribute(panelHandle, channelMeasFreq[i], ATTR_DIMMED, FALSE);
+				SetCtrlAttribute(panelHandle, channelMeasTime[i], ATTR_DIMMED, FALSE);
+			}
+			
+			// Enable bias points table
+			SetCtrlAttribute(panelHandle, MAINPANEL_GENERATEBUTTON, ATTR_DIMMED, FALSE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_LOADBUTTON, ATTR_DIMMED, FALSE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_CLEARBUTTON, ATTR_DIMMED, FALSE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_ADDROWBUTTON, ATTR_DIMMED, FALSE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_DELROWBUTTON, ATTR_DIMMED, FALSE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_SAVETABLEBUTTON, ATTR_DIMMED, FALSE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_DACBUTTON, ATTR_DIMMED, FALSE);
+			break;
+		case UI_MEASURING:
+			// Disable run buttons
+			SetCtrlAttribute(panelHandle, MAINPANEL_RUNBUTTON, ATTR_DIMMED, TRUE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_NEXTBUTTON, ATTR_DIMMED, FALSE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_STOPBUTTON, ATTR_DIMMED, FALSE);
+			
+			// Disable run settings
+			SetCtrlAttribute(panelHandle, MAINPANEL_BINSRING, ATTR_DIMMED, TRUE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_RATEBOX, ATTR_DIMMED, TRUE);
+			
+			// Disable channel settings
+			for (int i = 0;i < psConfig.nChannels;i++) {
+				SetCtrlAttribute(panelHandle, channelRanges[i], ATTR_DIMMED, TRUE);
+				SetCtrlAttribute(panelHandle, channelCouplings[i], ATTR_DIMMED, TRUE);
+				SetCtrlAttribute(panelHandle, channelCoeffs[i], ATTR_DIMMED, TRUE);
+				SetCtrlAttribute(panelHandle, channelMeasFreq[i], ATTR_DIMMED, TRUE);
+				SetCtrlAttribute(panelHandle, channelMeasTime[i], ATTR_DIMMED, TRUE);
+			}
+			
+			// Disable bias points table
+			SetCtrlAttribute(panelHandle, MAINPANEL_GENERATEBUTTON, ATTR_DIMMED, TRUE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_LOADBUTTON, ATTR_DIMMED, TRUE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_CLEARBUTTON, ATTR_DIMMED, TRUE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_ADDROWBUTTON, ATTR_DIMMED, TRUE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_DELROWBUTTON, ATTR_DIMMED, TRUE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_SAVETABLEBUTTON, ATTR_DIMMED, TRUE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_DACBUTTON, ATTR_DIMMED, TRUE);
+			break;
+	}
+}
 
 int CVICALLBACK generateRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
 {

@@ -7,6 +7,7 @@ cvistart.lib
 cbw32.lib
 kernel32.lib
 ps3000a.lib
+ps4000.lib
 ps6000.lib
 user32.lib
 EXE Symbol Module

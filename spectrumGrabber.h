@@ -26,7 +26,7 @@
 #define  MAINPANEL_LOADBUTTON             11      /* control type: command, callback function: loadButton_CB */
 #define  MAINPANEL_RUNBUTTON              12      /* control type: command, callback function: runButton_CB */
 #define  MAINPANEL_CLEARBUTTON            13      /* control type: command, callback function: clearButton_CB */
-#define  MAINPANEL_SAVETABLEBUTTON_2      14      /* control type: command, callback function: savetableButton_CB */
+#define  MAINPANEL_SAVETABLEBUTTON        14      /* control type: command, callback function: savetableButton_CB */
 #define  MAINPANEL_DELROWBUTTON           15      /* control type: command, callback function: delrowButton_CB */
 #define  MAINPANEL_ADDROWBUTTON           16      /* control type: command, callback function: addrowButton_CB */
 #define  MAINPANEL_VDNUM                  17      /* control type: numeric, callback function: boardNum_CB */

@@ -194,6 +194,10 @@ Prototype="int generateButton_CB(int panel, int control, int event, void *callba
 Class="Function"
 Prototype="void generateMatrix(double *VgVals, double *VdVals, int NumVgSteps, int NumVdSteps);"
 
+[gotoUiState]
+Class="Function"
+Prototype="void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state);"
+
 [generateRing_CB]
 Class="Function"
 Prototype="int generateRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"

@@ -6,6 +6,8 @@ kernel32.lib
 KERNEL32.dll
 ps3000a.lib
 ps3000a.dll
+ps4000.lib
+ps4000.dll
 ps6000.lib
 ps6000.dll
 user32.lib

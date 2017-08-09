@@ -1,3 +1,15 @@
+[getRangeLabel]
+Class="Function"
+Prototype="void getRangeLabel(enum psRange range, char *label);"
+
+[getCouplingLabel]
+Class="Function"
+Prototype="void getCouplingLabel(enum psCoupling coupling, char *label);"
+
+[getRangeValue]
+Class="Function"
+Prototype="double getRangeValue(enum psRange range);"
+
 [convertChannel]
 Class="Function"
 Prototype="int convertChannel(enum scopeType type, enum psChannel channel);"
