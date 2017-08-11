@@ -280,15 +280,12 @@ PICO_STATUS psOpenUnit(struct psconfig *config)
 	psCloseUnit(config);
 	switch(config->type) {
 		case PS4000:
-			//ps4000CloseUnit(config->handle);
-			status = ps4000OpenUnit(&(config->handle));
+			status = ps4000OpenUnitEx(&(config->handle), config->serial);
 			break;
 		case PS3000A:
-			//ps3000aCloseUnit(config->handle);
 			status = ps3000aOpenUnit(&(config->handle), config->serial);
 			break;	
 		case PS6000:
-			//ps6000CloseUnit(config->handle);
 			status = ps6000OpenUnit(&(config->handle), config->serial);
 			break;
 	}
@@ -320,13 +317,13 @@ void psUpdateTimebase(struct psconfig *config, float sampleRate)
 	switch (config->type) {
 		case PS4000:
 			if (sampleRate < 48e-9) {
-				config->timebase = RoundRealToNearestInteger(sqrt(250000000/sampleRate));
+				config->timebase = RoundRealToNearestInteger(sqrt(250000000/(sampleRate * config->downsampleRatio)));
 				if (config->timebase < 0)
 					config->timebase = 0;
 				if (config->timebase > 3)
 					config->timebase = 3;
 			} else {
-				config->timebase = RoundRealToNearestInteger(31250000/sampleRate + 2);
+				config->timebase = RoundRealToNearestInteger(31250000/(sampleRate * config->downsampleRatio) + 2);
 				if (config->timebase < 4)
 					config->timebase = 4;
 				if (config->timebase > (1<<30) - 1)
@@ -334,10 +331,10 @@ void psUpdateTimebase(struct psconfig *config, float sampleRate)
 			}
 			break;
 		case PS3000A:
-			config->timebase = RoundRealToNearestInteger(125000000/sampleRate + 2);
+			config->timebase = RoundRealToNearestInteger(125000000/(sampleRate * config->downsampleRatio) + 2);
 			break;
 		case PS6000:
-			config->timebase = RoundRealToNearestInteger(156250000/sampleRate + 4);
+			config->timebase = RoundRealToNearestInteger(156250000/(sampleRate * config->downsampleRatio) + 4);
 			break;
 	}
 }
@@ -348,15 +345,18 @@ PICO_STATUS psGetTimebase2(struct psconfig *config, float *timeInterval_ns)
 	
 	switch(config->type) {
 		case PS4000:
-			status = ps4000GetTimebase2(config->handle, config->timebase, config->nPoints, timeInterval_ns, 0, NULL, 0);
+			status = ps4000GetTimebase2(config->handle, config->timebase, config->nPoints, timeInterval_ns, 1, NULL, 0);
 			break;
 		case PS3000A:
-			status = ps3000aGetTimebase2(config->handle, config->timebase, config->nPoints, timeInterval_ns, 0, NULL, 0);
+			status = ps3000aGetTimebase2(config->handle, config->timebase, config->nPoints, timeInterval_ns, 1, NULL, 0);
 			break;	
 		case PS6000:
-			status = ps6000GetTimebase2(config->handle, config->timebase, config->nPoints, timeInterval_ns, 0, NULL, 0);
+			status = ps6000GetTimebase2(config->handle, config->timebase, config->nPoints, timeInterval_ns, 1, NULL, 0);
 			break;
 	}
+	
+	*timeInterval_ns = *timeInterval_ns * config->downsampleRatio;
+	
 	return status;
 }
 
@@ -366,13 +366,13 @@ PICO_STATUS psRunBlock(struct psconfig *config, void *dataAvailableCallback)
 	
 	switch(config->type) {
 		case PS4000:
-			status = ps4000RunBlock(config->handle, 0, config->nPoints, config->timebase, 1, NULL, 0, dataAvailableCallback, NULL);
+			status = ps4000RunBlock(config->handle, 0, config->nPoints * config->downsampleRatio, config->timebase, 1, NULL, 0, dataAvailableCallback, NULL);
 			break;
 		case PS3000A:
-			status = ps3000aRunBlock(config->handle, 0, config->nPoints, config->timebase, 1, 0, 0, dataAvailableCallback, NULL);
+			status = ps3000aRunBlock(config->handle, 0, config->nPoints * config->downsampleRatio, config->timebase, 1, 0, 0, dataAvailableCallback, NULL);
 			break;	
 		case PS6000:
-			status = ps6000RunBlock(config->handle, 0, config->nPoints, config->timebase, 1, 0, 0, dataAvailableCallback, NULL);
+			status = ps6000RunBlock(config->handle, 0, config->nPoints * config->downsampleRatio, config->timebase, 1, 0, 0, dataAvailableCallback, NULL);
 			break;
 	}
 	return status;
@@ -446,13 +446,14 @@ PICO_STATUS psSetDataBuffer(struct psconfig *config, int channelIndex, int measu
 	
 	switch(config->type) {
 		case PS4000:
-			status = ps4000SetDataBuffer(config->handle, channel, buffer, measuredPoints);
+			//status = ps4000SetDataBuffer(config->handle, channel, buffer, measuredPoints);
+			status = ps4000SetDataBufferWithMode(config->handle, channel, buffer, measuredPoints, RATIO_MODE_AVERAGE);
 			break;
 		case PS3000A:
-			status = ps3000aSetDataBuffer(config->handle, channel, buffer, measuredPoints, 0, PS3000A_RATIO_MODE_NONE);
+			status = ps3000aSetDataBuffer(config->handle, channel, buffer, measuredPoints, 0, PS3000A_RATIO_MODE_AVERAGE);
 			break;	
 		case PS6000:
-			status = ps6000SetDataBuffer(config->handle, channel, buffer, measuredPoints, PS6000_RATIO_MODE_NONE);
+			status = ps6000SetDataBuffer(config->handle, channel, buffer, measuredPoints, PS6000_RATIO_MODE_AVERAGE);
 			break;
 	}
 	return status;
@@ -464,13 +465,16 @@ PICO_STATUS psGetValues(struct psconfig *config, uint32_t *nPoints, int16_t *ove
 	
 	switch(config->type) {
 		case PS4000:
-			status = ps4000GetValues(config->handle, 0, nPoints, 1, RATIO_MODE_NONE, 0, overflow);
+			status = ps4000GetValues(config->handle, 0, nPoints, config->downsampleRatio, RATIO_MODE_AVERAGE, 0, overflow);
+			//status = ps4000GetValues(config->handle, 0, nPoints, 1, RATIO_MODE_NONE, 0, overflow);
 			break;
 		case PS3000A:
-			status = ps3000aGetValues(config->handle, 0, nPoints, 1, PS3000A_RATIO_MODE_NONE, 0, overflow);
+			status = ps3000aGetValues(config->handle, 0, nPoints, config->downsampleRatio, PS3000A_RATIO_MODE_AVERAGE, 0, overflow);
+			//status = ps3000aGetValues(config->handle, 0, nPoints, 1, PS3000A_RATIO_MODE_NONE, 0, overflow);
 			break;	
 		case PS6000:
-			status = ps6000GetValues(config->handle, 0, nPoints, 1, PS6000_RATIO_MODE_NONE, 0, overflow); 
+			status = ps6000GetValues(config->handle, 0, nPoints, config->downsampleRatio, PS6000_RATIO_MODE_AVERAGE, 0, overflow); 
+			//status = ps6000GetValues(config->handle, 0, nPoints, 1, PS6000_RATIO_MODE_NONE, 0, overflow); 
 			break;
 	}
 	return status;

@@ -42,6 +42,10 @@ Prototype="int delayBox_CB(int panel, int control, int event, void *callbackData
 Class="Function"
 Prototype="void processData(int nMeasured, int averages, int iBias, char ***timeFileNames, struct limits timeLimits);"
 
+[updateTimeAxis]
+Class="Function"
+Prototype="void updateTimeAxis(struct limits *freqLimits, struct limits *timeLimits);"
+
 [handleMeasurement]
 Class="Function"
 Prototype="void handleMeasurement(char *path, char *name, char *ext);"
@@ -118,6 +122,10 @@ Prototype="int delrowButton_CB(int panel, int control, int event, void *callback
 Class="Function"
 Prototype="int disableSave_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
+[dsBox_CB]
+Class="Function"
+Prototype="int dsBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
 [nextButton_CB]
 Class="Function"
 Prototype="int nextButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
@@ -129,6 +137,10 @@ Prototype="int picoscopeRing_CB(int panel, int control, int event, void *callbac
 [rateBox_CB]
 Class="Function"
 Prototype="int rateBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[calculateNewTimebase]
+Class="Function"
+Prototype="void calculateNewTimebase();"
 
 [runButton_CB]
 Class="Function"

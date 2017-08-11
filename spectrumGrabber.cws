@@ -13,10 +13,10 @@ Number of Projects = 1
 Active Project = 1
 Project 0001 = "spectrumGrabber.prj"
 Drag Bar Left = 226
-Window Top = 10
-Window Left = 583
-Window Bottom = 512
-Window Right = 1373
+Window Top = 11
+Window Left = 905
+Window Bottom = 513
+Window Right = 1695
 Maximized = True
 Maximized Children = True
 Max32 Number Of Errors = 20
@@ -30,7 +30,7 @@ Save Changes Before Compiling = "Always"
 Hide Windows = False
 Break At First Statement = False
 Sort Type = "File Name"
-Number of Opened Files = 6
+Number of Opened Files = 9
 Window Confinement Region Enabled = True
 MainColumnWidth = 209
 FileDateColumnWidth = 70
@@ -48,43 +48,43 @@ Batch Build Debug = False
 [File 0001]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.c"
 File Type = "CSource"
-Disk Date = 3585147391
+Disk Date = 3585315027
 In Projects = "1,"
 Window Top = 32
 Window Left = 10
-Window Z-Order = 3
-Source Window State = "1,222,222,222,5,22,22,0,3,60,0,1628,0,0,0,19,215,0,222,5,271,555,1,13,"
+Window Z-Order = 1
+Source Window State = "1,1159,1159,1159,16,26,26,0,0,195,0,1588,0,0,0,57,1402,0,1430,4,271,555,1,13,"
 
 [File 0002]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"
 File Type = "User Interface Resource"
-Disk Date = 3585143755
+Disk Date = 3585240233
 In Projects = "1,"
 Window Top = 62
 Window Left = 26
 Window Height = 349
 Window Width = 715
-Window Z-Order = 4
+Window Z-Order = 2
 
 [File 0003]
 Path = "/c/Users/user/Desktop/spectrumGrabber/picoscopes.c"
 File Type = "CSource"
-Disk Date = 3585147323
+Disk Date = 3585243966
 In Projects = "1,"
 Window Top = 152
 Window Left = 74
-Window Z-Order = 2
-Source Window State = "1,148,148,148,4,19,19,0,0,80,0,97,0,2,0,25,400,0,434,32,349,715,1,13,"
+Window Z-Order = 3
+Source Window State = "1,341,341,341,12,26,26,0,3,80,0,97,0,2,0,25,329,0,341,12,349,715,1,13,"
 
 [File 0004]
 Path = "/c/Users/user/Desktop/spectrumGrabber/picoscopes.h"
 File Type = "Include"
-Disk Date = 3585147609
+Disk Date = 3585157995
 In Projects = "1,"
 Window Top = 182
 Window Left = 90
-Window Z-Order = 1
-Source Window State = "1,50,50,50,120,122,122,0,0,195,0,0,0,0,0,57,0,0,14,86,349,715,1,13,"
+Window Z-Order = 5
+Source Window State = "1,66,66,66,68,93,93,0,0,80,0,0,0,0,0,25,0,0,45,17,349,715,1,13,"
 
 [File 0005]
 Path = "/c/Users/user/Desktop/spectrumGrabber/transposeText.c"
@@ -93,7 +93,7 @@ Disk Date = 3584969889
 In Projects = "1,"
 Window Top = 32
 Window Left = 10
-Window Z-Order = 6
+Window Z-Order = 9
 Source Window State = "1,108,110,110,0,30,30,0,0,80,0,4,0,2,0,25,45,0,66,20,349,715,1,13,"
 
 [File 0006]
@@ -103,7 +103,7 @@ Disk Date = 3584467743
 In Projects = "1,"
 Window Top = 62
 Window Left = 26
-Window Z-Order = 5
+Window Z-Order = 6
 Source Window State = "1,3,3,3,74,83,83,0,0,80,0,0,0,0,0,25,0,0,4,115,349,715,1,0,"
 
 [File 0007]
@@ -122,7 +122,8 @@ Disk Date = 3516620844
 In Projects = "1,"
 Window Top = 62
 Window Left = 26
-Source Window State = "1,137,137,137,2,19,19,0,3,0,0,0,0,0,0,0,101,0,137,2,349,715,1,0,"
+Window Z-Order = 8
+Source Window State = "1,108,108,108,8,38,38,0,3,80,0,0,0,0,0,25,95,0,108,8,349,715,1,0,"
 
 [File 0009]
 Path = "/c/Program Files (x86)/Pico Technology/SDK/inc/ps4000Api.h"
@@ -140,7 +141,8 @@ Disk Date = 3516620848
 In Projects = "1,"
 Window Top = 182
 Window Left = 90
-Source Window State = "1,80,80,80,8,24,24,0,3,0,0,0,0,0,0,0,44,0,80,8,349,715,1,0,"
+Window Z-Order = 7
+Source Window State = "1,80,80,80,8,24,24,0,0,80,0,0,0,0,0,25,73,0,97,12,349,715,1,0,"
 
 [File 0011]
 Path = "/c/Users/Public/Documents/Measurement Computing/DAQ/C/cbw32.lib"
@@ -166,6 +168,16 @@ File Type = "Library"
 Disk Date = 3516620848
 In Projects = "1,"
 
+[File 0015]
+Path = "/c/Program Files (x86)/Pico Technology/SDK/inc/PicoStatus.h"
+File Type = "Include"
+Disk Date = 3516620844
+In Projects = ""
+Window Top = 182
+Window Left = 90
+Window Z-Order = 4
+Source Window State = "1,50,50,50,8,65,65,0,3,80,0,0,0,0,0,25,22,0,50,8,349,715,1,0,"
+
 [Tab Order]
 Tab 0001 = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"
 Tab 0002 = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.c"
@@ -173,6 +185,9 @@ Tab 0003 = "/c/Users/user/Desktop/spectrumGrabber/picoscopes.c"
 Tab 0004 = "/c/Users/user/Desktop/spectrumGrabber/picoscopes.h"
 Tab 0005 = "/c/Users/user/Desktop/spectrumGrabber/transposeText.h"
 Tab 0006 = "/c/Users/user/Desktop/spectrumGrabber/transposeText.c"
+Tab 0007 = "/c/Program Files (x86)/Pico Technology/SDK/inc/ps3000aApi.h"
+Tab 0008 = "/c/Program Files (x86)/Pico Technology/SDK/inc/ps6000Api.h"
+Tab 0009 = "/c/Program Files (x86)/Pico Technology/SDK/inc/PicoStatus.h"
 
 [Default Build Config 0001 Debug]
 Generate Browse Info = True

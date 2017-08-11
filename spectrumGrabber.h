@@ -81,23 +81,30 @@
 #define  MAINPANEL_TOTALTIMETEXTLABEL     66      /* control type: textMsg, callback function: (none) */
 #define  MAINPANEL_DECORATION             67      /* control type: deco, callback function: (none) */
 #define  MAINPANEL_TEXTMSG_4              68      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_TEXTMSG_5              69      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_TEXTMSG_7              70      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_TEXTMSG_6              71      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_BIASTIMETEXTLABEL      72      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_DECORATION_4           73      /* control type: deco, callback function: (none) */
-#define  MAINPANEL_TEXTMSG_2              74      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_PICOSCOPERING          75      /* control type: ring, callback function: picoscopeRing_CB */
-#define  MAINPANEL_DISABLESAVEBUTTON      76      /* control type: textButton, callback function: disableSave_CB */
-#define  MAINPANEL_MAXTIME                77      /* control type: numeric, callback function: saveLimits_CB */
-#define  MAINPANEL_MINTIME                78      /* control type: numeric, callback function: saveLimits_CB */
-#define  MAINPANEL_MAXFREQ                79      /* control type: numeric, callback function: saveLimits_CB */
-#define  MAINPANEL_MINFREQ                80      /* control type: numeric, callback function: saveLimits_CB */
-#define  MAINPANEL_DECORATION_2           81      /* control type: deco, callback function: (none) */
-#define  MAINPANEL_NUMFBOX                82      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_NUMTBOX                83      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_TEXTMSG_8              84      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_TEXTMSG_9              85      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_BIASTIMETEXTLABEL      69      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_DECORATION_4           70      /* control type: deco, callback function: (none) */
+#define  MAINPANEL_TEXTMSG_2              71      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_PICOSCOPERING          72      /* control type: ring, callback function: picoscopeRing_CB */
+#define  MAINPANEL_DISABLESAVEBUTTON      73      /* control type: textButton, callback function: disableSave_CB */
+#define  MAINPANEL_MAXTIME                74      /* control type: numeric, callback function: saveLimits_CB */
+#define  MAINPANEL_MINTIME                75      /* control type: numeric, callback function: saveLimits_CB */
+#define  MAINPANEL_MAXFREQ                76      /* control type: numeric, callback function: saveLimits_CB */
+#define  MAINPANEL_MINFREQ                77      /* control type: numeric, callback function: saveLimits_CB */
+#define  MAINPANEL_DECORATION_2           78      /* control type: deco, callback function: (none) */
+#define  MAINPANEL_NUMTBOX                79      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_TEXTMSG_8              80      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_NUMFBOX                81      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_TEXTMSG_9              82      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_DOWNSAMPLEBOX          83      /* control type: numeric, callback function: dsBox_CB */
+#define  MAINPANEL_TEXTMSG_5              84      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_TEXTMSG_6              85      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_TEXTMSG_7              86      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_LABELD                 87      /* control type: string, callback function: channel_CB */
+#define  MAINPANEL_LABELC                 88      /* control type: string, callback function: channel_CB */
+#define  MAINPANEL_LABELB                 89      /* control type: string, callback function: channel_CB */
+#define  MAINPANEL_LABELA                 90      /* control type: string, callback function: channel_CB */
+#define  MAINPANEL_TEXTMSG_11             91      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_TEXTMSG_12             92      /* control type: textMsg, callback function: (none) */
 
 #define  TGPANEL                          2       /* callback function: tgPanel_CB */
 #define  TGPANEL_VGSTARTBOX               2       /* control type: numeric, callback function: editVgBox_CB */
@@ -150,6 +157,7 @@ int  CVICALLBACK delayBox_CB(int panel, int control, int event, void *callbackDa
 int  CVICALLBACK delrowButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK dirButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK disableSave_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
+int  CVICALLBACK dsBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK editVdBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK editVgBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK generateButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);

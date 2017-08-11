@@ -29,6 +29,7 @@ struct pschannel {
 	enum rangeSetting range;		// example: PS_DC
 	enum psCoupling coupling;		// example: PS_10V
 	double coefficient;
+	int downsample;
 	int16_t enabled;
 };
 
@@ -43,6 +44,7 @@ struct psconfig {
 	int8_t *serial;
 	uint32_t nPoints;
 	int timebase;
+	int32_t downsampleRatio;
 	struct pschannel channels[4];
 };
 

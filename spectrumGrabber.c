@@ -32,6 +32,7 @@ int userRequestedStop = 0;
 int userRequestedNext = 0;
 
 // Control arrays
+int channelLabels[] = {MAINPANEL_LABELA, MAINPANEL_LABELB, MAINPANEL_LABELC, MAINPANEL_LABELD};
 int channelLeds[] = {MAINPANEL_LEDA, MAINPANEL_LEDB, MAINPANEL_LEDC, MAINPANEL_LEDD};
 int overloadLeds[] = {MAINPANEL_OLLEDA, MAINPANEL_OLLEDB, MAINPANEL_OLLEDC, MAINPANEL_OLLEDD};
 int channelRanges[] = {MAINPANEL_RANGEA, MAINPANEL_RANGEB, MAINPANEL_RANGEC, MAINPANEL_RANGED};
@@ -51,6 +52,7 @@ int16_t scopeHandle;
 
 struct psconfig psConfig;
 
+void calculateNewTimebase();
 int picoscopeInit();
 int getInputNew(char FileInput[], int *pointer, char **line);
 char *fileread(char name[], char access[]);
@@ -159,18 +161,16 @@ int picoscopeInit()
 	psConfig.nPoints = psConfig.nPoints * 2;
 	
 	// Set up sample rate according to the UI values
-	double sampleRate;
-	float timeInterval_ns;
-	GetCtrlVal(panelHandle, MAINPANEL_RATEBOX, &sampleRate);
-	psUpdateTimebase(&psConfig, sampleRate);
-	psGetTimebase2(&psConfig, &timeInterval_ns);
-	sampleRate = 1/(timeInterval_ns*1e-9);
-	SetCtrlVal(panelHandle, MAINPANEL_RATEBOX, sampleRate);
+	calculateNewTimebase();
 	
+	// Get the downsample ratio
+	GetCtrlVal(panelHandle, MAINPANEL_DOWNSAMPLEBOX, &(psConfig.downsampleRatio));
+	
+	// This shouldn't be here...
 	// Initialize DAC stuff
-	GetCtrlVal(panelHandle, MAINPANEL_BOARDNUM, &dacBoard);
-	GetCtrlVal(panelHandle, MAINPANEL_VGNUM, &vgOut);
-	GetCtrlVal(panelHandle, MAINPANEL_VDNUM, &vdOut);
+	//GetCtrlVal(panelHandle, MAINPANEL_BOARDNUM, &dacBoard);
+	//GetCtrlVal(panelHandle, MAINPANEL_VGNUM, &vgOut);
+	//GetCtrlVal(panelHandle, MAINPANEL_VDNUM, &vdOut);
 	
 	updateTimeDisplay();
 
@@ -192,9 +192,6 @@ int picoscopeInit()
 	
 	// Set up data buffer
 	psMemorySegments(&psConfig);
-	
-	updateFreqSavingWindow(0, sampleRate/2, 1/(psConfig.nPoints*timeInterval_ns*1e-9));
-	updateTimeSavingWindow(0, timeInterval_ns * 1e-9 * psConfig.nPoints, timeInterval_ns*1e-9);
 	
 	return 0;
 	
@@ -227,23 +224,16 @@ void setupScopeChannel(int channelIndex, int enabledLed, int rangeRing, int coup
 	GetCtrlVal(panelHandle, enabledLed, &enabled);
 	
 	// Get Coupling
-	enum psCoupling coupling = PS_AC;
-	int couplingInt = 0;
+	int couplingInt;
+	enum psCoupling coupling;
 	GetCtrlVal(panelHandle, couplingRing, &couplingInt);
-	switch (couplingInt) {
-		case 1:
-			coupling = PS_AC;
-			break;
-		case 2:
-			coupling = PS_DC;
-			break;
-	}
+	coupling = (enum psCoupling) couplingInt;
 	
 	// Get range
 	int rangeInt;
-	enum psRange rangeSetting;
+	enum psRange range;
 	GetCtrlVal(panelHandle, rangeRing, &rangeInt);
-	rangeSetting = (enum psRange) rangeInt;
+	range = (enum psRange) rangeInt;
 	
 	double coeff;
 	GetCtrlVal(panelHandle, coeffBox, &coeff); 
@@ -255,7 +245,7 @@ void setupScopeChannel(int channelIndex, int enabledLed, int rangeRing, int coup
 	}	
 	
 	// Update psConfig
-	psConfig.channels[channelIndex].range = rangeSetting;
+	psConfig.channels[channelIndex].range = range;
 	psConfig.channels[channelIndex].coupling = coupling;
 	psConfig.channels[channelIndex].coefficient = coeff;
 	psConfig.channels[channelIndex].enabled = (int16_t) enabled;
@@ -393,7 +383,11 @@ void processData(int nMeasured, int averages, int iBias, char ***timeFileNames, 
 				avgSpectrum[iChannel][j] = (avgSpectrum[iChannel][j] * ((double) nMeasured / (double) averages) + dataValues[j] * (1 / (double) averages)) * ((double) averages) / ((double) nMeasured + 1);
 		
 				// Display units
-				avgSpectrumDisplay[j] = 20*log10(avgSpectrum[iChannel][j]);
+				if (avgSpectrum[iChannel][j] <= 0) { 
+					avgSpectrumDisplay[j] = -1000;
+				} else {
+					avgSpectrumDisplay[j] = 20*log10(avgSpectrum[iChannel][j]);
+				}
 			}
 		
 			// Display the data
@@ -402,6 +396,39 @@ void processData(int nMeasured, int averages, int iBias, char ***timeFileNames, 
 	}
 	//SetCtrlAttribute(panelHandle, MAINPANEL_FREQGRAPH, ATTR_REFRESH_GRAPH, TRUE);
 	RefreshGraph(freqTabHandle, FREQTAB_FREQGRAPH);
+}
+
+void updateTimeAxis(struct limits *freqLimits, struct limits *timeLimits)
+{
+	float timeInterval_ns = 0;
+	psGetTimebase2(&psConfig, &timeInterval_ns);
+	for (int i = 0;i < psConfig.nPoints/2;i++) {
+		timeValues[i] = (timeInterval_ns*i)/1e9;
+		freqValues[i] = i/(psConfig.nPoints*timeInterval_ns/1e9);
+		if (timeValues[i] < timeLimits->min)
+			timeLimits->iMin = i+1;
+		if (freqValues[i] < freqLimits->min)
+			freqLimits->iMin = i+1;
+		if (timeValues[i] <= timeLimits->max)
+			timeLimits->iMax = i;
+		if (freqValues[i] <= freqLimits->max)
+			freqLimits->iMax = i;
+	}
+	for (int i = psConfig.nPoints/2;i < psConfig.nPoints;i++) {
+		timeValues[i] = (timeInterval_ns*i)/1e9;
+		if (timeValues[i] < timeLimits->min)
+			timeLimits->iMin = i+1;
+		if (timeValues[i] <= timeLimits->max)
+			timeLimits->iMax = i;
+	}
+	if (timeLimits->iMin < 0)
+		timeLimits->iMin = 0;
+	if (timeLimits->iMax > psConfig.nPoints - 1)
+		timeLimits->iMax = psConfig.nPoints - 1;
+	if (freqLimits->iMin < 0)
+		freqLimits->iMin = 0;
+	if (freqLimits->iMax > psConfig.nPoints/2 - 1)
+		freqLimits->iMax = psConfig.nPoints/2 - 1;
 }
 
 void handleMeasurement(char *path, char *name, char *ext)
@@ -436,35 +463,7 @@ void handleMeasurement(char *path, char *name, char *ext)
 	GetCtrlVal(panelHandle, MAINPANEL_MAXTIME, &timeLimits.max);
 	
 	// Initialize time axis values
-	float timeInterval_ns = 0;
-	psGetTimebase2(&psConfig, &timeInterval_ns);
-	for (int i = 0;i < psConfig.nPoints/2;i++) {
-		timeValues[i] = (timeInterval_ns*i)/1e9;
-		freqValues[i] = i/(psConfig.nPoints*timeInterval_ns/1e9);
-		if (timeValues[i] < timeLimits.min)
-			timeLimits.iMin = i+1;
-		if (freqValues[i] < freqLimits.min)
-			freqLimits.iMin = i+1;
-		if (timeValues[i] <= timeLimits.max)
-			timeLimits.iMax = i;
-		if (freqValues[i] <= freqLimits.max)
-			freqLimits.iMax = i;
-	}
-	for (int i = psConfig.nPoints/2;i < psConfig.nPoints;i++) {
-		timeValues[i] = (timeInterval_ns*i)/1e9;
-		if (timeValues[i] < timeLimits.min)
-			timeLimits.iMin = i+1;
-		if (timeValues[i] <= timeLimits.max)
-			timeLimits.iMax = i;
-	}
-	if (timeLimits.iMin < 0)
-		timeLimits.iMin = 0;
-	if (timeLimits.iMax > psConfig.nPoints - 1)
-		timeLimits.iMax = psConfig.nPoints - 1;
-	if (freqLimits.iMin < 0)
-		freqLimits.iMin = 0;
-	if (freqLimits.iMax > psConfig.nPoints/2 - 1)
-		freqLimits.iMax = psConfig.nPoints/2 - 1;
+	updateTimeAxis(&freqLimits, &timeLimits);
 	
 	int dacEnabled = 0;
 	int nBias = 1;
@@ -985,7 +984,6 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 				case MAINPANEL_COEFFA:
 				case MAINPANEL_FREQA:
 				case MAINPANEL_TIMEA:
-					//channel = PS_CHANNEL_A;
 					channelIndex = 0;
 					break;
 				case MAINPANEL_RANGEB:
@@ -993,7 +991,6 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 				case MAINPANEL_COEFFB:
 				case MAINPANEL_FREQB:
 				case MAINPANEL_TIMEB:
-					//channel = PS_CHANNEL_B;
 					channelIndex = 1;
 					break;
 				case MAINPANEL_RANGEC:
@@ -1001,7 +998,6 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 				case MAINPANEL_COEFFC:
 				case MAINPANEL_FREQC:
 				case MAINPANEL_TIMEC:
-					//channel = PS_CHANNEL_C;
 					channelIndex = 2;
 					break;
 				case MAINPANEL_RANGED:
@@ -1009,7 +1005,6 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 				case MAINPANEL_COEFFD:
 				case MAINPANEL_FREQD:
 				case MAINPANEL_TIMED:
-					//channel = PS_CHANNEL_D;
 					channelIndex = 3;
 					break;
 			}
@@ -1017,25 +1012,25 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 			if (isChannelEnabled(channelIndex)) {
 				// Enable the current channel
 				SetCtrlVal(panelHandle, channelLeds[channelIndex], 1);
-				SetCtrlAttribute(panelHandle, channelRanges[channelIndex], ATTR_DIMMED, 0);
-				SetCtrlAttribute(panelHandle, channelCouplings[channelIndex], ATTR_DIMMED, 0);
-				SetCtrlAttribute(panelHandle, channelCoeffs[channelIndex], ATTR_DIMMED, 0);
-				SetCtrlAttribute(panelHandle, overloadLeds[channelIndex], ATTR_DIMMED, 0);
+				SetCtrlAttribute(panelHandle, channelRanges[channelIndex], ATTR_DIMMED, FALSE);
+				SetCtrlAttribute(panelHandle, channelCouplings[channelIndex], ATTR_DIMMED, FALSE);
+				SetCtrlAttribute(panelHandle, channelCoeffs[channelIndex], ATTR_DIMMED, FALSE);
+				SetCtrlAttribute(panelHandle, overloadLeds[channelIndex], ATTR_DIMMED, FALSE);
 			}
 			else {
 				// Disable the current channel
 				SetCtrlVal(panelHandle, channelLeds[channelIndex], 0);
-				SetCtrlAttribute(panelHandle, channelRanges[channelIndex], ATTR_DIMMED, 1);
-				SetCtrlAttribute(panelHandle, channelCouplings[channelIndex], ATTR_DIMMED, 1);
-				SetCtrlAttribute(panelHandle, channelCoeffs[channelIndex], ATTR_DIMMED, 1);
-				SetCtrlAttribute(panelHandle, overloadLeds[channelIndex], ATTR_DIMMED, 1);
+				SetCtrlAttribute(panelHandle, channelRanges[channelIndex], ATTR_DIMMED, TRUE);
+				SetCtrlAttribute(panelHandle, channelCouplings[channelIndex], ATTR_DIMMED, TRUE);
+				SetCtrlAttribute(panelHandle, channelCoeffs[channelIndex], ATTR_DIMMED, TRUE);
+				SetCtrlAttribute(panelHandle, overloadLeds[channelIndex], ATTR_DIMMED, TRUE);
 			}
 			
 			setupScopeChannel(channelIndex, channelLeds[channelIndex], channelRanges[channelIndex], channelCouplings[channelIndex], channelCoeffs[channelIndex]);
 			
 			// Resume capture if in progress
-			if(measurementInProgress)
-				psRunBlock(&psConfig, dataAvailableCallback); 
+			//if(measurementInProgress)
+			//	psRunBlock(&psConfig, dataAvailableCallback); 
 			
 			break;
 	}	
@@ -1125,6 +1120,17 @@ int CVICALLBACK disableSave_CB(int panel, int control, int event, void *callback
 	return 0;
 }
 
+int CVICALLBACK dsBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch(event){
+		case EVENT_COMMIT:
+			GetCtrlVal(panel, control, &(psConfig.downsampleRatio));
+			calculateNewTimebase();
+			break;
+	}	
+	return 0;
+}
+
 
 int CVICALLBACK nextButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
 {
@@ -1153,26 +1159,32 @@ int CVICALLBACK picoscopeRing_CB(int panel, int control, int event, void *callba
 
 int CVICALLBACK rateBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
 {
-	double sampleRate;
-	float timeInterval_ns;
 	switch(event){
 		case EVENT_COMMIT:
-			// If no picoscope is selected then don't do anything
-			if (psConfig.type == PSNONE)
-				return 0;
-			
-			// Find nearest timebase and change value to corresponding sample rate
-			GetCtrlVal(panelHandle, MAINPANEL_RATEBOX, &sampleRate);
-			psUpdateTimebase(&psConfig, sampleRate);
-			psGetTimebase2(&psConfig, &timeInterval_ns);
-			sampleRate = 1/(timeInterval_ns*1e-9);
-			SetCtrlVal(panelHandle, MAINPANEL_RATEBOX, sampleRate);
-			updateTimeDisplay();
-			updateFreqSavingWindow(0, sampleRate/2, 1/(psConfig.nPoints*timeInterval_ns*1e-9));
-			updateTimeSavingWindow(0, psConfig.nPoints * timeInterval_ns * 1e-9, timeInterval_ns*1e-9);
+			calculateNewTimebase();
 			break;
 	}	
 	return 0;
+}
+
+// Find nearest timebase and change displayed sample rate to corresponding value
+void calculateNewTimebase()
+{
+	// Only run this if a scope is selected
+	if (psConfig.type == PSNONE)
+		return;
+	
+	double sampleRate;
+	float timeInterval_ns;
+	GetCtrlVal(panelHandle, MAINPANEL_RATEBOX, &sampleRate);
+	GetCtrlVal(panelHandle, MAINPANEL_DOWNSAMPLEBOX, &(psConfig.downsampleRatio));
+	psUpdateTimebase(&psConfig, sampleRate);
+	psGetTimebase2(&psConfig, &timeInterval_ns);
+	sampleRate = 1/(timeInterval_ns*1e-9);
+	SetCtrlVal(panelHandle, MAINPANEL_RATEBOX, sampleRate);
+	updateTimeDisplay();
+	updateFreqSavingWindow(0, sampleRate/2, 1/(psConfig.nPoints*timeInterval_ns*1e-9));
+	updateTimeSavingWindow(0, psConfig.nPoints * timeInterval_ns * 1e-9, timeInterval_ns*1e-9);
 }
 
 int CVICALLBACK runButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
@@ -1605,14 +1617,15 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 				SetCtrlVal(panelHandle, channelMeasFreq[i], 0);
 				SetCtrlVal(panelHandle, channelMeasTime[i], 0);
 				
-				// Dim the channel elements 
-				SetCtrlAttribute(panelHandle, channelLeds[i], ATTR_DIMMED, TRUE);
-				SetCtrlAttribute(panelHandle, channelRanges[i], ATTR_DIMMED, TRUE);
-				SetCtrlAttribute(panelHandle, channelCouplings[i], ATTR_DIMMED, TRUE);
-				SetCtrlAttribute(panelHandle, channelCoeffs[i], ATTR_DIMMED, TRUE);
-				SetCtrlAttribute(panelHandle, channelMeasFreq[i], ATTR_DIMMED, TRUE);
-				SetCtrlAttribute(panelHandle, channelMeasTime[i], ATTR_DIMMED, TRUE);
-				SetCtrlAttribute(panelHandle, overloadLeds[i], ATTR_DIMMED, TRUE);
+				// Hide the channel elements 
+				SetCtrlAttribute(panelHandle, channelLabels[i], ATTR_VISIBLE, FALSE);     
+				SetCtrlAttribute(panelHandle, channelLeds[i], ATTR_VISIBLE, FALSE);
+				SetCtrlAttribute(panelHandle, channelRanges[i], ATTR_VISIBLE, FALSE);
+				SetCtrlAttribute(panelHandle, channelCouplings[i], ATTR_VISIBLE, FALSE);
+				SetCtrlAttribute(panelHandle, channelCoeffs[i], ATTR_VISIBLE, FALSE);
+				SetCtrlAttribute(panelHandle, channelMeasFreq[i], ATTR_VISIBLE, FALSE);
+				SetCtrlAttribute(panelHandle, channelMeasTime[i], ATTR_VISIBLE, FALSE);
+				SetCtrlAttribute(panelHandle, overloadLeds[i], ATTR_VISIBLE, FALSE);
 				
 				// Clear channel menus
 				ClearListCtrl(panelHandle, channelRanges[i]);
@@ -1622,9 +1635,7 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 			}
 			break;
 		case UI_NEW_SCOPE:
-			for (int i = 0; i < 4;i++) {
-				int channelAvailable = i < psConfig.nChannels;
-				
+			for (int i = 0; i < psConfig.nChannels;i++) {
 				// Turn off LEDs
 				SetCtrlVal(panelHandle, channelLeds[i], 0);
 				SetCtrlVal(panelHandle, overloadLeds[i], 0);
@@ -1633,10 +1644,21 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 				SetCtrlVal(panelHandle, channelMeasFreq[i], 0);
 				SetCtrlVal(panelHandle, channelMeasTime[i], 0);
 				
-				// Dim or undim checkboxes and channel LED
-				SetCtrlAttribute(panelHandle, channelLeds[i], ATTR_DIMMED, !channelAvailable);
-				SetCtrlAttribute(panelHandle, channelMeasFreq[i], ATTR_DIMMED, !channelAvailable);
-				SetCtrlAttribute(panelHandle, channelMeasTime[i], ATTR_DIMMED, !channelAvailable);
+				// Enable channels
+				SetCtrlAttribute(panelHandle, channelLabels[i], ATTR_VISIBLE, TRUE);
+				SetCtrlAttribute(panelHandle, channelLeds[i], ATTR_VISIBLE, TRUE);
+				SetCtrlAttribute(panelHandle, channelRanges[i], ATTR_VISIBLE, TRUE);
+				SetCtrlAttribute(panelHandle, channelCouplings[i], ATTR_VISIBLE, TRUE);
+				SetCtrlAttribute(panelHandle, channelCoeffs[i], ATTR_VISIBLE, TRUE);
+				SetCtrlAttribute(panelHandle, channelMeasFreq[i], ATTR_VISIBLE, TRUE);
+				SetCtrlAttribute(panelHandle, channelMeasTime[i], ATTR_VISIBLE, TRUE);
+				SetCtrlAttribute(panelHandle, overloadLeds[i], ATTR_VISIBLE, TRUE);
+				
+				// Undim checkboxes and channel LED
+				SetCtrlAttribute(panelHandle, channelLabels[i], ATTR_DIMMED, FALSE);
+				SetCtrlAttribute(panelHandle, channelLeds[i], ATTR_DIMMED, FALSE);
+				SetCtrlAttribute(panelHandle, channelMeasFreq[i], ATTR_DIMMED, FALSE);
+				SetCtrlAttribute(panelHandle, channelMeasTime[i], ATTR_DIMMED, FALSE);
 				
 				// Dim remaining channel elements
 				SetCtrlAttribute(panelHandle, channelRanges[i], ATTR_DIMMED, TRUE);
@@ -1647,10 +1669,7 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 				// Clear all channel menus  
 				ClearListCtrl(panelHandle, channelRanges[i]);
 				ClearListCtrl(panelHandle, channelCouplings[i]);
-			}
-			
-			// Set up required channel menus
-			for (int i = 0;i < psConfig.nChannels;i++) {
+				
 				// Fill in ranges
 				for (int j = 0;j < psConfig.nRanges;j++) {
 					getRangeLabel(psConfig.ranges[j], menuItemName);
@@ -1662,6 +1681,18 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 					getCouplingLabel(psConfig.couplings[j], menuItemName);
 					InsertListItem(panelHandle, channelCouplings[i], j, menuItemName, psConfig.couplings[j]);
 				}
+			}
+			
+			// Disable other channels
+			for (int i = psConfig.nChannels;i < 4;i++) {
+				SetCtrlAttribute(panelHandle, channelLabels[i], ATTR_VISIBLE, FALSE);
+				SetCtrlAttribute(panelHandle, channelLeds[i], ATTR_VISIBLE, FALSE);
+				SetCtrlAttribute(panelHandle, channelRanges[i], ATTR_VISIBLE, FALSE);
+				SetCtrlAttribute(panelHandle, channelCouplings[i], ATTR_VISIBLE, FALSE);
+				SetCtrlAttribute(panelHandle, channelCoeffs[i], ATTR_VISIBLE, FALSE);
+				SetCtrlAttribute(panelHandle, channelMeasFreq[i], ATTR_VISIBLE, FALSE);
+				SetCtrlAttribute(panelHandle, channelMeasTime[i], ATTR_VISIBLE, FALSE);
+				SetCtrlAttribute(panelHandle, overloadLeds[i], ATTR_VISIBLE, FALSE);
 			}
 
 			// Go to idle state
@@ -1679,6 +1710,7 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 			
 			// Enable channel settings
 			for (int i = 0;i < psConfig.nChannels;i++) {
+				SetCtrlAttribute(panelHandle, channelLabels[i], ATTR_DIMMED, FALSE);
 				SetCtrlAttribute(panelHandle, channelRanges[i], ATTR_DIMMED, !isChannelEnabled(i));
 				SetCtrlAttribute(panelHandle, channelCouplings[i], ATTR_DIMMED, !isChannelEnabled(i));
 				SetCtrlAttribute(panelHandle, channelCoeffs[i], ATTR_DIMMED, !isChannelEnabled(i));
@@ -1707,6 +1739,7 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 			
 			// Disable channel settings
 			for (int i = 0;i < psConfig.nChannels;i++) {
+				SetCtrlAttribute(panelHandle, channelLabels[i], ATTR_DIMMED, TRUE);
 				SetCtrlAttribute(panelHandle, channelRanges[i], ATTR_DIMMED, TRUE);
 				SetCtrlAttribute(panelHandle, channelCouplings[i], ATTR_DIMMED, TRUE);
 				SetCtrlAttribute(panelHandle, channelCoeffs[i], ATTR_DIMMED, TRUE);
