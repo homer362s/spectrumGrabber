@@ -438,6 +438,8 @@ PICO_STATUS psSetChannel(struct psconfig *config, int channelIndex)
 	return status;
 }
 
+// TODO: Overflow checking seems to only work in RATIO_MODE_NONE
+// I will have to implement my own overflow testing to use with downsampling
 PICO_STATUS psSetDataBuffer(struct psconfig *config, int channelIndex, int measuredPoints, int16_t *buffer)
 {
 	PICO_STATUS status = -1;
@@ -446,35 +448,57 @@ PICO_STATUS psSetDataBuffer(struct psconfig *config, int channelIndex, int measu
 	
 	switch(config->type) {
 		case PS4000:
-			//status = ps4000SetDataBuffer(config->handle, channel, buffer, measuredPoints);
-			status = ps4000SetDataBufferWithMode(config->handle, channel, buffer, measuredPoints, RATIO_MODE_AVERAGE);
+			if (config->downsampleRatio == 1) {
+				status = ps4000SetDataBuffer(config->handle, channel, buffer, measuredPoints);
+			} else {
+				status = ps4000SetDataBufferWithMode(config->handle, channel, buffer, measuredPoints, RATIO_MODE_AVERAGE);
+			}
 			break;
 		case PS3000A:
-			status = ps3000aSetDataBuffer(config->handle, channel, buffer, measuredPoints, 0, PS3000A_RATIO_MODE_AVERAGE);
+			if (config->downsampleRatio == 1) {
+				status = ps3000aSetDataBuffer(config->handle, channel, buffer, measuredPoints, 0, PS3000A_RATIO_MODE_NONE);   
+			} else {
+				status = ps3000aSetDataBuffer(config->handle, channel, buffer, measuredPoints, 0, PS3000A_RATIO_MODE_AVERAGE);
+			}
 			break;	
 		case PS6000:
-			status = ps6000SetDataBuffer(config->handle, channel, buffer, measuredPoints, PS6000_RATIO_MODE_AVERAGE);
+			if (config->downsampleRatio == 1) {
+				status = ps6000SetDataBuffer(config->handle, channel, buffer, measuredPoints, PS6000_RATIO_MODE_NONE);
+			} else {
+				status = ps6000SetDataBuffer(config->handle, channel, buffer, measuredPoints, PS6000_RATIO_MODE_AVERAGE);
+			}
 			break;
 	}
 	return status;
 }
 
+// TODO: Overflow checking seems to only work in RATIO_MODE_NONE
+// I will have to implement my own overflow testing to use with downsampling
 PICO_STATUS psGetValues(struct psconfig *config, uint32_t *nPoints, int16_t *overflow)
 {
 	PICO_STATUS status = -1;
 	
 	switch(config->type) {
 		case PS4000:
-			status = ps4000GetValues(config->handle, 0, nPoints, config->downsampleRatio, RATIO_MODE_AVERAGE, 0, overflow);
-			//status = ps4000GetValues(config->handle, 0, nPoints, 1, RATIO_MODE_NONE, 0, overflow);
+			if (config->downsampleRatio == 1) {
+				status = ps4000GetValues(config->handle, 0, nPoints, 1, RATIO_MODE_NONE, 0, overflow); 
+			} else {
+				status = ps4000GetValues(config->handle, 0, nPoints, config->downsampleRatio, RATIO_MODE_AVERAGE, 0, overflow);
+			}
 			break;
 		case PS3000A:
-			status = ps3000aGetValues(config->handle, 0, nPoints, config->downsampleRatio, PS3000A_RATIO_MODE_AVERAGE, 0, overflow);
-			//status = ps3000aGetValues(config->handle, 0, nPoints, 1, PS3000A_RATIO_MODE_NONE, 0, overflow);
+			if (config->downsampleRatio == 1) {
+				status = ps3000aGetValues(config->handle, 0, nPoints, 1, PS3000A_RATIO_MODE_NONE, 0, overflow); 
+			} else {
+				status = ps3000aGetValues(config->handle, 0, nPoints, config->downsampleRatio, PS3000A_RATIO_MODE_AVERAGE, 0, overflow);
+			}
 			break;	
 		case PS6000:
-			status = ps6000GetValues(config->handle, 0, nPoints, config->downsampleRatio, PS6000_RATIO_MODE_AVERAGE, 0, overflow); 
-			//status = ps6000GetValues(config->handle, 0, nPoints, 1, PS6000_RATIO_MODE_NONE, 0, overflow); 
+			if (config->downsampleRatio == 1) {
+				status = ps6000GetValues(config->handle, 0, nPoints, 1, PS6000_RATIO_MODE_NONE, 0, overflow);
+			} else {
+				status = ps6000GetValues(config->handle, 0, nPoints, config->downsampleRatio, PS6000_RATIO_MODE_AVERAGE, 0, overflow); 
+			}
 			break;
 	}
 	return status;

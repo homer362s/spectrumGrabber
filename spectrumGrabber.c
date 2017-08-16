@@ -108,6 +108,11 @@ int main (int argc, char *argv[])
 	// Initialize picoscope
 	picoscopeInit();
 	
+	// Initialize DAC stuff
+	GetCtrlVal(panelHandle, MAINPANEL_BOARDNUM, &dacBoard);
+	GetCtrlVal(panelHandle, MAINPANEL_VGNUM, &vgOut);
+	GetCtrlVal(panelHandle, MAINPANEL_VDNUM, &vdOut);
+	
 	/* display the panel and run the user interface */
 	errChk (DisplayPanel (panelHandle));
 	errChk (RunUserInterface ());
@@ -166,12 +171,6 @@ int picoscopeInit()
 	// Get the downsample ratio
 	GetCtrlVal(panelHandle, MAINPANEL_DOWNSAMPLEBOX, &(psConfig.downsampleRatio));
 	
-	// This shouldn't be here...
-	// Initialize DAC stuff
-	//GetCtrlVal(panelHandle, MAINPANEL_BOARDNUM, &dacBoard);
-	//GetCtrlVal(panelHandle, MAINPANEL_VGNUM, &vgOut);
-	//GetCtrlVal(panelHandle, MAINPANEL_VDNUM, &vdOut);
-	
 	updateTimeDisplay();
 
 	switch (status) {
@@ -217,12 +216,9 @@ void updateFreqSavingWindow(double minFreq, double maxFreq, double freqStep)
 	SetCtrlVal(panelHandle, MAINPANEL_NUMFBOX, str);
 }
 
-void setupScopeChannel(int channelIndex, int enabledLed, int rangeRing, int couplingRing, int coeffBox)
+void setupScopeChannel(int channelIndex, int channelLabel, int enabledLed, int rangeRing, int couplingRing, int coeffBox)
 {
-	// Get enabled status
-	int enabled = 0;
-	GetCtrlVal(panelHandle, enabledLed, &enabled);
-	
+	int enabled;
 	// Get Coupling
 	int couplingInt;
 	enum psCoupling coupling;
@@ -238,9 +234,9 @@ void setupScopeChannel(int channelIndex, int enabledLed, int rangeRing, int coup
 	double coeff;
 	GetCtrlVal(panelHandle, coeffBox, &coeff); 
 	
-	if(isChannelEnabled(channelIndex)){
+	if (isChannelEnabled(channelIndex)){
 		enabled = 1;	
-	}else{
+	} else {
 		enabled = 0;	
 	}	
 	
@@ -249,6 +245,7 @@ void setupScopeChannel(int channelIndex, int enabledLed, int rangeRing, int coup
 	psConfig.channels[channelIndex].coupling = coupling;
 	psConfig.channels[channelIndex].coefficient = coeff;
 	psConfig.channels[channelIndex].enabled = (int16_t) enabled;
+	GetCtrlVal(panelHandle, channelLabel, psConfig.channels[channelIndex].name);
 	
 	// Set the channel
 	psSetChannel(&psConfig, channelIndex);
@@ -258,7 +255,7 @@ void setupScopeChannels()
 {
 	// Set up scope channels according to UI defaults
 	for(int i =0;i<psConfig.nChannels;i++) {
-		setupScopeChannel(i, channelLeds[i], channelRanges[i], channelCouplings[i], channelCoeffs[i]);
+		setupScopeChannel(i, channelLabels[i], channelLeds[i], channelRanges[i], channelCouplings[i], channelCoeffs[i]);
 	}
 }
 
@@ -472,7 +469,9 @@ void handleMeasurement(char *path, char *name, char *ext)
 	if (dacEnabled)
 		GetNumTableRows(panelHandle, MAINPANEL_TABLE, &nBias);
 	
-	int filenameLen = strlen(path) + strlen(name) + 5 + 2 + strlen(ext) + 1;
+	
+	// filename = path + _ + name + _ + type + _ + label + . + ext + null
+	int filenameLen = strlen(path) + 1 + strlen(name) + 1 + 4 + 1 + 31 + 1 + strlen(ext) + 1;
 	
 	char **freqFileNames[4] = {0,0,0,0}, *freqFileName[4] = {0,0,0,0};
 	char **timeFileNames[4] = {0,0,0,0}, *timeFileName[4] = {0,0,0,0};
@@ -485,14 +484,14 @@ void handleMeasurement(char *path, char *name, char *ext)
 	char *filename;
 	for (int i = 0;i < 4;i++) {
 		freqFileName[i] = malloc((filenameLen) * sizeof(char));
-		sprintf(freqFileName[i], "%s%s_Freq_%s%s", path, name, channelLabel[i], ext);
+		sprintf(freqFileName[i], "%s%s_Freq_%s%s", path, name, psConfig.channels[i].name, ext);
 		timeFileName[i] = malloc((filenameLen) * sizeof(char));
-		sprintf(timeFileName[i], "%s%s_Time_%s%s", path, name, channelLabel[i], ext);
+		sprintf(timeFileName[i], "%s%s_Time_%s%s", path, name, psConfig.channels[i].name, ext);
 		for (int j = 0;j<nBias+1;j++) {
 			freqFileNames[i][j] = malloc((filenameLen + 1 + 8) * sizeof(char));
-			sprintf(freqFileNames[i][j], "%s%s_Freq_%s_%d%s", path, name, channelLabel[i], j, ext);
+			sprintf(freqFileNames[i][j], "%s%s_Freq_%s_%d%s", path, name, psConfig.channels[i].name, j, ext);
 			timeFileNames[i][j] = malloc((filenameLen + 1 + 8) * sizeof(char));
-			sprintf(timeFileNames[i][j], "%s%s_Time_%s_%d%s", path, name, channelLabel[i], j, ext);
+			sprintf(timeFileNames[i][j], "%s%s_Time_%s_%d%s", path, name, psConfig.channels[i].name, j, ext);
 		}
 	}
 	filename = NULL;
@@ -666,12 +665,14 @@ void handleMeasurement(char *path, char *name, char *ext)
 		}
 	}
 	
-	// Free filename memory
+	// Delete files and free filename memory
 	for(int i = 0;i < 4;i++) {
 		free(freqFileName[i]);
 		free(timeFileName[i]);
 		for(int j = 0;j<nBias+1;j++) {
+			remove(freqFileNames[i][j]);  
 			free(freqFileNames[i][j]);
+			remove(timeFileNames[i][j]);
 			free(timeFileNames[i][j]);
 		}
 		free(freqFileNames[i]);
@@ -974,11 +975,12 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 	switch(event){
 		case EVENT_COMMIT:
 			// Stop current capture
-			psStop(&psConfig);
+			//psStop(&psConfig);
 			
 			//enum psChannel channel = 0;
 			int channelIndex = 0;
 			switch (control) {
+				case MAINPANEL_LABELA:
 				case MAINPANEL_RANGEA:
 				case MAINPANEL_COUPLINGA:
 				case MAINPANEL_COEFFA:
@@ -986,6 +988,7 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 				case MAINPANEL_TIMEA:
 					channelIndex = 0;
 					break;
+				case MAINPANEL_LABELB:
 				case MAINPANEL_RANGEB:
 				case MAINPANEL_COUPLINGB:
 				case MAINPANEL_COEFFB:
@@ -993,6 +996,7 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 				case MAINPANEL_TIMEB:
 					channelIndex = 1;
 					break;
+				case MAINPANEL_LABELC:
 				case MAINPANEL_RANGEC:
 				case MAINPANEL_COUPLINGC:
 				case MAINPANEL_COEFFC:
@@ -1000,6 +1004,7 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 				case MAINPANEL_TIMEC:
 					channelIndex = 2;
 					break;
+				case MAINPANEL_LABELD:
 				case MAINPANEL_RANGED:
 				case MAINPANEL_COUPLINGD:
 				case MAINPANEL_COEFFD:
@@ -1026,7 +1031,7 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 				SetCtrlAttribute(panelHandle, overloadLeds[channelIndex], ATTR_DIMMED, TRUE);
 			}
 			
-			setupScopeChannel(channelIndex, channelLeds[channelIndex], channelRanges[channelIndex], channelCouplings[channelIndex], channelCoeffs[channelIndex]);
+			setupScopeChannel(channelIndex, channelLabels[channelIndex], channelLeds[channelIndex], channelRanges[channelIndex], channelCouplings[channelIndex], channelCoeffs[channelIndex]);
 			
 			// Resume capture if in progress
 			//if(measurementInProgress)
@@ -1631,7 +1636,16 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 				ClearListCtrl(panelHandle, channelRanges[i]);
 				ClearListCtrl(panelHandle, channelCouplings[i]);
 				
+				// Disable save limits
+				SetCtrlAttribute(panelHandle, MAINPANEL_MINFREQ, ATTR_DIMMED, TRUE);
+				SetCtrlAttribute(panelHandle, MAINPANEL_MAXFREQ, ATTR_DIMMED, TRUE);
+				SetCtrlAttribute(panelHandle, MAINPANEL_MINTIME, ATTR_DIMMED, TRUE);
+				SetCtrlAttribute(panelHandle, MAINPANEL_MAXTIME, ATTR_DIMMED, TRUE);
+				
 				// Disable run buttons
+				SetCtrlAttribute(panelHandle, MAINPANEL_RUNBUTTON, ATTR_DIMMED, TRUE);
+				SetCtrlAttribute(panelHandle, MAINPANEL_NEXTBUTTON, ATTR_DIMMED, TRUE);
+				SetCtrlAttribute(panelHandle, MAINPANEL_STOPBUTTON, ATTR_DIMMED, TRUE);
 			}
 			break;
 		case UI_NEW_SCOPE:
@@ -1704,6 +1718,12 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 			SetCtrlAttribute(panelHandle, MAINPANEL_NEXTBUTTON, ATTR_DIMMED, TRUE);
 			SetCtrlAttribute(panelHandle, MAINPANEL_STOPBUTTON, ATTR_DIMMED, TRUE);
 			
+			// Enable save limits
+			SetCtrlAttribute(panelHandle, MAINPANEL_MINFREQ, ATTR_DIMMED, FALSE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_MAXFREQ, ATTR_DIMMED, FALSE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_MINTIME, ATTR_DIMMED, FALSE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_MAXTIME, ATTR_DIMMED, FALSE);
+			
 			// Enable run settings
 			SetCtrlAttribute(panelHandle, MAINPANEL_BINSRING, ATTR_DIMMED, FALSE);
 			SetCtrlAttribute(panelHandle, MAINPANEL_RATEBOX, ATTR_DIMMED, FALSE);
@@ -1732,6 +1752,12 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 			SetCtrlAttribute(panelHandle, MAINPANEL_RUNBUTTON, ATTR_DIMMED, TRUE);
 			SetCtrlAttribute(panelHandle, MAINPANEL_NEXTBUTTON, ATTR_DIMMED, FALSE);
 			SetCtrlAttribute(panelHandle, MAINPANEL_STOPBUTTON, ATTR_DIMMED, FALSE);
+			
+			// Disable save limits
+			SetCtrlAttribute(panelHandle, MAINPANEL_MINFREQ, ATTR_DIMMED, TRUE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_MAXFREQ, ATTR_DIMMED, TRUE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_MINTIME, ATTR_DIMMED, TRUE);
+			SetCtrlAttribute(panelHandle, MAINPANEL_MAXTIME, ATTR_DIMMED, TRUE);
 			
 			// Disable run settings
 			SetCtrlAttribute(panelHandle, MAINPANEL_BINSRING, ATTR_DIMMED, TRUE);

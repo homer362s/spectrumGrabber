@@ -29,23 +29,23 @@ struct pschannel {
 	enum rangeSetting range;		// example: PS_DC
 	enum psCoupling coupling;		// example: PS_10V
 	double coefficient;
-	int downsample;
 	int16_t enabled;
+	char name[32];					// User specified name of the channel
 };
 
 struct psconfig {
-	int16_t handle;
-	int nChannels;
-	int nRanges;
-	enum psRange *ranges;
-	int nCouplings;
-	enum psCouplings *couplings;
-	enum scopeType type;
-	int8_t *serial;
-	uint32_t nPoints;
-	int timebase;
-	int32_t downsampleRatio;
-	struct pschannel channels[4];
+	int16_t handle;					// Handle that identifies connected picoscope
+	int nChannels;					// Number of channels installed on this picoscope
+	int nRanges;					// Number of range settings on this picoscope
+	enum psRange *ranges;			// List of valid ranges for this picoscope
+	int nCouplings;					// Number of coupling settings on this picoscope
+	enum psCouplings *couplings;	// List of valid coupling settings on this picoscope
+	enum scopeType type;			// API version of the picoscope
+	int8_t *serial;					// Serial string
+	uint32_t nPoints;				// Number of points set to be measured
+	int timebase;					// Timebase set to be used
+	int32_t downsampleRatio;		// How many points sould be averaged into one
+	struct pschannel channels[4];   // Settings for individual channels
 };
 
 static const struct scopeDef picoscopes[] = {{.serial = (int8_t*) "AP231/007", .type = PS6000, .nChannels=4, .nRanges = 9, .ranges={PS_50MV, PS_100MV, PS_200MV, PS_500MV, PS_1V, PS_2V, PS_5V, PS_10V, PS_20V}, .nCouplings = 2, .couplings = {PS_DC, PS_AC}},

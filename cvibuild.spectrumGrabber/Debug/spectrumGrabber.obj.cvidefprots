@@ -16,7 +16,7 @@ Prototype="void updateFreqSavingWindow(double minFreq, double maxFreq, double fr
 
 [setupScopeChannel]
 Class="Function"
-Prototype="void setupScopeChannel(int channelIndex, int enabledLed, int rangeRing, int couplingRing, int coeffBox);"
+Prototype="void setupScopeChannel(int channelIndex, int channelLabel, int enabledLed, int rangeRing, int couplingRing, int coeffBox);"
 
 [setupScopeChannels]
 Class="Function"

@@ -108,7 +108,6 @@ void combineFiles(char *newFilename, char **filenames, char* sep, int nFiles, in
 		if (filenames[i][0]) {
 			free(bufferText[i]);
 			fclose(fp[i]);
-			remove(filenames[i]);
 		}
 	}
 }
