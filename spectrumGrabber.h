@@ -13,7 +13,16 @@
 
      /* Panels and Controls: */
 
-#define  MAINPANEL                        1       /* callback function: mainpanel_CB */
+#define  CFPANEL                          1       /* callback function: cfPanel_CB */
+#define  CFPANEL_FILEPREFIX               2       /* control type: string, callback function: (none) */
+#define  CFPANEL_COMBINEBUTTON            3       /* control type: command, callback function: combineFiles_CB */
+#define  CFPANEL_CANCELBUTTON             4       /* control type: command, callback function: closePanel_CB */
+#define  CFPANEL_FILEEXT                  5       /* control type: string, callback function: (none) */
+#define  CFPANEL_BUFFERBOX                6       /* control type: numeric, callback function: (none) */
+#define  CFPANEL_LASTFILE                 7       /* control type: numeric, callback function: (none) */
+#define  CFPANEL_TEXTMSG                  8       /* control type: textMsg, callback function: (none) */
+
+#define  MAINPANEL                        2       /* callback function: mainpanel_CB */
 #define  MAINPANEL_VGCOEFFBOX             2       /* control type: numeric, callback function: (none) */
 #define  MAINPANEL_VDCOEFFBOX             3       /* control type: numeric, callback function: (none) */
 #define  MAINPANEL_AVGBOX                 4       /* control type: numeric, callback function: avgBox_CB */
@@ -103,10 +112,11 @@
 #define  MAINPANEL_LABELC                 88      /* control type: string, callback function: channel_CB */
 #define  MAINPANEL_LABELB                 89      /* control type: string, callback function: channel_CB */
 #define  MAINPANEL_LABELA                 90      /* control type: string, callback function: channel_CB */
-#define  MAINPANEL_TEXTMSG_11             91      /* control type: textMsg, callback function: (none) */
-#define  MAINPANEL_TEXTMSG_12             92      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_COMBINEBUTTON          91      /* control type: command, callback function: combineButton_CB */
+#define  MAINPANEL_TEXTMSG_11             92      /* control type: textMsg, callback function: (none) */
+#define  MAINPANEL_TEXTMSG_12             93      /* control type: textMsg, callback function: (none) */
 
-#define  TGPANEL                          2       /* callback function: tgPanel_CB */
+#define  TGPANEL                          3       /* callback function: tgPanel_CB */
 #define  TGPANEL_VGSTARTBOX               2       /* control type: numeric, callback function: editVgBox_CB */
 #define  TGPANEL_VGSTOPBOX                3       /* control type: numeric, callback function: editVgBox_CB */
 #define  TGPANEL_NUMVGSTEPBOX             4       /* control type: numeric, callback function: editVgBox_CB */
@@ -149,9 +159,13 @@ int  CVICALLBACK avgBox_CB(int panel, int control, int event, void *callbackData
 int  CVICALLBACK binsRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK boardNum_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK buildtableButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
+int  CVICALLBACK cfPanel_CB(int panel, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK clearButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
+int  CVICALLBACK closePanel_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK closetgButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
+int  CVICALLBACK combineButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
+int  CVICALLBACK combineFiles_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK dacButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK delayBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK delrowButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);

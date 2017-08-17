@@ -1057,6 +1057,16 @@ int CVICALLBACK clearButton_CB(int panel, int control, int event, void *callback
 	return 0;
 }
 
+int CVICALLBACK closePanel_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch(event){
+		case EVENT_COMMIT:
+			DiscardPanel(panel);
+			break;
+	}	
+	return 0;
+}
+
 int CVICALLBACK addrowButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
 {
 	switch(event){
@@ -1370,6 +1380,22 @@ int CVICALLBACK tgPanel_CB (int panel, int event, void *callbackData, int eventD
 	return 0;
 }
 
+int CVICALLBACK cfPanel_CB (int panel, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch (event) {
+		case EVENT_CLOSE:
+			DiscardPanel(panel);
+			break;
+		case EVENT_KEYPRESS:
+			if (eventData1 == VAL_ESC_VKEY) {
+				DiscardPanel(panel);
+			}
+			break;
+	}
+	
+	return 0;
+}
+
 void updateBiasCount(){
 	if(isEnabled(panelHandle, MAINPANEL_DACBUTTON)){
 		int nBias;
@@ -1500,6 +1526,64 @@ int CVICALLBACK closetgButton_CB (int panel, int control, int event, void *callb
 	switch (event) {
 		case EVENT_COMMIT:
 			HidePanel(tgHandle);
+			break;
+	}
+	return 0;
+}
+
+int CVICALLBACK combineFiles_CB (int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch (event) {
+		case EVENT_COMMIT:
+			char combineFilePath[MAX_PATHNAME_LEN];
+			if(!DirSelectPopup("", "Select File Location", 1, 1, combineFilePath)) {
+				break;
+			}
+			
+			// Read values form UI
+			int nFiles, buffLen;
+			char fileprefix[256], fileext[16];
+			GetCtrlVal(panel, CFPANEL_LASTFILE, &nFiles);
+			GetCtrlVal(panel, CFPANEL_BUFFERBOX, &buffLen);
+			GetCtrlVal(panel, CFPANEL_FILEPREFIX, fileprefix);
+			GetCtrlVal(panel, CFPANEL_FILEEXT, fileext);
+			
+			// Build filename array
+			// filename = path + \ + prefix + . + ext + null
+			int filenameLen = strlen(combineFilePath) + 1 + strlen(fileprefix) + 1 + strlen(fileext) + 1;
+			char *fileName = 0;
+			char **fileNames = 0;
+
+			// Make all data filenames
+			char *filename;
+			fileName = malloc((filenameLen) * sizeof(char));
+			sprintf(fileName, "%s\\%s.%s", combineFilePath, fileprefix, fileext);
+			fileNames = malloc((nFiles + 1) * sizeof(char*));
+			for (int i = 0;i<nFiles+1;i++) {
+				fileNames[i] = malloc((filenameLen + 1 + 8) * sizeof(char));
+				sprintf(fileNames[i], "%s\\%s_%d.%s", combineFilePath, fileprefix, i, fileext);
+			}
+			filename = NULL;
+			
+			// Combine files
+			combineFiles(fileName, fileNames, ",", nFiles+1, 13, buffLen); 
+			
+			// Free filename array
+			free(fileName);
+			for (int i = 0;i<nFiles+1;i++) {
+				free(fileNames[i]);
+			}
+			free(fileNames);
+			break;
+	}
+	return 0;
+}
+
+int CVICALLBACK combineButton_CB (int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch (event) {
+		case EVENT_COMMIT:
+			DisplayPanel(LoadPanel(panelHandle, "spectrumGrabber.uir", CFPANEL));
 			break;
 	}
 	return 0;

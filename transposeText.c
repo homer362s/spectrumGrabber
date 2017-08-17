@@ -56,29 +56,36 @@ void combineFiles(char *newFilename, char **filenames, char* sep, int nFiles, in
 {
 	unsigned long bufferSize = bufferLen * (fieldLen + 1);
 	char **bufferText = malloc(nFiles * sizeof(char**));
-	FILE *fp[nFiles];
+	long int *locs = malloc(nFiles * sizeof(long int));
+	FILE *infp;
 	FILE *outfp;
-	// Allocate memory and open files
+	// Allocate memory and set initial file locations
 	outfp = fopen(newFilename, "w");
 	for(int i = 0;i < nFiles;i++) {
 		// If there is a file to read from make the buffer and open the file
 		if(filenames[i][0]) {
 			bufferText[i] = malloc((bufferSize + 1) * sizeof(char));
-			fp[i] = fopen(filenames[i], "r");
+			locs[i] = 0;
 		}
 	}
 	
+	unsigned long buffsRead = 0;
 	size_t nRead;
 	size_t minRead = bufferSize;
 	while(minRead == bufferSize) {
 		// Read in the next buffers
 		for(int i = 0;i < nFiles;i++) {
 			if (filenames[i][0]) {
-				nRead = fread(bufferText[i], sizeof(char), bufferSize, fp[i]);
+				infp = fopen(filenames[i], "r");
+				fseek(infp, locs[i], SEEK_SET);
+				nRead = fread(bufferText[i], sizeof(char), bufferSize, infp);
+				locs[i] = ftell(infp);
+				fclose(infp);
 				bufferText[i][nRead] = 0;
 				minRead = nRead < minRead ? nRead : minRead;
 			}
 		}
+		buffsRead = buffsRead + 1;
 		
 		// Write to the file
 		// Loop over buffer elements
@@ -104,10 +111,11 @@ void combineFiles(char *newFilename, char **filenames, char* sep, int nFiles, in
 	
 	// Free the buffers then close and delete the files
 	fclose(outfp);
+	free(locs);
 	for(int i = 0;i < nFiles;i++) {
 		if (filenames[i][0]) {
 			free(bufferText[i]);
-			fclose(fp[i]);
 		}
 	}
+	free(bufferText);
 }

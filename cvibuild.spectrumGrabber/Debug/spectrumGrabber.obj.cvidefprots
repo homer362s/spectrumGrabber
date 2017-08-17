@@ -102,6 +102,10 @@ Prototype="int channel_CB(int panel, int control, int event, void *callbackData,
 Class="Function"
 Prototype="int clearButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
+[closePanel_CB]
+Class="Function"
+Prototype="int closePanel_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
 [addrowButton_CB]
 Class="Function"
 Prototype="int addrowButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
@@ -166,6 +170,10 @@ Prototype="int stopButton_CB(int panel, int control, int event, void *callbackDa
 Class="Function"
 Prototype="int tgPanel_CB(int panel, int event, void *callbackData, int eventData1, int eventData2);"
 
+[cfPanel_CB]
+Class="Function"
+Prototype="int cfPanel_CB(int panel, int event, void *callbackData, int eventData1, int eventData2);"
+
 [updateBiasCount]
 Class="Function"
 Prototype="void updateBiasCount();"
@@ -189,6 +197,14 @@ Prototype="int buildtableButton_CB(int panel, int control, int event, void *call
 [closetgButton_CB]
 Class="Function"
 Prototype="int closetgButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[combineFiles_CB]
+Class="Function"
+Prototype="int combineFiles_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[combineButton_CB]
+Class="Function"
+Prototype="int combineButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
 [editVdBox_CB]
 Class="Function"
