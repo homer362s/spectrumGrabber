@@ -151,6 +151,7 @@ int picoscopeInit()
 	psConfig.couplings = picoscopes[pico].couplings;
 	psConfig.nRanges = picoscopes[pico].nRanges;
 	psConfig.ranges = picoscopes[pico].ranges;
+	psConfig.downsampleSupport = picoscopes[pico].downsampleSupport;
 	
 	// Enable or disable ui elements according to the selected scope
 	gotoUiState(panelHandle, psConfig, UI_NEW_SCOPE);
@@ -329,9 +330,9 @@ void processData(int nMeasured, int averages, int iBias, char ***timeFileNames, 
 		// Get data from scope
 		uint32_t nPoints = psConfig.nPoints;
 		
-		psSetDataBuffer(&psConfig, iChannel, psConfig.nPoints, rawDataBuffer);
+		psSetDataBuffer(&psConfig, iChannel, rawDataBuffer);
 		psGetValues(&psConfig, &nPoints, &overflow);
-		psSetDataBuffer(&psConfig, iChannel, psConfig.nPoints, NULL); 
+		psSetDataBuffer(&psConfig, iChannel, NULL); 
 		
 		// Check for overload and turn on LED if overload occurred
 		for(int i=0; i<4; i++) {
@@ -340,11 +341,11 @@ void processData(int nMeasured, int averages, int iBias, char ***timeFileNames, 
 		}
 		
 		// Log the raw data
-		//FILE *logfp = fopen("dataLog.log", "w");
-		//for(int j = 0;j<nPoints;j++) {
-		//	fprintf(logfp, "%d\n", rawDataBuffer[j]);
-		//}
-		//fclose(logfp);
+		FILE *logfp = fopen("dataLog.log", "w");
+		for(int j = 0;j<nPoints;j++) {
+			fprintf(logfp, "%d\n", rawDataBuffer[j]);
+		}
+		fclose(logfp);
 		
 		scaleReading(&psConfig, iChannel, rawDataBuffer, dataValues);
 	
@@ -1730,6 +1731,10 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 				SetCtrlAttribute(panelHandle, MAINPANEL_RUNBUTTON, ATTR_DIMMED, TRUE);
 				SetCtrlAttribute(panelHandle, MAINPANEL_NEXTBUTTON, ATTR_DIMMED, TRUE);
 				SetCtrlAttribute(panelHandle, MAINPANEL_STOPBUTTON, ATTR_DIMMED, TRUE);
+				
+				// Disable downsample box
+				SetCtrlVal(panelHandle, MAINPANEL_DOWNSAMPLEBOX, 1);
+				SetCtrlAttribute(panelHandle, MAINPANEL_DOWNSAMPLEBOX, ATTR_DIMMED, TRUE);
 			}
 			break;
 		case UI_NEW_SCOPE:
@@ -1767,6 +1772,10 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 				// Clear all channel menus  
 				ClearListCtrl(panelHandle, channelRanges[i]);
 				ClearListCtrl(panelHandle, channelCouplings[i]);
+				
+				// Set downsample box
+				SetCtrlVal(panelHandle, MAINPANEL_DOWNSAMPLEBOX, 1);
+				SetCtrlAttribute(panelHandle, MAINPANEL_DOWNSAMPLEBOX, ATTR_DIMMED, !psConfig.downsampleSupport);
 				
 				// Fill in ranges
 				for (int j = 0;j < psConfig.nRanges;j++) {
@@ -1830,6 +1839,9 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 			SetCtrlAttribute(panelHandle, MAINPANEL_DELROWBUTTON, ATTR_DIMMED, FALSE);
 			SetCtrlAttribute(panelHandle, MAINPANEL_SAVETABLEBUTTON, ATTR_DIMMED, FALSE);
 			SetCtrlAttribute(panelHandle, MAINPANEL_DACBUTTON, ATTR_DIMMED, FALSE);
+			
+			// Set downsample box
+			SetCtrlAttribute(panelHandle, MAINPANEL_DOWNSAMPLEBOX, ATTR_DIMMED, !psConfig.downsampleSupport);
 			break;
 		case UI_MEASURING:
 			// Disable run buttons
@@ -1865,6 +1877,9 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 			SetCtrlAttribute(panelHandle, MAINPANEL_DELROWBUTTON, ATTR_DIMMED, TRUE);
 			SetCtrlAttribute(panelHandle, MAINPANEL_SAVETABLEBUTTON, ATTR_DIMMED, TRUE);
 			SetCtrlAttribute(panelHandle, MAINPANEL_DACBUTTON, ATTR_DIMMED, TRUE);
+			
+			// Disable downsample box
+			SetCtrlAttribute(panelHandle, MAINPANEL_DOWNSAMPLEBOX, ATTR_DIMMED, TRUE);
 			break;
 	}
 }

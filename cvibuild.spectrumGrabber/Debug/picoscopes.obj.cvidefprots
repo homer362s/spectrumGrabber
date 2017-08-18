@@ -60,7 +60,7 @@ Prototype="unsigned int psSetChannel(struct psconfig *config, int channelIndex);
 
 [psSetDataBuffer]
 Class="Function"
-Prototype="unsigned int psSetDataBuffer(struct psconfig *config, int channelIndex, int measuredPoints, short *buffer);"
+Prototype="unsigned int psSetDataBuffer(struct psconfig *config, int channelIndex, short *buffer);"
 
 [psGetValues]
 Class="Function"

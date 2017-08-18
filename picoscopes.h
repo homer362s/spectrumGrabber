@@ -22,6 +22,7 @@ struct scopeDef {
 	const enum psRange ranges[MAX_RANGES];
 	const int nCouplings;
 	const enum psCouplings couplings[MAX_COUPLINGS];
+	int downsampleSupport;
 };
 
 struct pschannel {
@@ -45,12 +46,13 @@ struct psconfig {
 	uint32_t nPoints;				// Number of points set to be measured
 	int timebase;					// Timebase set to be used
 	int32_t downsampleRatio;		// How many points sould be averaged into one
+	int downsampleSupport;			// TRUE if downsampling is supported, FALSE otherwise
 	struct pschannel channels[4];   // Settings for individual channels
 };
 
-static const struct scopeDef picoscopes[] = {{.serial = (int8_t*) "AP231/007", .type = PS6000, .nChannels=4, .nRanges = 9, .ranges={PS_50MV, PS_100MV, PS_200MV, PS_500MV, PS_1V, PS_2V, PS_5V, PS_10V, PS_20V}, .nCouplings = 2, .couplings = {PS_DC, PS_AC}},
-									         {.serial = (int8_t*) "ES286/061", .type = PS3000A, .nChannels=4, .nRanges = 9, .ranges={PS_50MV, PS_100MV, PS_200MV, PS_500MV, PS_1V, PS_2V, PS_5V, PS_10V, PS_20V}, .nCouplings = 2, .couplings = {PS_DC, PS_AC}},
-									         {.serial = (int8_t*) "AU354/016", .type = PS4000, .nChannels=2, .nRanges = 9, .ranges={PS_50MV, PS_100MV, PS_200MV, PS_500MV, PS_1V, PS_2V, PS_5V, PS_10V, PS_20V}, .nCouplings = 2, .couplings = {PS_DC, PS_AC}}};
+static const struct scopeDef picoscopes[] = {{.serial = (int8_t*) "AP231/007", .type = PS6000, .nChannels=4, .nRanges = 9, .ranges={PS_50MV, PS_100MV, PS_200MV, PS_500MV, PS_1V, PS_2V, PS_5V, PS_10V, PS_20V}, .nCouplings = 2, .couplings = {PS_DC, PS_AC}, .downsampleSupport = 1},
+									         {.serial = (int8_t*) "ES286/061", .type = PS3000A, .nChannels=4, .nRanges = 9, .ranges={PS_50MV, PS_100MV, PS_200MV, PS_500MV, PS_1V, PS_2V, PS_5V, PS_10V, PS_20V}, .nCouplings = 2, .couplings = {PS_DC, PS_AC}, .downsampleSupport = 1},
+									         {.serial = (int8_t*) "AU354/016", .type = PS4000, .nChannels=2, .nRanges = 9, .ranges={PS_50MV, PS_100MV, PS_200MV, PS_500MV, PS_1V, PS_2V, PS_5V, PS_10V, PS_20V}, .nCouplings = 2, .couplings = {PS_DC, PS_AC}, .downsampleSupport = 0}};
 // Function prototypes
 void getRangeLabel(enum psRange range, char *label);
 void getCouplingLabel(enum psCoupling coupling, char *label);
@@ -64,7 +66,7 @@ PICO_STATUS psRunBlock(struct psconfig *config, void *dataAvailableCallback);
 PICO_STATUS psStop(struct psconfig *config);
 PICO_STATUS psMemorySegments(struct psconfig *config);
 PICO_STATUS psSetChannel(struct psconfig *config, int channelIndex);
-PICO_STATUS psSetDataBuffer(struct psconfig *config, int channelIndex, int measuredPoints, int16_t *rawDataBuffer);
+PICO_STATUS psSetDataBuffer(struct psconfig *config, int channelIndex, int16_t *rawDataBuffer);
 PICO_STATUS psGetValues(struct psconfig *config, uint32_t *nPoints, int16_t *overflow);
 
 #endif  /* ndef __picoscopes_H__ */
