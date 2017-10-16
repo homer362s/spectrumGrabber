@@ -20,13 +20,13 @@ struct limits {double min; double max; int iMin; int iMax};
 enum uiState {UI_NO_SCOPE, UI_NEW_SCOPE, UI_IDLE, UI_MEASURING};
 
 //uint32_t timebase = 7816;
-int16_t *rawDataBuffer;   // Stores data from the scope
-double *zeros;			  // Stores zeros for FFT
-double *dataValues;		  // Stores specctrum data for a single measurement
-double *avgSpectrum[4];	  // Stores the average spectrum magnitudes
+int16_t *rawDataBuffer;   	// Stores data from the scope
+double *zeros;			  	// Stores zeros for FFT
+double *dataValues;		  	// Stores specctrum data for a single measurement
+double *avgSpectrum[4];	  	// Stores the average spectrum magnitudes
 double *avgSpectrumDisplay;	// Stores an average spectrum in display units (dBV)
-double thisCurrent[4]; 	  // Average current from a single measurement (for each channel)
-double averageCurrent[4]; // Average current from all measurements at the current bias point (for each channel)
+double thisCurrent[4]; 	  	// Average current from a single measurement (for each channel)
+double averageCurrent[4]; 	// Average current from all measurements at the current bias point (for each channel)
 float *timeValues;
 float *freqValues;
 

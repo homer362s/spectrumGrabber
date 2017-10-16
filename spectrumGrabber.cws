@@ -53,7 +53,7 @@ In Projects = "1,"
 Window Top = 32
 Window Left = 10
 Window Z-Order = 1
-Source Window State = "1,572,572,572,42,46,46,0,0,195,0,1686,0,0,0,56,542,0,572,34,271,555,1,13,"
+Source Window State = "1,572,572,572,42,46,46,0,0,195,0,1686,0,0,0,56,542,0,559,149,271,555,1,13,"
 
 [File 0002]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"
