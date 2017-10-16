@@ -570,10 +570,10 @@ void handleMeasurement(char *path, char *name, char *ext)
 	    isEnabled(panelHandle, channelMeasCurr[2]) ||
 	    isEnabled(panelHandle, channelMeasCurr[3])) {
 		currFP = fopen(currFilename, "w");
-		fprintf(currFP, "Vg [V],\t\tVd [V],\t\t");
+		fprintf(currFP, "Vg [V],\tVd [V]");
 		for(int i = 0;i < 4;i++) {
 			if (isEnabled(panelHandle, channelMeasCurr[i]))
-				fprintf(currFP, "%s,\t", psConfig.channels[i].name);
+				fprintf(currFP, ",\t%s", psConfig.channels[i].name);
 		}
 		fprintf(currFP, "\n");
 	}
