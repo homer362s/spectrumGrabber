@@ -1,0 +1,8 @@
+[boolToStr]
+Class="Function"
+Prototype="char *boolToStr(int val);"
+
+[savePicoscopeConfig]
+Class="Function"
+Prototype="void savePicoscopeConfig(struct psconfig *config, struct dacconfig *dacConfig, char *filename);"
+
