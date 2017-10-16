@@ -13,6 +13,7 @@
 -browsedeps:c:\Users\user\Desktop\spectrumGrabber\cvibuild.spectrumGrabber\Debug\moduledependencies.txt
 -stackreserve:1048576
 -stackcommit:4096
+-in:c:\Users\user\Desktop\spectrumGrabber\cvibuild.spectrumGrabber\Debug\picoscopeConfig.obj
 -in:c:\Users\user\Desktop\spectrumGrabber\cvibuild.spectrumGrabber\Debug\picoscopes.obj
 -in:c:\Users\user\Desktop\spectrumGrabber\cvibuild.spectrumGrabber\Debug\spectrumGrabber.obj
 -in:c:\Users\user\Desktop\spectrumGrabber\cvibuild.spectrumGrabber\Debug\transposeText.obj

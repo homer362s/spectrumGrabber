@@ -1,3 +1,4 @@
+picoscopeConfig.obj
 picoscopes.obj
 spectrumGrabber.obj
 transposeText.obj

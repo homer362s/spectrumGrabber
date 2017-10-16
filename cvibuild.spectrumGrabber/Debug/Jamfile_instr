@@ -1,3 +1,4 @@
+Depends "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Debug\\spectrumGrabber.exe" : "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Debug\\picoscopeConfig.obj" ;
 Depends "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Debug\\spectrumGrabber.exe" : "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Debug\\picoscopes.obj" ;
 Depends "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Debug\\spectrumGrabber.exe" : "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Debug\\spectrumGrabber.obj" ;
 Depends "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Debug\\spectrumGrabber.exe" : "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Debug\\transposeText.obj" ;

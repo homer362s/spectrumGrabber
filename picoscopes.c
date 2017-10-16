@@ -10,66 +10,66 @@
 #define FALSE 0
 #define TRUE 1
 
-void getRangeLabel(enum psRange range, char *label)
+char* getScopeTypeStr(struct psconfig *config)
 {
-	char *tmp;
-	switch (range) {
-		case PS_10MV:
-			tmp = "10 mV";
+	char *str;
+	switch (config->type) {
+		case PS6000:
+			str = "PS6000";
 			break;
-		case PS_20MV:
-			tmp = "20 mV";
+		case PS3000A:
+			str = "PS3000A";
 			break;
-		case PS_50MV:
-			tmp = "50 mV";
+		case PS4000:
+			str = "PS4000";
 			break;
-		case PS_100MV:
-			tmp = "100 mV";
-			break;
-		case PS_200MV:
-			tmp = "200 mV";
-			break;
-		case PS_500MV:
-			tmp = "500 mV";
-			break;
-		case PS_1V:
-			tmp = "1 V";
-			break;
-		case PS_2V:
-			tmp = "2 V";
-			break;
-		case PS_5V:
-			tmp = "5 V";
-			break;
-		case PS_10V:
-			tmp = "10 V";
-			break;
-		case PS_20V:
-			tmp = "20 V";
-			break;
-		case PS_50V:
-			tmp = "50 V";
-			break;
-		case PS_100V:
-			tmp = "100 V";
+		case PSNONE:
+			str = "PSNONE";
 			break;
 	}
-	
-	strcpy(label, tmp);
+	return str;
 }
 
-void getCouplingLabel(enum psCoupling coupling, char *label)
+char* getRangeLabel(enum psRange range)
 {
-	char *tmp;
+	switch (range) {
+		case PS_10MV:
+			return "10 mV";
+		case PS_20MV:
+			return "20 mV";
+		case PS_50MV:
+			return "50 mV";
+		case PS_100MV:
+			return "100 mV";
+		case PS_200MV:
+			return "200 mV";
+		case PS_500MV:
+			return "500 mV";
+		case PS_1V:
+			return "1 V";
+		case PS_2V:
+			return "2 V";
+		case PS_5V:
+			return "5 V";
+		case PS_10V:
+			return "10 V";
+		case PS_20V:
+			return "20 V";
+		case PS_50V:
+			return "50 V";
+		case PS_100V:
+			return "100 V";
+	}
+}
+
+char* getCouplingLabel(enum psCoupling coupling)
+{
 	switch (coupling) {
 		case PS_DC:
-			tmp = "DC";
-			break;
+			return "DC";
 		case PS_AC:
-			tmp = "AC";
-			break;
+			return "AC";
 	}
-	strcpy(label, tmp);
 }
 
 double getRangeValue(enum psRange range)

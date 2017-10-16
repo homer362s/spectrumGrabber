@@ -58,6 +58,10 @@ Prototype="void fileparts(char *fullfile, char **path, char **name, char **ext);
 Class="Function"
 Prototype="void gotoBiasPoint(int index);"
 
+[getBiasPoint]
+Class="Function"
+Prototype="void getBiasPoint(int index, double *Vg, double *Vd);"
+
 [isEnabled]
 Class="Function"
 Prototype="int isEnabled(int panel, int control);"
@@ -157,6 +161,10 @@ Prototype="int dirButton_CB(int panel, int control, int event, void *callbackDat
 [saveLimits_CB]
 Class="Function"
 Prototype="int saveLimits_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[saveSettings_CB]
+Class="Function"
+Prototype="int saveSettings_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
 [savetableButton_CB]
 Class="Function"

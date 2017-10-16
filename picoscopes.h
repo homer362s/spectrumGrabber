@@ -54,8 +54,9 @@ static const struct scopeDef picoscopes[] = {{.serial = (int8_t*) "AP231/007", .
 									         {.serial = (int8_t*) "ES286/061", .type = PS3000A, .nChannels=4, .nRanges = 9, .ranges={PS_50MV, PS_100MV, PS_200MV, PS_500MV, PS_1V, PS_2V, PS_5V, PS_10V, PS_20V}, .nCouplings = 2, .couplings = {PS_DC, PS_AC}, .downsampleSupport = 1},
 									         {.serial = (int8_t*) "AU354/016", .type = PS4000, .nChannels=2, .nRanges = 9, .ranges={PS_50MV, PS_100MV, PS_200MV, PS_500MV, PS_1V, PS_2V, PS_5V, PS_10V, PS_20V}, .nCouplings = 2, .couplings = {PS_DC, PS_AC}, .downsampleSupport = 0}};
 // Function prototypes
-void getRangeLabel(enum psRange range, char *label);
-void getCouplingLabel(enum psCoupling coupling, char *label);
+char* getScopeTypeStr(struct psconfig *config);
+char* getRangeLabel(enum psRange range);
+char* getCouplingLabel(enum psCoupling coupling);
 double getRangeValue(enum psRange range);
 void scaleReading(struct psconfig *config, int channel, int16_t *rawData, double *scaledData);
 PICO_STATUS psOpenUnit(struct psconfig *config);

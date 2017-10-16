@@ -12,6 +12,8 @@
 #include <math.h>
 #include "picoscopes.h"
 #include "transposeText.h"
+#include "picoscopeConfig.h"
+#include "dacConfig.h"
 
 struct limits {double min; double max; int iMin; int iMax};
 
@@ -23,6 +25,8 @@ double *zeros;			  // Stores zeros for FFT
 double *dataValues;		  // Stores specctrum data for a single measurement
 double *avgSpectrum[4];	  // Stores the average spectrum magnitudes
 double *avgSpectrumDisplay;	// Stores an average spectrum in display units (dBV)
+double thisCurrent[4]; 	  // Average current from a single measurement (for each channel)
+double averageCurrent[4]; // Average current from all measurements at the current bias point (for each channel)
 float *timeValues;
 float *freqValues;
 
@@ -40,17 +44,20 @@ int channelCouplings[] = {MAINPANEL_COUPLINGA, MAINPANEL_COUPLINGB, MAINPANEL_CO
 int channelCoeffs[] = {MAINPANEL_COEFFA, MAINPANEL_COEFFB, MAINPANEL_COEFFC, MAINPANEL_COEFFD};
 int channelMeasFreq[] = {MAINPANEL_FREQA, MAINPANEL_FREQB, MAINPANEL_FREQC, MAINPANEL_FREQD};
 int channelMeasTime[] = {MAINPANEL_TIMEA, MAINPANEL_TIMEB, MAINPANEL_TIMEC, MAINPANEL_TIMED};
+int channelMeasCurr[] = {MAINPANEL_CURRA, MAINPANEL_CURRB, MAINPANEL_CURRC, MAINPANEL_CURRD};
 int colors[] = {VAL_MAGENTA, VAL_CYAN, VAL_BLUE, VAL_DK_GREEN};
 char channelLabel[][2] = {"A", "B", "C", "D"};
 
-int dacBoard;
-int vgOut;
-int vdOut;
+
+//int dacBoard;
+//int vgOut;
+//int vdOut;
 static int panelHandle = 0;
 int tgHandle = 0;
 int16_t scopeHandle;
 
 struct psconfig psConfig;
+struct dacconfig dacConfig;
 
 void calculateNewTimebase();
 int picoscopeInit();
@@ -60,6 +67,7 @@ void updateTimeAxis();
 void setupScopeChannels();
 int isEnabled(int handle, int control);
 void gotoBiasPoint(int index);
+void getBiasPoint(int index, double *Vg, double *Vd);
 void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state);
 void generateMatrix(double *VgVals, double *VdVals, int NumVgSteps, int NumVdSteps); 
 void updateBiasCount();  
@@ -109,9 +117,9 @@ int main (int argc, char *argv[])
 	picoscopeInit();
 	
 	// Initialize DAC stuff
-	GetCtrlVal(panelHandle, MAINPANEL_BOARDNUM, &dacBoard);
-	GetCtrlVal(panelHandle, MAINPANEL_VGNUM, &vgOut);
-	GetCtrlVal(panelHandle, MAINPANEL_VDNUM, &vdOut);
+	GetCtrlVal(panelHandle, MAINPANEL_BOARDNUM, &dacConfig.board);
+	GetCtrlVal(panelHandle, MAINPANEL_VGNUM, &dacConfig.vg);
+	GetCtrlVal(panelHandle, MAINPANEL_VDNUM, &dacConfig.vd);
 	
 	/* display the panel and run the user interface */
 	errChk (DisplayPanel (panelHandle));
@@ -136,10 +144,18 @@ int picoscopeInit()
 	int pico;
 	GetCtrlVal(panelHandle, MAINPANEL_PICOSCOPERING, &pico);
 	
-	// If the chosen scope is none disable the run button and return
+	// If the chosen scope is none disable the run button, set up some values and return
 	if(pico<0) {
 		psConfig.type = PSNONE;
 		gotoUiState(panelHandle, psConfig, UI_NO_SCOPE);
+		
+		//Set up config struct
+		psConfig.type = PSNONE;
+		psConfig.serial = (int8_t*) "";
+		psConfig.nChannels = 0;
+		psConfig.nCouplings = 0;
+		psConfig.nRanges = 0;
+		psConfig.downsampleSupport = FALSE;
 		return 0;
 	}
 	
@@ -324,7 +340,7 @@ void processData(int nMeasured, int averages, int iBias, char ***timeFileNames, 
 	// Loop over each scope input
 	for(int iChannel = 0;iChannel < 4;iChannel++) {
 		// Skip if the input is disabled
-		if(!isEnabled(panelHandle, channelMeasFreq[iChannel]) && !isEnabled(panelHandle, channelMeasTime[iChannel]))
+		if(!isChannelEnabled(iChannel))
 			continue;
 		
 		// Get data from scope
@@ -362,7 +378,25 @@ void processData(int nMeasured, int averages, int iBias, char ***timeFileNames, 
 		// Plot the time domain
 		if (isChannelEnabled(iChannel) && nMeasured==0) { 
 			PlotXY(timeTabHandle, TIMETAB_TIMEGRAPH, timeValues, dataValues, psConfig.nPoints, VAL_FLOAT, VAL_DOUBLE, VAL_THIN_LINE, VAL_NO_POINT, VAL_SOLID, 1, colors[iChannel]);
-		}	
+		}
+		
+		// Update time domain average if requested
+		// Using the Kahan summation algorithm to reduce errors
+		// https://en.wikipedia.org/wiki/Kahan_summation_algorithm
+		if (isEnabled(panelHandle, channelMeasCurr[iChannel])) {
+			double y, t;
+			double c = 0;
+			thisCurrent[iChannel] = 0;
+			// Calculate average of this measurement set
+			for (int j = 0;j < psConfig.nPoints; j++) {
+				y = dataValues[j] / (double) psConfig.nPoints - c;
+				t = thisCurrent[iChannel] + y;
+				c = (t - thisCurrent[iChannel]) - y;
+				thisCurrent[iChannel] = t;
+			}
+			// Average into previous measurement sets (regular average, nothing fancy this time)
+			averageCurrent[iChannel] = (averageCurrent[iChannel] * ((double) nMeasured / (double) averages) + thisCurrent[iChannel] * (1 / (double) averages)) * (double) averages / ((double) nMeasured + 1);
+		}
 		
 		// Compute FFT if the FFT is requested
 		if (isEnabled(panelHandle, channelMeasFreq[iChannel])) {
@@ -433,6 +467,8 @@ void handleMeasurement(char *path, char *name, char *ext)
 {
 	FILE *freqFP = NULL;
 	FILE *timeFP = NULL;
+	char *currFilename = NULL;
+	FILE *currFP = NULL;
 	PICO_STATUS status;
 	
 	// Disable the run button
@@ -471,7 +507,7 @@ void handleMeasurement(char *path, char *name, char *ext)
 		GetNumTableRows(panelHandle, MAINPANEL_TABLE, &nBias);
 	
 	
-	// filename = path + _ + name + _ + type + _ + label + . + ext + null
+	// filename = path + _ + name + _ + type + _ + label + "." + ext + null
 	int filenameLen = strlen(path) + 1 + strlen(name) + 1 + 4 + 1 + 31 + 1 + strlen(ext) + 1;
 	
 	char **freqFileNames[4] = {0,0,0,0}, *freqFileName[4] = {0,0,0,0};
@@ -484,9 +520,9 @@ void handleMeasurement(char *path, char *name, char *ext)
 	// Make all data filenames
 	char *filename;
 	for (int i = 0;i < 4;i++) {
-		freqFileName[i] = malloc((filenameLen) * sizeof(char));
+		freqFileName[i] = malloc(filenameLen * sizeof(char));
 		sprintf(freqFileName[i], "%s%s_Freq_%s%s", path, name, psConfig.channels[i].name, ext);
-		timeFileName[i] = malloc((filenameLen) * sizeof(char));
+		timeFileName[i] = malloc(filenameLen * sizeof(char));
 		sprintf(timeFileName[i], "%s%s_Time_%s%s", path, name, psConfig.channels[i].name, ext);
 		for (int j = 0;j<nBias+1;j++) {
 			freqFileNames[i][j] = malloc((filenameLen + 1 + 8) * sizeof(char));
@@ -495,15 +531,14 @@ void handleMeasurement(char *path, char *name, char *ext)
 			sprintf(timeFileNames[i][j], "%s%s_Time_%s_%d%s", path, name, psConfig.channels[i].name, j, ext);
 		}
 	}
+	currFilename = malloc(filenameLen * sizeof(char)); 
+	sprintf(currFilename, "%s%s_Curr%s", path, name, ext);
 	filename = NULL;
-	
-	for (int i = 0;i < nBias;i++) {
-	}
 	
 	// Store frequency and time axes in the files
 	for(int iChannel = 0;iChannel<4;iChannel++) {
 		// Skip if this channel is neither measurement is requested
-		if (!(isChannelEnabled(iChannel)))
+		if (!isChannelEnabled(iChannel))
 			continue;
 
 		// Save frequency column
@@ -528,6 +563,21 @@ void handleMeasurement(char *path, char *name, char *ext)
 			fclose(timeFP);
 		}
 	}
+	
+	// Open current file if requested and fill in header
+	if (isEnabled(panelHandle, channelMeasCurr[0]) ||
+	    isEnabled(panelHandle, channelMeasCurr[1]) ||
+	    isEnabled(panelHandle, channelMeasCurr[2]) ||
+	    isEnabled(panelHandle, channelMeasCurr[3])) {
+		currFP = fopen(currFilename, "w");
+		fprintf(currFP, "Vg [V],\t\tVd [V],\t\t");
+		for(int i = 0;i < 4;i++) {
+			if (isEnabled(panelHandle, channelMeasCurr[i]))
+				fprintf(currFP, "%s,\t", psConfig.channels[i].name);
+		}
+		fprintf(currFP, "\n");
+	}
+		
 			
 	// Loop over bias conditions measuring at each
 	int iBias = 0;
@@ -549,6 +599,12 @@ void handleMeasurement(char *path, char *name, char *ext)
 		double delay;
 		GetCtrlVal(panelHandle, MAINPANEL_DELAYBOX, &delay);
 		Delay(delay);
+		
+		// Initialize current averages
+		for(int j = 0;j < 4;j++) {
+			thisCurrent[j] = 0;
+			averageCurrent[j] = 0;
+		}
 		
 		// Loop within a single bias condition and average
 		for(nMeasured = 0; nMeasured < averages; nMeasured++) {
@@ -602,22 +658,41 @@ void handleMeasurement(char *path, char *name, char *ext)
 				sprintf(tmpstr, "%d/%d Bias Points", i + 1, nBias); 
 				SetCtrlVal(panelHandle, MAINPANEL_BIASCOUNTDISP, tmpstr);
 			}
-		}
+		} // End looping around a single measurenemt at a given bias point
 		
-		// Save average spectra
+		// Save average data
 		if ((userRequestedStop || userRequestedNext) && nMeasured == 0) {
+			// If we skipped this bias point without measuring any data, clear the filename so it is ignored when combining files
 			for (int k = 0;k<4;k++) {
 				freqFileNames[k][i+1][0] = 0;
 			}
 		} else {
-			for (int j = 0;j < 4;j++) {
-				if(isEnabled(panelHandle, channelMeasFreq[j]) && isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
-					// Save average spectrum
-					FILE *fp = fopen(freqFileNames[j][i+1], "w");
-					for(int k=freqLimits.iMin; k<freqLimits.iMax+1; k++) {
-						fprintf(fp, "%13.6e\n", avgSpectrum[j][k]);	
+			if (isEnabled(panelHandle, MAINPANEL_DISABLESAVEBUTTON)) {
+				for (int j = 0;j < 4;j++) {
+					// Save average frequency spectra
+					if(isEnabled(panelHandle, channelMeasFreq[j])) {
+						FILE *fp = fopen(freqFileNames[j][i+1], "w");
+						for(int k=freqLimits.iMin; k<freqLimits.iMax+1; k++) {
+							fprintf(fp, "%13.6e\n", avgSpectrum[j][k]);	
+						}
+						fclose(fp);
 					}
-					fclose(fp);
+				}
+				if (isEnabled(panelHandle, channelMeasCurr[0]) ||
+				    isEnabled(panelHandle, channelMeasCurr[1]) ||
+				    isEnabled(panelHandle, channelMeasCurr[2]) ||
+				    isEnabled(panelHandle, channelMeasCurr[3])) {
+					// Save current row labels (vd, vg)
+					double Vg, Vd;
+					getBiasPoint(iBias, &Vg, &Vd);
+					fprintf(currFP, "%13.6e,\t%13.6e", Vg, Vd);
+					// Save data points
+					for (int j = 0;j < 4;j++) {
+						if (isEnabled(panelHandle, channelMeasCurr[j]))
+							fprintf(currFP, ",\t%13.6e", averageCurrent[j]);
+					}
+					// Newline
+					fprintf(currFP, "\n");
 				}
 			}
 		}
@@ -634,6 +709,14 @@ void handleMeasurement(char *path, char *name, char *ext)
 		// Check if the number of bias points changed 
 		if (dacEnabled)
 			GetNumTableRows(panelHandle, MAINPANEL_TABLE, &nBias);
+	} // End bias loop
+	
+	// Close current file if in use
+	if (isEnabled(panelHandle, channelMeasCurr[0]) ||
+	    isEnabled(panelHandle, channelMeasCurr[1]) ||
+	    isEnabled(panelHandle, channelMeasCurr[2]) ||
+	    isEnabled(panelHandle, channelMeasCurr[3])) {
+		fclose(currFP);
 	}
 	
 	// Free memory
@@ -679,6 +762,7 @@ void handleMeasurement(char *path, char *name, char *ext)
 		free(freqFileNames[i]);
 		free(timeFileNames[i]);
 	}
+	free(currFilename);
 	
 	// Re-enable the run button
 	gotoUiState(panelHandle, psConfig, UI_IDLE);
@@ -737,7 +821,6 @@ void gotoBiasPoint(int index)
 	double Vg, Vd;
 	double VgCoeff, VdCoeff;
 	if (isEnabled(panelHandle, MAINPANEL_DACBUTTON)) {
-		
 		GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(1,index+1), &Vg);
 		GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(2,index+1), &Vd);
 		GetCtrlVal(panelHandle, MAINPANEL_VGCOEFFBOX, &VgCoeff);
@@ -755,9 +838,20 @@ void gotoBiasPoint(int index)
 		}
 		SetTableCellRangeAttribute(panelHandle, MAINPANEL_TABLE, VAL_TABLE_ROW_RANGE(index+1), ATTR_TEXT_BGCOLOR, VAL_PANEL_GRAY);
 		
-		cbVOut(dacBoard, vgOut, BIP10VOLTS, Vg/VgCoeff*0.001, 0);
-		cbVOut(dacBoard, vdOut, BIP10VOLTS, Vd/VdCoeff*0.001, 0);
+		cbVOut(dacConfig.board, dacConfig.vg, BIP10VOLTS, Vg/VgCoeff*0.001, 0);
+		cbVOut(dacConfig.board, dacConfig.vd, BIP10VOLTS, Vd/VdCoeff*0.001, 0);
 	 }
+}
+
+void getBiasPoint(int index, double *Vg, double *Vd) {
+	double VgCoeff, VdCoeff;
+	GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(1,index+1), Vg);
+	GetTableCellVal(panelHandle, MAINPANEL_TABLE, MakePoint(2,index+1), Vd);
+	GetCtrlVal(panelHandle, MAINPANEL_VGCOEFFBOX, &VgCoeff);
+	GetCtrlVal(panelHandle, MAINPANEL_VDCOEFFBOX, &VdCoeff);
+	
+	*Vg = *Vg/VgCoeff*0.001;
+	*Vd = *Vd/VdCoeff*0.001;
 }
 
 int isEnabled(int panel, int control)
@@ -769,7 +863,7 @@ int isEnabled(int panel, int control)
 
 int isChannelEnabled(int i)
 {
-	return isEnabled(panelHandle, channelMeasFreq[i]) | isEnabled(panelHandle, channelMeasTime[i]);
+	return isEnabled(panelHandle, channelMeasFreq[i]) || isEnabled(panelHandle, channelMeasTime[i]) || isEnabled(panelHandle, channelMeasCurr[i]);
 }	
 
 void loadConditions(){
@@ -987,6 +1081,7 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 				case MAINPANEL_COEFFA:
 				case MAINPANEL_FREQA:
 				case MAINPANEL_TIMEA:
+				case MAINPANEL_CURRA:
 					channelIndex = 0;
 					break;
 				case MAINPANEL_LABELB:
@@ -995,6 +1090,7 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 				case MAINPANEL_COEFFB:
 				case MAINPANEL_FREQB:
 				case MAINPANEL_TIMEB:
+				case MAINPANEL_CURRB:
 					channelIndex = 1;
 					break;
 				case MAINPANEL_LABELC:
@@ -1003,6 +1099,7 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 				case MAINPANEL_COEFFC:
 				case MAINPANEL_FREQC:
 				case MAINPANEL_TIMEC:
+				case MAINPANEL_CURRC:
 					channelIndex = 2;
 					break;
 				case MAINPANEL_LABELD:
@@ -1011,6 +1108,7 @@ int CVICALLBACK channel_CB(int panel, int control, int event, void *callbackData
 				case MAINPANEL_COEFFD:
 				case MAINPANEL_FREQD:
 				case MAINPANEL_TIMED:
+				case MAINPANEL_CURRD:
 					channelIndex = 3;
 					break;
 			}
@@ -1102,9 +1200,9 @@ int CVICALLBACK boardNum_CB(int panel, int control, int event, void *callbackDat
 {
 	switch(event){
 		case EVENT_COMMIT:
-			GetCtrlVal(panelHandle, MAINPANEL_BOARDNUM, &dacBoard);
-			GetCtrlVal(panelHandle, MAINPANEL_VGNUM, &vgOut);
-			GetCtrlVal(panelHandle, MAINPANEL_VDNUM, &vdOut);
+			GetCtrlVal(panelHandle, MAINPANEL_BOARDNUM, &dacConfig.board);
+			GetCtrlVal(panelHandle, MAINPANEL_VGNUM, &dacConfig.vg);
+			GetCtrlVal(panelHandle, MAINPANEL_VDNUM, &dacConfig.vd);
 			break;
 	}	
 	return 0;
@@ -1336,6 +1434,16 @@ int CVICALLBACK saveLimits_CB(int panel, int control, int event, void *callbackD
 			break;
 	}
 	
+	return 0;
+}
+
+int CVICALLBACK saveSettings_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
+{
+	switch (event) {
+		case EVENT_COMMIT:
+			savePicoscopeConfig(&psConfig, &dacConfig, "tmpSettings.cfg");
+			break;
+	}
 	return 0;
 }
 
@@ -1694,7 +1802,7 @@ void generateMatrix(double *VgVals, double *VdVals, int NumVgSteps, int NumVdSte
 
 void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 {
-	char menuItemName[32];
+	char *menuItemName;
 	switch (state)
 	{
 		case UI_NO_SCOPE:
@@ -1706,6 +1814,7 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 				// Uncheck measurement checkboxes
 				SetCtrlVal(panelHandle, channelMeasFreq[i], 0);
 				SetCtrlVal(panelHandle, channelMeasTime[i], 0);
+				SetCtrlVal(panelHandle, channelMeasCurr[i], 0);
 				
 				// Hide the channel elements 
 				SetCtrlAttribute(panelHandle, channelLabels[i], ATTR_VISIBLE, FALSE);     
@@ -1715,6 +1824,7 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 				SetCtrlAttribute(panelHandle, channelCoeffs[i], ATTR_VISIBLE, FALSE);
 				SetCtrlAttribute(panelHandle, channelMeasFreq[i], ATTR_VISIBLE, FALSE);
 				SetCtrlAttribute(panelHandle, channelMeasTime[i], ATTR_VISIBLE, FALSE);
+				SetCtrlAttribute(panelHandle, channelMeasCurr[i], ATTR_VISIBLE, FALSE);
 				SetCtrlAttribute(panelHandle, overloadLeds[i], ATTR_VISIBLE, FALSE);
 				
 				// Clear channel menus
@@ -1746,6 +1856,7 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 				// Uncheck measurement checkboxes
 				SetCtrlVal(panelHandle, channelMeasFreq[i], 0);
 				SetCtrlVal(panelHandle, channelMeasTime[i], 0);
+				SetCtrlVal(panelHandle, channelMeasCurr[i], 0);
 				
 				// Enable channels
 				SetCtrlAttribute(panelHandle, channelLabels[i], ATTR_VISIBLE, TRUE);
@@ -1755,6 +1866,7 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 				SetCtrlAttribute(panelHandle, channelCoeffs[i], ATTR_VISIBLE, TRUE);
 				SetCtrlAttribute(panelHandle, channelMeasFreq[i], ATTR_VISIBLE, TRUE);
 				SetCtrlAttribute(panelHandle, channelMeasTime[i], ATTR_VISIBLE, TRUE);
+				SetCtrlAttribute(panelHandle, channelMeasCurr[i], ATTR_VISIBLE, TRUE);
 				SetCtrlAttribute(panelHandle, overloadLeds[i], ATTR_VISIBLE, TRUE);
 				
 				// Undim checkboxes and channel LED
@@ -1762,6 +1874,7 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 				SetCtrlAttribute(panelHandle, channelLeds[i], ATTR_DIMMED, FALSE);
 				SetCtrlAttribute(panelHandle, channelMeasFreq[i], ATTR_DIMMED, FALSE);
 				SetCtrlAttribute(panelHandle, channelMeasTime[i], ATTR_DIMMED, FALSE);
+				SetCtrlAttribute(panelHandle, channelMeasCurr[i], ATTR_DIMMED, FALSE);
 				
 				// Dim remaining channel elements
 				SetCtrlAttribute(panelHandle, channelRanges[i], ATTR_DIMMED, TRUE);
@@ -1779,13 +1892,13 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 				
 				// Fill in ranges
 				for (int j = 0;j < psConfig.nRanges;j++) {
-					getRangeLabel(psConfig.ranges[j], menuItemName);
+					menuItemName = getRangeLabel(psConfig.ranges[j]);
 					InsertListItem(panelHandle, channelRanges[i], j, menuItemName, psConfig.ranges[j]);
 				}
 				
 				// Fill in couplings
 				for (int j = 0;j < psConfig.nCouplings;j++) {
-					getCouplingLabel(psConfig.couplings[j], menuItemName);
+					menuItemName = getCouplingLabel(psConfig.couplings[j]);
 					InsertListItem(panelHandle, channelCouplings[i], j, menuItemName, psConfig.couplings[j]);
 				}
 			}
@@ -1799,6 +1912,7 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 				SetCtrlAttribute(panelHandle, channelCoeffs[i], ATTR_VISIBLE, FALSE);
 				SetCtrlAttribute(panelHandle, channelMeasFreq[i], ATTR_VISIBLE, FALSE);
 				SetCtrlAttribute(panelHandle, channelMeasTime[i], ATTR_VISIBLE, FALSE);
+				SetCtrlAttribute(panelHandle, channelMeasCurr[i], ATTR_VISIBLE, FALSE);
 				SetCtrlAttribute(panelHandle, overloadLeds[i], ATTR_VISIBLE, FALSE);
 			}
 
@@ -1829,6 +1943,7 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 				SetCtrlAttribute(panelHandle, channelCoeffs[i], ATTR_DIMMED, !isChannelEnabled(i));
 				SetCtrlAttribute(panelHandle, channelMeasFreq[i], ATTR_DIMMED, FALSE);
 				SetCtrlAttribute(panelHandle, channelMeasTime[i], ATTR_DIMMED, FALSE);
+				SetCtrlAttribute(panelHandle, channelMeasCurr[i], ATTR_DIMMED, FALSE);
 			}
 			
 			// Enable bias points table
@@ -1867,6 +1982,7 @@ void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state)
 				SetCtrlAttribute(panelHandle, channelCoeffs[i], ATTR_DIMMED, TRUE);
 				SetCtrlAttribute(panelHandle, channelMeasFreq[i], ATTR_DIMMED, TRUE);
 				SetCtrlAttribute(panelHandle, channelMeasTime[i], ATTR_DIMMED, TRUE);
+				SetCtrlAttribute(panelHandle, channelMeasCurr[i], ATTR_DIMMED, TRUE);
 			}
 			
 			// Disable bias points table

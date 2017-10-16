@@ -1,10 +1,14 @@
+[getScopeTypeStr]
+Class="Function"
+Prototype="char *getScopeTypeStr(struct psconfig *config);"
+
 [getRangeLabel]
 Class="Function"
-Prototype="void getRangeLabel(enum psRange range, char *label);"
+Prototype="char *getRangeLabel(enum psRange range);"
 
 [getCouplingLabel]
 Class="Function"
-Prototype="void getCouplingLabel(enum psCoupling coupling, char *label);"
+Prototype="char *getCouplingLabel(enum psCoupling coupling);"
 
 [getRangeValue]
 Class="Function"
