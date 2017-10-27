@@ -12,5 +12,4 @@ ps4000.lib
 ps6000.lib
 user32.lib
 EXE Symbol Module
-Exports Module
 Resource Module

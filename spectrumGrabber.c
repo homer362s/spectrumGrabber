@@ -850,8 +850,8 @@ void getBiasPoint(int index, double *Vg, double *Vd) {
 	GetCtrlVal(panelHandle, MAINPANEL_VGCOEFFBOX, &VgCoeff);
 	GetCtrlVal(panelHandle, MAINPANEL_VDCOEFFBOX, &VdCoeff);
 	
-	*Vg = *Vg/VgCoeff*0.001;
-	*Vd = *Vd/VdCoeff*0.001;
+	*Vg = *Vg*0.001;
+	*Vd = *Vd*0.001;
 }
 
 int isEnabled(int panel, int control)
