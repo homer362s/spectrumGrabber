@@ -4,21 +4,249 @@ Prototype="int main(int argc, char **argv);"
 
 [picoscopeInit]
 Class="Function"
-Prototype="void picoscopeInit();"
+Prototype="int picoscopeInit();"
+
+[updateTimeSavingWindow]
+Class="Function"
+Prototype="void updateTimeSavingWindow(double minTime, double maxTime, double timeStep);"
+
+[updateFreqSavingWindow]
+Class="Function"
+Prototype="void updateFreqSavingWindow(double minFreq, double maxFreq, double freqStep);"
+
+[setupScopeChannel]
+Class="Function"
+Prototype="void setupScopeChannel(int channelIndex, int channelLabel, int enabledLed, int rangeRing, int couplingRing, int coeffBox);"
+
+[setupScopeChannels]
+Class="Function"
+Prototype="void setupScopeChannels();"
 
 [dataAvailableCallback]
 Class="Function"
 Prototype="void dataAvailableCallback(short handle, unsigned int status, void *pParameter);"
 
+[avgBox_CB]
+Class="Function"
+Prototype="int avgBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[dacButton_CB]
+Class="Function"
+Prototype="int dacButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[delayBox_CB]
+Class="Function"
+Prototype="int delayBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[processData]
+Class="Function"
+Prototype="void processData(int nMeasured, int averages, int iBias, char ***timeFileNames, struct limits timeLimits);"
+
+[updateTimeAxis]
+Class="Function"
+Prototype="void updateTimeAxis(struct limits *freqLimits, struct limits *timeLimits);"
+
+[handleMeasurement]
+Class="Function"
+Prototype="void handleMeasurement(char *path, char *name, char *ext);"
+
+[fileparts]
+Class="Function"
+Prototype="void fileparts(char *fullfile, char **path, char **name, char **ext);"
+
+[gotoBiasPoint]
+Class="Function"
+Prototype="void gotoBiasPoint(int index);"
+
+[getBiasPoint]
+Class="Function"
+Prototype="void getBiasPoint(int index, double *Vg, double *Vd);"
+
+[isEnabled]
+Class="Function"
+Prototype="int isEnabled(int panel, int control);"
+
+[isChannelEnabled]
+Class="Function"
+Prototype="int isChannelEnabled(int i);"
+
+[loadConditions]
+Class="Function"
+Prototype="void loadConditions();"
+
+[buildTable]
+Class="Function"
+Prototype="void buildTable();"
+
+[calculateVgStepSize]
+Class="Function"
+Prototype="void calculateVgStepSize();"
+
+[calculateVdStepSize]
+Class="Function"
+Prototype="void calculateVdStepSize();"
+
+[saveTable]
+Class="Function"
+Prototype="void saveTable(char *savetableFilename);"
+
+[delRows]
+Class="Function"
+Prototype="void delRows();"
+
+[loadButton_CB]
+Class="Function"
+Prototype="int loadButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[channel_CB]
+Class="Function"
+Prototype="int channel_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[clearButton_CB]
+Class="Function"
+Prototype="int clearButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[closePanel_CB]
+Class="Function"
+Prototype="int closePanel_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[addrowButton_CB]
+Class="Function"
+Prototype="int addrowButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
 [binsRing_CB]
 Class="Function"
 Prototype="int binsRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[boardNum_CB]
+Class="Function"
+Prototype="int boardNum_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[delrowButton_CB]
+Class="Function"
+Prototype="int delrowButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[disableSave_CB]
+Class="Function"
+Prototype="int disableSave_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[dsBox_CB]
+Class="Function"
+Prototype="int dsBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[nextButton_CB]
+Class="Function"
+Prototype="int nextButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[picoscopeRing_CB]
+Class="Function"
+Prototype="int picoscopeRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[rateBox_CB]
+Class="Function"
+Prototype="int rateBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[calculateNewTimebase]
+Class="Function"
+Prototype="void calculateNewTimebase();"
 
 [runButton_CB]
 Class="Function"
 Prototype="int runButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
 
+[dirButton_CB]
+Class="Function"
+Prototype="int dirButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[saveLimits_CB]
+Class="Function"
+Prototype="int saveLimits_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[saveSettings_CB]
+Class="Function"
+Prototype="int saveSettings_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[savetableButton_CB]
+Class="Function"
+Prototype="int savetableButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[stopButton_CB]
+Class="Function"
+Prototype="int stopButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[tgPanel_CB]
+Class="Function"
+Prototype="int tgPanel_CB(int panel, int event, void *callbackData, int eventData1, int eventData2);"
+
+[cfPanel_CB]
+Class="Function"
+Prototype="int cfPanel_CB(int panel, int event, void *callbackData, int eventData1, int eventData2);"
+
+[updateBiasCount]
+Class="Function"
+Prototype="void updateBiasCount();"
+
+[formatFloat]
+Class="Function"
+Prototype="void formatFloat(float num, char *unit, char *outstr);"
+
+[updateTimeDisplay]
+Class="Function"
+Prototype="void updateTimeDisplay();"
+
+[updateTimeAxis_CB]
+Class="Function"
+Prototype="int updateTimeAxis_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[buildtableButton_CB]
+Class="Function"
+Prototype="int buildtableButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[closetgButton_CB]
+Class="Function"
+Prototype="int closetgButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[combineFiles_CB]
+Class="Function"
+Prototype="int combineFiles_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[combineButton_CB]
+Class="Function"
+Prototype="int combineButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[editVdBox_CB]
+Class="Function"
+Prototype="int editVdBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[editVgBox_CB]
+Class="Function"
+Prototype="int editVgBox_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[generateButton_CB]
+Class="Function"
+Prototype="int generateButton_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
+[generateMatrix]
+Class="Function"
+Prototype="void generateMatrix(double *VgVals, double *VdVals, int NumVgSteps, int NumVdSteps);"
+
+[gotoUiState]
+Class="Function"
+Prototype="void gotoUiState(int panelHandle, struct psconfig psConfig, enum uiState state);"
+
+[generateRing_CB]
+Class="Function"
+Prototype="int generateRing_CB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);"
+
 [mainpanel_CB]
 Class="Function"
 Prototype="int mainpanel_CB(int panel, int event, void *callbackData, int eventData1, int eventData2);"
+
+[getInputNew]
+Class="Function"
+Prototype="int getInputNew(char *FileInput, int *pointer, char **line);"
+
+[fileread]
+Class="Function"
+Prototype="char *fileread(char *name, char *access);"
 

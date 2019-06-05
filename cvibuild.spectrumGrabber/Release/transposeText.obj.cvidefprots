@@ -1,0 +1,8 @@
+[transposeText]
+Class="Function"
+Prototype="void transposeText(char *filename, int fieldLen, int numCols, int numRows);"
+
+[combineFiles]
+Class="Function"
+Prototype="void combineFiles(char *newFilename, char **filenames, char *sep, int nFiles, int fieldLen, unsigned long bufferLen);"
+

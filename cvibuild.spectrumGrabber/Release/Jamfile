@@ -1,41 +1,67 @@
-HDRS = 	"c:\\program files (x86)\\national instruments\\cvi2015\\toolslib\\activex\\word"
-	"c:\\program files (x86)\\national instruments\\cvi2015\\toolslib\\activex\\excel"
-	"c:\\program files (x86)\\national instruments\\cvi2015\\toolslib\\custctrl"
-	"c:\\program files (x86)\\national instruments\\cvi2015\\toolslib\\custctrl\\custsupp"
-	"c:\\program files (x86)\\national instruments\\cvi2015\\toolslib\\cvirtsup"
-	"c:\\program files (x86)\\national instruments\\cvi2015\\toolslib\\datasock"
-	"c:\\program files (x86)\\national instruments\\cvi2015\\toolslib\\daqUtil"
-	"c:\\program files (x86)\\national instruments\\cvi2015\\toolslib\\printing"
-	"c:\\program files (x86)\\national instruments\\cvi2015\\toolslib\\toolbox"
-	"c:\\program files (x86)\\national instruments\\cvi2015\\toolslib\\reportgen"
-	"c:\\program files (x86)\\national instruments\\cvi2015\\toolslib\\localui"
-	"c:\\program files (x86)\\national instruments\\cvi2015\\instr"
+HDRS = 	"c:\\program files (x86)\\national instruments\\cvi2017\\toolslib\\activex\\word"
+	"c:\\program files (x86)\\national instruments\\cvi2017\\toolslib\\activex\\excel"
+	"c:\\program files (x86)\\national instruments\\cvi2017\\toolslib\\custctrl"
+	"c:\\program files (x86)\\national instruments\\cvi2017\\toolslib\\custctrl\\custsupp"
+	"c:\\program files (x86)\\national instruments\\cvi2017\\toolslib\\cvirtsup"
+	"c:\\program files (x86)\\national instruments\\cvi2017\\toolslib\\datasock"
+	"c:\\program files (x86)\\national instruments\\cvi2017\\toolslib\\daqUtil"
+	"c:\\program files (x86)\\national instruments\\cvi2017\\toolslib\\printing"
+	"c:\\program files (x86)\\national instruments\\cvi2017\\toolslib\\toolbox"
+	"c:\\program files (x86)\\national instruments\\cvi2017\\toolslib\\reportgen"
+	"c:\\program files (x86)\\national instruments\\cvi2017\\toolslib\\localui"
+	"c:\\program files (x86)\\national instruments\\cvi2017\\instr"
 	"C:\\Program Files (x86)\\National Instruments\\Shared\\CVI\\toolslib\\custctrl"
 	"C:\\Program Files (x86)\\National Instruments\\Shared\\CVI\\toolslib\\custctrl\\custsupp"
 	"C:\\Program Files (x86)\\National Instruments\\Shared\\CVI\\instr"
-	"C:\\ProgramData\\National Instruments\\CVI2015\\instr"
-	"c:\\program files (x86)\\national instruments\\cvi2015\\include"
+	"C:\\ProgramData\\National Instruments\\CVI2017\\instr"
+	"c:\\program files (x86)\\national instruments\\cvi2017\\include"
 	"C:\\Program Files (x86)\\National Instruments\\Shared\\CVI\\include"
-	"C:\\ProgramData\\National Instruments\\CVI2015\\include"
+	"C:\\ProgramData\\National Instruments\\CVI2017\\include"
 	"C:\\ProgramData\\National Instruments\\CVI\\include"
-	"c:\\program files (x86)\\national instruments\\cvi2015\\include\\ansi"
-	"c:\\program files (x86)\\national instruments\\cvi2015\\include\\clang\\3.3"
+	"c:\\program files (x86)\\national instruments\\cvi2017\\include\\ansi"
+	"c:\\program files (x86)\\national instruments\\cvi2017\\include\\clang\\3.3"
 	"C:\\Program Files (x86)\\IVI Foundation\\IVI\\Include"
 	"C:\\Program Files (x86)\\IVI Foundation\\VISA\\winnt\\include"
 	"C:\\Program Files (x86)\\National Instruments\\Shared\\MSDTRedistributables\\SDKHeaderFiles\\8.1"
-	"c:\\Program Files (x86)\\National Instruments\\CVI2015\\bin"
-	"c:\\ProgramData\\National Instruments\\CVI2015\\bin"
+	"c:\\Program Files (x86)\\National Instruments\\CVI2017\\bin"
+	"c:\\ProgramData\\National Instruments\\CVI2017\\bin"
 	"c:\\Program Files (x86)\\National Instruments\\Shared\\CVI\\Bin"
 	;
 include Jamfile_instr ;
+LOCATE on "cbw.h" = "c:\\Users\\Public\\Documents\\Measurement Computing\\DAQ\\C" ;
+LOCATE on "dacConfig.h" = "c:\\Users\\user\\Desktop\\spectrumGrabber" ;
+LOCATE on "picoscopeConfig.c" = "c:\\Users\\user\\Desktop\\spectrumGrabber" ;
+LOCATE on "picoscopeConfig.h" = "c:\\Users\\user\\Desktop\\spectrumGrabber" ;
+LOCATE on "picoscopes.c" = "c:\\Users\\user\\Desktop\\spectrumGrabber" ;
+LOCATE on "picoscopes.h" = "c:\\Users\\user\\Desktop\\spectrumGrabber" ;
+LOCATE on "ps3000aApi.h" = "c:\\Program Files (x86)\\Pico Technology\\SDK\\inc" ;
+LOCATE on "ps4000Api.h" = "c:\\Program Files (x86)\\Pico Technology\\SDK\\inc" ;
 LOCATE on "ps6000Api.h" = "c:\\Program Files (x86)\\Pico Technology\\SDK\\inc" ;
 LOCATE on "spectrumGrabber.c" = "c:\\Users\\user\\Desktop\\spectrumGrabber" ;
+LOCATE on "transposeText.c" = "c:\\Users\\user\\Desktop\\spectrumGrabber" ;
+LOCATE on "transposeText.h" = "c:\\Users\\user\\Desktop\\spectrumGrabber" ;
+Object "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\picoscopeConfig.obj" : "c:\\Users\\user\\Desktop\\spectrumGrabber\\picoscopeConfig.c" ;
+FILENUM on "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\picoscopeConfig.obj" = 1 ;
+DEFPROTS on "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\picoscopeConfig.obj" = "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\picoscopeConfig.obj.cvidefprots" ;
+OUTFILE on "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\picoscopeConfig.obj" = "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\picoscopeConfig.obj.out" ;
+PrjObjects += "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\picoscopeConfig.obj" ;
+Object "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\picoscopes.obj" : "c:\\Users\\user\\Desktop\\spectrumGrabber\\picoscopes.c" ;
+FILENUM on "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\picoscopes.obj" = 2 ;
+DEFPROTS on "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\picoscopes.obj" = "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\picoscopes.obj.cvidefprots" ;
+OUTFILE on "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\picoscopes.obj" = "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\picoscopes.obj.out" ;
+PrjObjects += "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\picoscopes.obj" ;
 Object "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\spectrumGrabber.obj" : "c:\\Users\\user\\Desktop\\spectrumGrabber\\spectrumGrabber.c" ;
-FILENUM on "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\spectrumGrabber.obj" = 1 ;
+FILENUM on "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\spectrumGrabber.obj" = 3 ;
 DEFPROTS on "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\spectrumGrabber.obj" = "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\spectrumGrabber.obj.cvidefprots" ;
 OUTFILE on "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\spectrumGrabber.obj" = "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\spectrumGrabber.obj.out" ;
 PrjObjects += "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\spectrumGrabber.obj" ;
+Object "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\transposeText.obj" : "c:\\Users\\user\\Desktop\\spectrumGrabber\\transposeText.c" ;
+FILENUM on "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\transposeText.obj" = 4 ;
+DEFPROTS on "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\transposeText.obj" = "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\transposeText.obj.cvidefprots" ;
+OUTFILE on "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\transposeText.obj" = "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\transposeText.obj.out" ;
+PrjObjects += "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\transposeText.obj" ;
 Object "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\resources.res" : "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\resources.in.rc" ;
+Depends "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\resources.res" : "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\manifest.xml" ;
 MainFromObjects "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\spectrumGrabber.exe" : $(PrjObjects) $(InstrObjects) ;
 Depends "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\spectrumGrabber.exe" : "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\link_options.txt" ;
 Depends "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\spectrumGrabber.exe" : "c:\\Users\\user\\Desktop\\spectrumGrabber\\cvibuild.spectrumGrabber\\Release\\resources.res" ;

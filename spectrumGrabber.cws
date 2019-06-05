@@ -1,9 +1,9 @@
 [Workspace Header]
-Version = 1302
+Version = 1700
 Pathname = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.cws"
-CVI Dir = "/c/program files (x86)/national instruments/cvi2013"
+CVI Dir = "/c/program files (x86)/national instruments/cvi2017"
 CVI Shared Dir = "/C/Program Files (x86)/National Instruments/Shared/CVI"
-CVI Pub Local Dir = "/C/ProgramData/National Instruments/CVI2013"
+CVI Pub Local Dir = "/C/ProgramData/National Instruments/CVI2017"
 CVI Pub Global Dir = "/C/ProgramData/National Instruments/CVI"
 IVI Standard Root Dir = "/C/Program Files (x86)/IVI Foundation/IVI"
 IVI Standard Root 64-bit Dir = "/C/Program Files/IVI Foundation/IVI"
@@ -14,9 +14,9 @@ Active Project = 1
 Project 0001 = "spectrumGrabber.prj"
 Drag Bar Left = 217
 Window Top = 214
-Window Left = 26
-Window Bottom = 953
-Window Right = 1600
+Window Left = 1127
+Window Bottom = 214
+Window Right = 1271
 Maximized = True
 Maximized Children = True
 Max32 Number Of Errors = 20
@@ -37,7 +37,7 @@ FileDateColumnWidth = 70
 FileSizeColumnWidth = 70
 
 [Project Header 0001]
-Version = 1302
+Version = 1700
 Don't Update DistKit = False
 Platform Code = 4
 Build Configuration = "Debug"
@@ -52,19 +52,19 @@ Disk Date = 3591964635
 In Projects = "1,"
 Window Top = 32
 Window Left = 10
-Window Z-Order = 1
-Source Window State = "1,853,853,853,14,21,21,0,0,208,0,1686,0,0,0,47,823,0,853,26,271,555,1,13,"
+Window Z-Order = 2
+Source Window State = "1,853,853,853,14,21,21,0,0,64,0,1686,0,0,0,19,823,0,853,26,271,555,1,13,"
 
 [File 0002]
 Path = "/c/Users/user/Desktop/spectrumGrabber/spectrumGrabber.uir"
 File Type = "User Interface Resource"
-Disk Date = 3591092760
+Disk Date = 3642586954
 In Projects = "1,"
 Window Top = 62
 Window Left = 26
 Window Height = 349
 Window Width = 715
-Window Z-Order = 2
+Window Z-Order = 1
 
 [File 0003]
 Path = "/c/Users/user/Desktop/spectrumGrabber/picoscopes.c"

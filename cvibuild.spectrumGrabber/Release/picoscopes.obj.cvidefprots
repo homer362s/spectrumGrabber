@@ -1,0 +1,72 @@
+[getScopeTypeStr]
+Class="Function"
+Prototype="char *getScopeTypeStr(struct psconfig *config);"
+
+[getRangeLabel]
+Class="Function"
+Prototype="char *getRangeLabel(enum psRange range);"
+
+[getCouplingLabel]
+Class="Function"
+Prototype="char *getCouplingLabel(enum psCoupling coupling);"
+
+[getRangeValue]
+Class="Function"
+Prototype="double getRangeValue(enum psRange range);"
+
+[convertChannel]
+Class="Function"
+Prototype="int convertChannel(enum scopeType type, enum psChannel channel);"
+
+[convertCoupling]
+Class="Function"
+Prototype="int convertCoupling(enum scopeType type, enum psCoupling coupling);"
+
+[convertRange]
+Class="Function"
+Prototype="int convertRange(enum scopeType type, enum psRange range);"
+
+[scaleReading]
+Class="Function"
+Prototype="void scaleReading(struct psconfig *config, int channel, short *rawData, double *scaledData);"
+
+[psOpenUnit]
+Class="Function"
+Prototype="unsigned int psOpenUnit(struct psconfig *config);"
+
+[psCloseUnit]
+Class="Function"
+Prototype="unsigned int psCloseUnit(struct psconfig *config);"
+
+[psUpdateTimebase]
+Class="Function"
+Prototype="void psUpdateTimebase(struct psconfig *config, float sampleRate);"
+
+[psGetTimebase2]
+Class="Function"
+Prototype="unsigned int psGetTimebase2(struct psconfig *config, float *timeInterval_ns);"
+
+[psRunBlock]
+Class="Function"
+Prototype="unsigned int psRunBlock(struct psconfig *config, void *dataAvailableCallback);"
+
+[psStop]
+Class="Function"
+Prototype="unsigned int psStop(struct psconfig *config);"
+
+[psMemorySegments]
+Class="Function"
+Prototype="unsigned int psMemorySegments(struct psconfig *config);"
+
+[psSetChannel]
+Class="Function"
+Prototype="unsigned int psSetChannel(struct psconfig *config, int channelIndex);"
+
+[psSetDataBuffer]
+Class="Function"
+Prototype="unsigned int psSetDataBuffer(struct psconfig *config, int channelIndex, short *buffer);"
+
+[psGetValues]
+Class="Function"
+Prototype="unsigned int psGetValues(struct psconfig *config, unsigned int *nPoints, short *overflow);"
+
